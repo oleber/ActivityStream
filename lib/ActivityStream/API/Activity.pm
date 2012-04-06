@@ -82,6 +82,16 @@ sub get_sources {
     return ( $self->get_actor->get_object_id );
 }
 
+sub get_type {
+    my ($self) = @_;
+    return join( ':',
+        $self->get_actor->get_type,
+        $self->get_verb,
+        $self->get_object->get_type,
+        ( $self->get_target ? $self->get_target->get_type : () ),
+    );
+}
+
 sub from_db_struct {
     my ( $pkg, $data ) = @_;
 
