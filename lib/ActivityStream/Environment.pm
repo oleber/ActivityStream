@@ -13,6 +13,7 @@ use Mojo::JSON;
 use MongoDB::Connection;
 use Readonly;
 
+use ActivityStream::AsyncUserAgent;
 use ActivityStream::Data::CollectionFactory;
 
 Readonly my $CONFIG_FILEPATH =>
@@ -50,6 +51,13 @@ has 'collection_factory' => (
         return ActivityStream::Data::CollectionFactory->new(
             'database' => shift->get_db_connecton->get_database('hotlinks_db') );
     },
+);
+
+has 'async_user_agent' => (
+    'is'      => 'ro',
+    'isa'     => 'ActivityStream::AsyncUserAgent',
+    'lazy'    => 1,
+    'default' => sub { return ActivityStream::AsyncUserAgent->new },
 );
 
 1;

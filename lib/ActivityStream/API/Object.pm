@@ -6,9 +6,14 @@ use MooseX::FollowPBP;
 use Carp;
 
 has 'object_id' => (
-    is       => 'rw',
-    isa      => subtype( 'Str' => where sub {/^\w+:\w+:\w+$/} ),
-    required => 1,
+    'is'       => 'rw',
+    'isa'      => subtype( 'Str' => where sub {/^\w+:\w+:\w+$/} ),
+    'required' => 1,
+);
+
+has 'loaded_successfully' => (
+    'is'       => 'rw',
+    'isa'      => 'Bool',
 );
 
 sub to_struct {
@@ -23,6 +28,9 @@ sub to_db_struct {
 
 sub to_rest_response_struct {
     my ($self) = @_;
+
+    confess sprintf( "'%s' didn't load correctly", $self->get_object_id) if not $self->get_loaded_successfully;
+
     return $self->to_struct;
 }
 
@@ -47,6 +55,11 @@ sub get_type {
     if ( $self->get_object_id =~ /:(.*):/ ) {
         return $1;
     }
+}
+
+sub prepare_load {
+    my ( $self, $environment, $args ) = @_;
+    return;
 }
 
 __PACKAGE__->meta->make_immutable;

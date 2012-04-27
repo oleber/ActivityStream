@@ -9,8 +9,8 @@ use Data::UUID;
 {
     my $root = join( ',', Data::UUID->new->create_str(), $$, time );
     sub generate_id {
-        $root = md5_base64( $root . $$ . time );
-        $root =~ s/[^a-zA-Z]/a/g;
+        $root = time . md5_base64( $root . $$ . time );
+        $root =~ tr/0123456789\/\+/abcdefghijkl/;
         return $root;
     }
 }

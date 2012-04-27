@@ -10,7 +10,7 @@ use ActivityStream::Util;
 has 'activity_id' => (
     'is'      => 'rw',
     'isa'     => 'Str',
-    'default' => sub { ActivityStream::Util::generate_id() },
+    'default' => sub {ActivityStream::Util::generate_id},
 );
 
 has 'creation_time' => (
@@ -40,6 +40,11 @@ has 'object' => (
 has 'target' => (
     'is'  => 'rw',
     'isa' => 'Maybe[ActivityStream::API::Object]'
+);
+
+has 'loaded_successfully' => (
+    'is'  => 'rw',
+    'isa' => 'Bool',
 );
 
 sub to_db_struct {
@@ -132,6 +137,70 @@ sub get_attribute_base_class {
     }
 
     return $type_constraint->name;
+}
+
+sub prepare_load {
+    my ( $self, $environment, $args ) = @_;
+
+    $self->prepare_load_actor( $environment, $args );
+    $self->prepare_load_object( $environment, $args );
+    $self->prepare_load_target( $environment, $args );
+
+    return;
+}
+
+sub prepare_load_actor {
+    my ( $self, $environment, $args ) = @_;
+
+    $self->get_actor->prepare_load( $environment, $args );
+
+    return;
+}
+
+sub prepare_load_object {
+    my ( $self, $environment, $args ) = @_;
+
+    $self->get_object->prepare_load( $environment, $args );
+
+    return;
+}
+
+sub prepare_load_target {
+    my ( $self, $environment, $args ) = @_;
+
+    $self->get_target->prepare_load( $environment, $args ) if defined $self->get_target;
+
+    return;
+}
+
+sub has_fully_loaded_successfully {
+    my ($self) = @_;
+
+    return
+              $self->get_loaded_successfully
+          && $self->actor_loaded_successfully
+          && $self->object_loaded_successfully
+          && $self->target_loaded_successfully;
+}
+
+sub actor_loaded_successfully {
+    my ($self) = @_;
+
+    return $self->get_actor->get_loaded_successfully;
+}
+
+sub object_loaded_successfully {
+    my ($self) = @_;
+
+    return $self->get_object->get_loaded_successfully;
+}
+
+sub target_loaded_successfully {
+    my ($self) = @_;
+
+    return 1 if not defined $self->get_target;
+
+    return $self->get_actor->get_loaded_successfully;
 }
 
 __PACKAGE__->meta->make_immutable;
