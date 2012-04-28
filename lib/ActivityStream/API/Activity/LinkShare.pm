@@ -1,16 +1,17 @@
-package ActivityStream::API::Activity::Friendship;
+package ActivityStream::API::Activity::LinkShare;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use ActivityStream::API::Activity;
 use ActivityStream::API::Object::Person;
+use ActivityStream::API::Object::Link;
 
 extends 'ActivityStream::API::Activity';
 
 has '+actor'  => ( 'isa' => 'ActivityStream::API::Object::Person' );
-has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^friendship$/} ) );
-has '+object' => ( 'isa' => 'ActivityStream::API::Object::Person' );
+has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^share$/} ) );
+has '+object' => ( 'isa' => 'ActivityStream::API::Object::Link' );
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;

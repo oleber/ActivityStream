@@ -44,17 +44,22 @@ my $t    = Test::Mojo->new('ActivityStream');
     cmp_deeply( $t->tx->res->json, { 'activity_id' => ignore, 'creation_time' => num( time, 2 ) } );
     $friendship_activity{'activity_id'}   = $t->tx->res->json->{'activity_id'};
     $friendship_activity{'creation_time'} = $t->tx->res->json->{'creation_time'};
-    ok( $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } ) );
+    cmp_deeply(
+        $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } ),
+        superhashof(
+            ActivityStream::API::Activity::Friendship->from_rest_request_struct( \%friendship_activity )->to_db_struct
+        ),
+    );
 }
 
 {
     note("GET single activity: existing");
     $t->get_ok("/rest/activitystream/activity/$friendship_activity{'activity_id'}?rid=$RID")->status_is(200);
 
-    my $db_activity = $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } );
-    my $activity = ActivityStream::API::Activity::Friendship->from_db_struct( $db_activity );
-    $activity->prepare_load( $environment, { 'rid' => $RID } );
-    $environment->get_async_user_agent->load_all;
+    my $db_activity
+          = $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } );
+    my $activity = ActivityStream::API::Activity::Friendship->from_db_struct($db_activity);
+    $activity->load( $environment, { 'rid' => $RID } );
 
     cmp_deeply( $t->tx->res->json, $activity->to_rest_response_struct );
 }

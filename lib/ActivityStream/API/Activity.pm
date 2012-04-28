@@ -173,11 +173,18 @@ sub prepare_load_target {
     return;
 }
 
+sub load {
+    my ( $self, $environment, $args ) = @_;
+
+    $self->prepare_load( $environment, $args );
+    return $environment->get_async_user_agent->load_all;
+}
+
 sub has_fully_loaded_successfully {
     my ($self) = @_;
 
     return
-              $self->get_loaded_successfully
+             $self->get_loaded_successfully
           && $self->actor_loaded_successfully
           && $self->object_loaded_successfully
           && $self->target_loaded_successfully;
