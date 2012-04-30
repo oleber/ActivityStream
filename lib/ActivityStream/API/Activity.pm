@@ -6,6 +6,7 @@ use Data::Dumper;
 use Scalar::Util qw(blessed);
 
 use ActivityStream::API::ActivityLike;
+use ActivityStream::API::ActivityComment;
 use ActivityStream::API::Object;
 use ActivityStream::Util;
 
@@ -53,11 +54,19 @@ has 'likers' => (
     'is'      => 'rw',
     'isa'     => 'HashRef[ActivityStream::API::ActivityLike]',
     'default' => sub { {} },
-    traits    => ['Hash'],
-    handles   => {
-        put_like_from => 'set',
-        get_like_from => 'get',
+    'traits'  => ['Hash'],
+    'handles' => {
+        'put_like_from' => 'set',
+        'get_like_from' => 'get',
     },
+);
+
+has 'comments' => (
+    'is'      => 'rw',
+    'isa'     => 'ArrayRef[ActivityStream::API::ActivityComment]',
+    'default' => sub { [] },
+    'traits'  => ['Array'],
+    'handles' => { 'add_comment' => 'push' },
 );
 
 around BUILDARGS => sub {
@@ -65,8 +74,12 @@ around BUILDARGS => sub {
 
     my $args = $class->$orig(@args);
 
-    foreach my $value ( values %{ $args->{'likers'} } ) {
+    foreach my $value ( values %{ $args->{'likers'} // {} } ) {
         $value = ActivityStream::API::ActivityLike->new($value);    # change inline
+    }
+
+    foreach my $value ( @{ $args->{'comments'} // [] } ) {
+        $value = ActivityStream::API::ActivityComment->new($value);    # change inline
     }
 
     return $args;
@@ -79,11 +92,12 @@ sub is_recomendable { return 0 }
 sub to_db_struct {
     my ($self) = @_;
     my %data = (
-        'activity_id'   => $self->get_activity_id,
-        'actor'         => $self->get_actor->to_db_struct,
-        'verb'          => $self->get_verb,
-        'object'        => $self->get_object->to_db_struct,
-        'likers'        => +{ map { $_->get_user_id => $_->to_db_struct } values %{ $self->get_likers } },
+        'activity_id' => $self->get_activity_id,
+        'actor'       => $self->get_actor->to_db_struct,
+        'verb'        => $self->get_verb,
+        'object'      => $self->get_object->to_db_struct,
+        'likers'      => +{ map { $_->get_user_id => $_->to_db_struct } values %{ $self->get_likers } },
+        'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
     );
 
@@ -129,11 +143,12 @@ sub to_rest_response_struct {
     my ($self) = @_;
 
     my %data = (
-        'activity_id'   => $self->get_activity_id,
-        'actor'         => $self->get_actor->to_rest_response_struct,
-        'verb'          => $self->get_verb,
-        'object'        => $self->get_object->to_rest_response_struct,
-        'likers'        => +{ map { $_->get_user_id => $_->to_rest_response_struct } values %{ $self->get_likers } },
+        'activity_id' => $self->get_activity_id,
+        'actor'       => $self->get_actor->to_rest_response_struct,
+        'verb'        => $self->get_verb,
+        'object'      => $self->get_object->to_rest_response_struct,
+        'likers'      => +{ map { $_->get_user_id => $_->to_rest_response_struct } values %{ $self->get_likers } },
+        'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
     );
 
@@ -275,7 +290,7 @@ sub target_loaded_successfully {
 sub save_like {
     my ( $self, $environment, $param ) = @_;
 
-    confess("Can't like: " . ref($self)) if not $self->is_likeable;
+    confess( "Can't like: " . ref($self) ) if not $self->is_likeable;
 
     my $collection_activity = $environment->get_collection_factory->collection_activity;
 
@@ -289,6 +304,25 @@ sub save_like {
     );
 
     return $activity_like;
+}
+
+sub save_comment {
+    my ( $self, $environment, $param ) = @_;
+
+    confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
+
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+
+    my $activity_comment = blessed($param) ? $param : ActivityStream::API::ActivityComment->new($param);
+
+    $self->add_comment($activity_comment);
+
+    $collection_activity->update_activity(
+        { 'activity_id' => $self->get_activity_id },
+        { '$push'       => { 'comments' => $activity_comment->to_db_struct } },
+    );
+
+    return $activity_comment;
 }
 
 __PACKAGE__->meta->make_immutable;

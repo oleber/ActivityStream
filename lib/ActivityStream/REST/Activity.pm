@@ -78,4 +78,25 @@ sub post_handler_user_activity_like {
     }
 }
 
+
+sub post_handler_user_activity_comment {
+    my $self = shift;
+
+    my $activity_id = $self->param('activity_id');
+    my $user_id     = $self->param('user_id');
+    my $body        = $self->req->json->{'body'};
+    my $rid         = $self->param('rid');
+
+    my $environment = ActivityStream::Environment->new;
+    my $activity
+          = ActivityStream::API::Activity::Friendship->load_from_db( $environment, { 'activity_id' => $activity_id } );
+
+    if ( defined $activity ) {
+        my $comment = $activity->save_comment( $environment, { 'user_id' => $user_id, 'body' => $body } );
+        return $self->render_json( { 'comment_id' => $comment->get_comment_id, 'creation_time' => $comment->get_creation_time } );
+    } else {
+        return $self->render_json( {}, status => 404 );
+    }
+}
+
 1;

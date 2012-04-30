@@ -34,7 +34,8 @@ sub startup {
           ->to( namespace => 'ActivityStream::REST::Activity', action => 'get_handler_activity' );
     $r->post("/rest/activitystream/user/:user_id/like/activity/:activity_id")
           ->to( namespace => 'ActivityStream::REST::Activity', action => 'post_handler_user_activity_like' );
-
+    $r->post("/rest/activitystream/user/:user_id/comment/activity/:activity_id")
+          ->to( namespace => 'ActivityStream::REST::Activity', action => 'post_handler_user_activity_comment' );
 } ## end sub startup
 
 1;

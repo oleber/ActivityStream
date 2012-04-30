@@ -91,7 +91,32 @@ my $t    = Test::Mojo->new('ActivityStream');
             ),
         },
     );
+}
 
+{
+    note("POST User Comment Existing activity");
+
+    Readonly my $BODY => ActivityStream::Util::generate_id;
+
+    $t->post_ok( "/rest/activitystream/user/$user_creator_3_id/comment/activity/$friendship_activity{'activity_id'}",
+        $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(200);
+    cmp_deeply( $t->tx->res->json, { 'comment_id' => ignore, 'creation_time' => num( time, 2 ) } );
+
+    my $activity = ActivityStream::API::Activity::Friendship->load_from_db( $environment,
+        { 'activity_id' => $friendship_activity{'activity_id'} } );
+    $activity->load( $environment, { 'rid' => $RID } );
+
+    cmp_deeply(
+        $activity->get_comments,
+        [
+            ActivityStream::API::ActivityComment->new(
+                'comment_id'    => $t->tx->res->json->{'comment_id'},
+                'user_id'       => $user_creator_3_id,
+                'body'          => $BODY,
+                'creation_time' => $t->tx->res->json->{'creation_time'},
+            ),
+        ],
+    );
 }
 
 done_testing();

@@ -32,7 +32,7 @@ Readonly my $RID => ActivityStream::Util::generate_id();
 
     is( $activity->get_type, 'person:friendship:person' );
     cmp_deeply( $activity->to_db_struct,
-        { %DATA, 'activity_id' => ignore, 'creation_time' => num( time, 2 ), 'likers' => {} },
+        { %DATA, 'activity_id' => ignore, 'creation_time' => num( time, 2 ), 'likers' => {}, 'comments' => [] },
     );
     cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );
 }
@@ -84,6 +84,7 @@ my $object_request = $async_user_agent->create_request_person( { 'object_id' => 
             'object'        => $person_object->to_rest_response_struct,
             'activity_id'   => ignore,
             'likers'        => {},
+            'comments' => [],
             'creation_time' => num( time, 2 ),
         },
     );
