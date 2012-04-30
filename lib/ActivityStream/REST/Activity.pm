@@ -8,13 +8,6 @@ use ActivityStream::API::Activity::Friendship;
 use ActivityStream::Data::CollectionFactory;
 use ActivityStream::Environment;
 
-Readonly my $SECONDS_IN_A_DAY => 60 * 60 * 24;
-
-sub get_day_of {
-    my ($time) = @_;
-    return int( $time / $SECONDS_IN_A_DAY );
-}
-
 sub post_handler_activity {
     my $self = shift;
 
@@ -27,7 +20,7 @@ sub post_handler_activity {
 
     foreach my $source ( $activity->get_sources ) {
         $collection_source->upsert_source(
-            { 'source_id' => $source, 'day' => get_day_of( time() ) },
+            { 'source_id' => $source, 'day' => ActivityStream::Util::get_day_of(time) },
             { '$set' => { 'activity.' . $activity->get_activity_id => time } },
         );
     }
@@ -65,5 +58,24 @@ sub get_handler_activity {
         return $self->render_json( {}, status => 404 );
     }
 } ## end sub get_handler_activity
+
+sub post_handler_user_activity_like {
+    my $self = shift;
+
+    my $activity_id = $self->param('activity_id');
+    my $user_id     = $self->param('user_id');
+    my $rid         = $self->param('rid');
+
+    my $environment = ActivityStream::Environment->new;
+    my $activity
+          = ActivityStream::API::Activity::Friendship->load_from_db( $environment, { 'activity_id' => $activity_id } );
+
+    if ( defined $activity ) {
+        my $like = $activity->save_like( $environment, { 'user_id' => $user_id } );
+        return $self->render_json( { 'like_id' => $like->get_like_id, 'creation_time' => $like->get_creation_time } );
+    } else {
+        return $self->render_json( {}, status => 404 );
+    }
+}
 
 1;

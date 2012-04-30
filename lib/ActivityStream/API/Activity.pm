@@ -3,7 +3,9 @@ use Moose;
 use MooseX::FollowPBP;
 
 use Data::Dumper;
+use Scalar::Util qw(blessed);
 
+use ActivityStream::API::ActivityLike;
 use ActivityStream::API::Object;
 use ActivityStream::Util;
 
@@ -47,6 +49,33 @@ has 'loaded_successfully' => (
     'isa' => 'Bool',
 );
 
+has 'likers' => (
+    'is'      => 'rw',
+    'isa'     => 'HashRef[ActivityStream::API::ActivityLike]',
+    'default' => sub { {} },
+    traits    => ['Hash'],
+    handles   => {
+        put_like_from => 'set',
+        get_like_from => 'get',
+    },
+);
+
+around BUILDARGS => sub {
+    my ( $orig, $class, @args ) = @_;
+
+    my $args = $class->$orig(@args);
+
+    foreach my $value ( values %{ $args->{'likers'} } ) {
+        $value = ActivityStream::API::ActivityLike->new($value);    # change inline
+    }
+
+    return $args;
+};
+
+sub is_likeable     { return 0 }
+sub is_commentable  { return 0 }
+sub is_recomendable { return 0 }
+
 sub to_db_struct {
     my ($self) = @_;
     my %data = (
@@ -54,6 +83,7 @@ sub to_db_struct {
         'actor'         => $self->get_actor->to_db_struct,
         'verb'          => $self->get_verb,
         'object'        => $self->get_object->to_db_struct,
+        'likers'        => +{ map { $_->get_user_id => $_->to_db_struct } values %{ $self->get_likers } },
         'creation_time' => $self->get_creation_time,
     );
 
@@ -64,6 +94,37 @@ sub to_db_struct {
     return \%data;
 }
 
+sub save_in_db {
+    my ( $self, $environment ) = @_;
+
+    my $collection_source   = $environment->get_collection_factory->collection_source;
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+
+    $collection_activity->upsert_activity( { 'activity_id' => $self->get_activity_id }, $self->to_db_struct );
+
+    foreach my $source ( $self->get_sources ) {
+        $collection_source->upsert_source(
+            { 'source_id' => $source, 'day' => ActivityStream::Util::get_day_of(time) },
+            { '$set' => { 'activity.' . $self->get_activity_id => time } },
+        );
+    }
+
+    return;
+}
+
+sub load_from_db {
+    my ( $pkg, $environment, $criteria ) = @_;
+
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+    my $db_activity         = $collection_activity->find_one_activity($criteria);
+
+    if ( defined $db_activity ) {
+        return $pkg->from_db_struct($db_activity);
+    } else {
+        confess "NOT FOUND";    #TODO: MAKE IT AN OBJECT
+    }
+}
+
 sub to_rest_response_struct {
     my ($self) = @_;
 
@@ -72,6 +133,7 @@ sub to_rest_response_struct {
         'actor'         => $self->get_actor->to_rest_response_struct,
         'verb'          => $self->get_verb,
         'object'        => $self->get_object->to_rest_response_struct,
+        'likers'        => +{ map { $_->get_user_id => $_->to_rest_response_struct } values %{ $self->get_likers } },
         'creation_time' => $self->get_creation_time,
     );
 
@@ -208,6 +270,25 @@ sub target_loaded_successfully {
     return 1 if not defined $self->get_target;
 
     return $self->get_actor->get_loaded_successfully;
+}
+
+sub save_like {
+    my ( $self, $environment, $param ) = @_;
+
+    confess("Can't like: " . ref($self)) if not $self->is_likeable;
+
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+
+    my $activity_like = blessed($param) ? $param : ActivityStream::API::ActivityLike->new($param);
+
+    $self->put_like_from( $activity_like->get_user_id => $activity_like );
+
+    $collection_activity->update_activity(
+        { 'activity_id' => $self->get_activity_id },
+        { '$set'        => { sprintf( 'likers.%s', $activity_like->get_user_id ) => $activity_like->to_db_struct }, },
+    );
+
+    return $activity_like;
 }
 
 __PACKAGE__->meta->make_immutable;

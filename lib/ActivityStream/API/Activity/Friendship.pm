@@ -12,6 +12,10 @@ has '+actor'  => ( 'isa' => 'ActivityStream::API::Object::Person' );
 has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^friendship$/} ) );
 has '+object' => ( 'isa' => 'ActivityStream::API::Object::Person' );
 
+sub is_likeable     { return 1 }
+sub is_commentable  { return 1 }
+sub is_recomendable { return 0 }
+
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
 

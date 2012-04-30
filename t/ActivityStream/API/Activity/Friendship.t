@@ -31,7 +31,9 @@ Readonly my $RID => ActivityStream::Util::generate_id();
     my $activity = $PKG->from_rest_request_struct( \%DATA );
 
     is( $activity->get_type, 'person:friendship:person' );
-    cmp_deeply( $activity->to_db_struct, { %DATA, 'activity_id' => ignore, 'creation_time' => num( time, 2 ) } );
+    cmp_deeply( $activity->to_db_struct,
+        { %DATA, 'activity_id' => ignore, 'creation_time' => num( time, 2 ), 'likers' => {} },
+    );
     cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );
 }
 
@@ -39,13 +41,20 @@ my $environment      = ActivityStream::Environment->new;
 my $async_user_agent = $environment->get_async_user_agent;
 
 my $actor_request  = $async_user_agent->create_request_person( { 'object_id' => $PERSON_ACTOR_ID,  'rid' => $RID } );
-my $activityect_request = $async_user_agent->create_request_person( { 'object_id' => $PERSON_OBJECT_ID, 'rid' => $RID } );
+my $object_request = $async_user_agent->create_request_person( { 'object_id' => $PERSON_OBJECT_ID, 'rid' => $RID } );
 
 {
     note('Test bad Creation');
     dies_ok { $PKG->from_rest_request_struct( { %DATA, 'actor'  => { 'object_id' => 'x:link:1' } } ) };
     dies_ok { $PKG->from_rest_request_struct( { %DATA, 'verb'   => 'share' } ) };
     dies_ok { $PKG->from_rest_request_struct( { %DATA, 'object' => { 'object_id' => 'x:link:1' } } ) };
+}
+
+{
+    note('Test Attributs');
+    ok( $PKG->is_likeable );
+    ok( $PKG->is_commentable );
+    ok( not $PKG->is_recomendable );
 }
 
 {
@@ -56,11 +65,10 @@ my $activityect_request = $async_user_agent->create_request_person( { 'object_id
     my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
     my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
 
-    $async_user_agent->set_response_to( $actor_request->as_string,
+    $async_user_agent->put_response_to( $actor_request->as_string,
         $async_user_agent->create_test_response_person( { 'first_name' => 'person a', 'rid' => $RID } ) );
-
-    $async_user_agent->set_response_to( $activityect_request->as_string,
-        $async_user_agent->create_test_response_link( { 'first_name' => 'person b', 'rid' => $RID } ) );
+    $async_user_agent->put_response_to( $object_request->as_string,
+        $async_user_agent->create_test_response_person( { 'first_name' => 'person b', 'rid' => $RID } ) );
 
     $activity->prepare_load( $environment, { 'rid' => $RID } );
     $person_actor->prepare_load( $environment, { 'rid' => $RID } );
@@ -75,6 +83,7 @@ my $activityect_request = $async_user_agent->create_request_person( { 'object_id
             'verb'          => 'friendship',
             'object'        => $person_object->to_rest_response_struct,
             'activity_id'   => ignore,
+            'likers'        => {},
             'creation_time' => num( time, 2 ),
         },
     );
@@ -91,9 +100,9 @@ my $activityect_request = $async_user_agent->create_request_person( { 'object_id
     my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
     my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
 
-    $async_user_agent->set_response_to( $actor_request->as_string, HTTP::Response->new(400) );
+    $async_user_agent->put_response_to( $actor_request->as_string, HTTP::Response->new(400) );
 
-    $async_user_agent->set_response_to( $activityect_request->as_string,
+    $async_user_agent->put_response_to( $object_request->as_string,
         $async_user_agent->create_test_response_person( { 'first_name' => 'person b', 'rid' => $RID } ) );
 
     $activity->prepare_load( $environment, { 'rid' => $RID } );
@@ -114,10 +123,10 @@ my $activityect_request = $async_user_agent->create_request_person( { 'object_id
     my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
     my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
 
-    $async_user_agent->set_response_to( $actor_request->as_string,
+    $async_user_agent->put_response_to( $actor_request->as_string,
         $async_user_agent->create_test_response_person( { 'first_name' => 'person a', 'rid' => $RID } ) );
 
-    $async_user_agent->set_response_to( $activityect_request->as_string, HTTP::Response->new(400), );
+    $async_user_agent->put_response_to( $object_request->as_string, HTTP::Response->new(400), );
 
     $activity->prepare_load( $environment, { 'rid' => $RID } );
     $person_actor->prepare_load( $environment, { 'rid' => $RID } );

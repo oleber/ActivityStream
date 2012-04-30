@@ -31,7 +31,7 @@ has 'cache' => (
     default => sub { $cache // {} },
     traits  => ['Hash'],
     handles => {
-        set_response_to => 'set',
+        put_response_to => 'set',
         get_response_to => 'get',
     },
 );
@@ -83,7 +83,7 @@ sub load_all {
                 $cb->( $self, $self->_convert_response($response) );
             }
             delete $self->get_request_tasks->{ $request->as_string };
-            $self->set_response_to( $request->as_string => $response );
+            $self->put_response_to( $request->as_string => $response );
         } elsif ( @{ $self->get_no_request_tasks } ) {
             my $cb = shift @{ $self->get_no_request_tasks };
             $cb->($self);

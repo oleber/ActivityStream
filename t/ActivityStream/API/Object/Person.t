@@ -52,7 +52,7 @@ my $request_as_string = $async_user_agent->create_request_person( \%DATA_REQUEST
 
     my $obj = $PKG->new(%DATA);
 
-    $async_user_agent->set_response_to( $request_as_string,
+    $async_user_agent->put_response_to( $request_as_string,
         $async_user_agent->create_test_response_person( { %DATA_RESPONSE, 'rid' => 'rid_1' } ),
     );
 
@@ -68,7 +68,7 @@ my $request_as_string = $async_user_agent->create_request_person( \%DATA_REQUEST
 
     my $obj = $PKG->new(%DATA);
 
-    $async_user_agent->set_response_to( $request_as_string, HTTP::Response->new(400) );
+    $async_user_agent->put_response_to( $request_as_string, HTTP::Response->new(400) );
 
     $obj->prepare_load( $environment, { 'rid' => 'rid_1' } );
     $async_user_agent->load_all;

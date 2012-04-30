@@ -12,6 +12,16 @@ sub insert_activity {
      return $self->get_collection->insert( $object );
 }
 
+sub update_activity {
+     my ( $self, $criteria, $object ) = @_;
+     return $self->get_collection->update( $criteria, $object );
+}
+
+sub upsert_activity {
+     my ( $self, $criteria, $object ) = @_;
+     return $self->get_collection->upsert( $criteria, $object );
+}
+
 sub find_one_activity {
     my ( $self, $criteria) = @_;
     return $self->get_collection->find_one( $criteria );

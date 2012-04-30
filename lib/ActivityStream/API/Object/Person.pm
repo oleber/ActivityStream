@@ -23,6 +23,8 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }
 
+no Moose::Util::TypeConstraints;
+
 sub to_rest_response_struct {
     my ($self) = @_;
     my $data = $self->SUPER::to_rest_response_struct;
