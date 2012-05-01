@@ -126,19 +126,6 @@ sub save_in_db {
     return;
 }
 
-sub load_from_db {
-    my ( $pkg, $environment, $criteria ) = @_;
-
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
-    my $db_activity         = $collection_activity->find_one_activity($criteria);
-
-    if ( defined $db_activity ) {
-        return $pkg->from_db_struct($db_activity);
-    } else {
-        confess "NOT FOUND";    #TODO: MAKE IT AN OBJECT
-    }
-}
-
 sub to_rest_response_struct {
     my ($self) = @_;
 

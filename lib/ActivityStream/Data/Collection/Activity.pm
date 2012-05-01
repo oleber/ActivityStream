@@ -27,4 +27,7 @@ sub find_one_activity {
     return $self->get_collection->find_one( $criteria );
 }
 
+__PACKAGE__->meta->make_immutable;
+no Moose;
+
 1;

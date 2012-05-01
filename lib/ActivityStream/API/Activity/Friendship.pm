@@ -3,7 +3,6 @@ use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
-use ActivityStream::API::Activity;
 use ActivityStream::API::Object::Person;
 
 extends 'ActivityStream::API::Activity';
@@ -15,6 +14,11 @@ has '+object' => ( 'isa' => 'ActivityStream::API::Object::Person' );
 sub is_likeable     { return 1 }
 sub is_commentable  { return 1 }
 sub is_recomendable { return 0 }
+
+sub get_sources {
+    my ($self) = @_;
+    return ( $self->get_actor->get_object_id, $self->get_object->get_object_id);
+}
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;

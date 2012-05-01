@@ -7,6 +7,7 @@ use Data::Dumper;
 use Mojo::JSON;
 use Readonly;
 
+use ActivityStream::API::ActivityFactory;
 use ActivityStream::Environment;
 
 Readonly my $PKG => 'ActivityStream::API::Activity::Friendship';
@@ -55,6 +56,21 @@ my $object_request = $async_user_agent->create_request_person( { 'object_id' => 
     ok( $PKG->is_likeable );
     ok( $PKG->is_commentable );
     ok( not $PKG->is_recomendable );
+
+    my $activity = $PKG->from_rest_request_struct( \%DATA );
+    cmp_deeply( [ $activity->get_sources ], [ $PERSON_ACTOR_ID, $PERSON_OBJECT_ID ] );
+}
+
+{
+    note('Store DB');
+
+    my $activity = $PKG->from_rest_request_struct( \%DATA );
+    $activity->save_in_db($environment);
+    cmp_deeply(
+        ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            { 'activity_id' => $activity->get_activity_id } )->to_db_struct,
+        $activity->to_db_struct
+    );
 }
 
 {
@@ -84,11 +100,10 @@ my $object_request = $async_user_agent->create_request_person( { 'object_id' => 
             'object'        => $person_object->to_rest_response_struct,
             'activity_id'   => ignore,
             'likers'        => {},
-            'comments' => [],
+            'comments'      => [],
             'creation_time' => num( time, 2 ),
         },
     );
-    cmp_deeply( [ $activity->get_sources ], [$PERSON_ACTOR_ID] );
 
     ok( $activity->has_fully_loaded_successfully );
 }

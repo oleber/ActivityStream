@@ -77,7 +77,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         $json->encode( { 'rid' => 'internal' } ) )->status_is(200);
     cmp_deeply( $t->tx->res->json, { 'like_id' => ignore, 'creation_time' => num( time, 2 ) } );
 
-    my $activity = ActivityStream::API::Activity::Friendship->load_from_db( $environment,
+    my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
         { 'activity_id' => $friendship_activity{'activity_id'} } );
     $activity->load( $environment, { 'rid' => $RID } );
 
@@ -102,7 +102,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(200);
     cmp_deeply( $t->tx->res->json, { 'comment_id' => ignore, 'creation_time' => num( time, 2 ) } );
 
-    my $activity = ActivityStream::API::Activity::Friendship->load_from_db( $environment,
+    my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
         { 'activity_id' => $friendship_activity{'activity_id'} } );
     $activity->load( $environment, { 'rid' => $RID } );
 

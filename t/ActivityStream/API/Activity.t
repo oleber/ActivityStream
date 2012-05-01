@@ -7,6 +7,7 @@ use Data::Dumper;
 use Mojo::JSON;
 use Readonly;
 
+use ActivityStream::API::ActivityFactory;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
@@ -19,6 +20,18 @@ Readonly my $USER_2_ID => sprintf( "x:person:%s", ActivityStream::Util::generate
 Readonly my $USER_3_ID => sprintf( "x:person:%s", ActivityStream::Util::generate_id );
 
 use_ok($PKG);
+
+{
+    package ActivityStream::API::Activity::JustForTest;
+    use Moose;
+
+    extends 'ActivityStream::API::Activity';
+}
+
+no warnings 'redefine';
+local *ActivityStream::API::ActivityFactory::_structure_class = sub {
+    return 'ActivityStream::API::Activity::JustForTest';
+};
 
 Readonly my %DATA => (
     'actor'  => { 'object_id' => 'x:xxx:123' },
@@ -53,8 +66,12 @@ $obj->get_object->set_loaded_successfully(1);
     cmp_deeply( $obj->to_db_struct,            \%expected );
     cmp_deeply( $obj->to_rest_response_struct, \%expected );
     $obj->save_in_db($environment);
-    cmp_deeply( $PKG->load_from_db( $environment, { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-        $obj->to_db_struct, );
+    cmp_deeply(
+        ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            { 'activity_id' => $obj->get_activity_id },
+              )->to_db_struct,
+        $obj->to_db_struct,
+    );
 }
 
 {
@@ -66,8 +83,12 @@ $obj->get_object->set_loaded_successfully(1);
         cmp_deeply( $obj->to_db_struct,            \%expected );
         cmp_deeply( $obj->to_rest_response_struct, \%expected );
         $obj->save_in_db($environment);
-        cmp_deeply( $PKG->load_from_db( $environment, { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-            $obj->to_db_struct, );
+        cmp_deeply(
+            ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                { 'activity_id' => $obj->get_activity_id },
+                  )->to_db_struct,
+            $obj->to_db_struct,
+        );
     }
 
     {
@@ -85,8 +106,11 @@ $obj->get_object->set_loaded_successfully(1);
             };
             cmp_deeply( $obj->to_db_struct,            \%expected );
             cmp_deeply( $obj->to_rest_response_struct, \%expected );
-            cmp_deeply( $PKG->load_from_db( $environment, { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct, );
+            cmp_deeply(
+                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
+                $obj->to_db_struct,
+            );
         }
 
         {
@@ -100,8 +124,11 @@ $obj->get_object->set_loaded_successfully(1);
             };
             cmp_deeply( $obj->to_db_struct,            \%expected );
             cmp_deeply( $obj->to_rest_response_struct, \%expected );
-            cmp_deeply( $PKG->load_from_db( $environment, { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct, );
+            cmp_deeply(
+                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
+                $obj->to_db_struct,
+            );
         }
     }
 }
@@ -118,8 +145,11 @@ $obj->get_object->set_loaded_successfully(1);
         cmp_deeply( $obj->to_db_struct,            \%expected );
         cmp_deeply( $obj->to_rest_response_struct, \%expected );
         $obj->save_in_db($environment);
-        cmp_deeply( $PKG->load_from_db( $environment, { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-            $obj->to_db_struct, );
+        cmp_deeply(
+            ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
+            $obj->to_db_struct,
+        );
     }
 
     {
@@ -140,8 +170,11 @@ $obj->get_object->set_loaded_successfully(1);
                 } );
             cmp_deeply( $obj->to_db_struct,            \%expected );
             cmp_deeply( $obj->to_rest_response_struct, \%expected );
-            cmp_deeply( $PKG->load_from_db( $environment, { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct, );
+            cmp_deeply(
+                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
+                $obj->to_db_struct,
+            );
         }
 
         {
@@ -158,8 +191,11 @@ $obj->get_object->set_loaded_successfully(1);
                 } );
             cmp_deeply( $obj->to_db_struct,            \%expected );
             cmp_deeply( $obj->to_rest_response_struct, \%expected );
-            cmp_deeply( $PKG->load_from_db( $environment, { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct, );
+            cmp_deeply(
+                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
+                $obj->to_db_struct,
+            );
         }
     }
 }

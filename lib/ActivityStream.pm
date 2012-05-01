@@ -17,9 +17,13 @@ sub startup {
                 $next->();
             }
             catch {
+                my $exception = $_;
+
+                return $c->render_json( {}, status => 404 ) if $exception->isa('ActivityStream::X::ActivityNotFound');
+
                 warn "EXCEPTION: $_";
                 die $_;
-            },
+            },;
         },
     );
 

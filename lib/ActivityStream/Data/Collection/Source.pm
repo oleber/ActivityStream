@@ -12,4 +12,7 @@ sub upsert_source {
      return $self->get_collection->upsert( $criteria, $object );
 }
 
+__PACKAGE__->meta->make_immutable;
+no Moose;
+
 1;

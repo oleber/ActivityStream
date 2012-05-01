@@ -30,4 +30,7 @@ sub collection_source {
     return ActivityStream::Data::Collection::Source->new( collection => shift->create_collection('source') );
 }
 
+__PACKAGE__->meta->make_immutable;
+no Moose;
+
 1;
