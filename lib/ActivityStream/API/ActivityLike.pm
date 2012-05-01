@@ -26,7 +26,7 @@ has 'creation_time' => (
 
 no Moose::Util::TypeConstraints;
 
-sub to_db_struct {
+sub to_struct {
     my ($self) = @_;
     return {
         'like_id'       => $self->get_like_id,
@@ -35,14 +35,8 @@ sub to_db_struct {
     };
 }
 
-sub to_rest_response_struct {
-    my ($self) = @_;
-    return {
-        'like_id'       => $self->get_like_id,
-        'user_id'       => $self->get_user_id,
-        'creation_time' => $self->get_creation_time,
-    };
-}
+sub to_db_struct            { return shift->to_struct }
+sub to_rest_response_struct { return shift->to_struct }
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

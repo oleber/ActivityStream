@@ -1,5 +1,5 @@
 package ActivityStream::REST::Activity;
-use Mojo::Base 'ActivityStream::BaseController';
+use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
 use Readonly;
