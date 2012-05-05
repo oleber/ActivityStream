@@ -3,6 +3,7 @@ use Moose;
 use MooseX::FollowPBP;
 
 use Data::Dumper;
+use List::MoreUtils qw(any);
 use Scalar::Util qw(blessed);
 
 use ActivityStream::API::ActivityLike;
@@ -118,12 +119,12 @@ sub save_in_db {
 
     foreach my $source ( $self->get_sources ) {
         $collection_source->upsert_source(
-            { 'source_id' => $source, 'day' => ActivityStream::Util::get_day_of(time) },
-            { '$set' => { 'activity.' . $self->get_activity_id => time } },
+            { 'source_id' => $source, 'day' => ActivityStream::Util::get_day_of( $self->get_creation_time ) },
+            { '$set' => { 'activity.' . $self->get_activity_id => $self->get_creation_time } },
         );
     }
 
-    return;
+    return $self;
 }
 
 sub to_rest_response_struct {
@@ -310,6 +311,18 @@ sub save_comment {
     );
 
     return $activity_comment;
+}
+
+sub preload_filter_pass {
+    my ( $self, $filter ) = @_;
+
+    return if any { $self->get_activity_id eq $_ } @{ $filter->get_ignore_activities };
+
+    foreach my $source ( $self->get_sources ) {
+        return if any { $source eq $_ } @{ $filter->get_ignore_sources };
+    }
+
+    return 1;
 }
 
 __PACKAGE__->meta->make_immutable;

@@ -2,9 +2,11 @@ package ActivityStream::REST::Activity;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
+use List::Util qw(min);
 use Readonly;
 
 use ActivityStream::API::ActivityFactory;
+use ActivityStream::API::Search;
 use ActivityStream::Environment;
 
 sub post_handler_activity {
@@ -41,6 +43,42 @@ sub get_handler_activity {
     }
 }
 
+sub get_handler_user_activitystream {
+    my $self = shift;
+
+    my $user_id           = $self->param('activity_id');
+    my @see_sources       = $self->param('see_sources');
+    my @ignore_sources    = $self->param('ignore_sources');
+    my @ignore_activities = $self->param('ignore_activities');
+    my $limit             = $self->param('limit');
+    my $rid               = $self->param('rid');
+
+    my $environment = ActivityStream::Environment->new;
+
+    my $filter = ActivityStream::API::Search::Filter->new( {
+            'see_sources'       => \@see_sources,
+            'ignore_sources'    => \@ignore_sources,
+            'ignore_activities' => \@ignore_activities,
+            'limit'             => ( $limit // 25 ),
+    } );
+
+    my $search = ActivityStream::API::Search->search( $environment, $filter );
+
+    my @activities;
+    while ( my $activity = $search->next_activity ) {
+        next if not $activity->preload_filter_pass($filter);
+
+        $activity->prepare_load( $environment, { 'rid' => $rid } );
+
+        push( @activities, $activity );
+        last if @activities >= $filter->get_limit;
+    }
+
+    $environment->get_async_user_agent->load_all;
+
+    return $self->render_json( { 'activities' => [ map { $_->to_rest_response_struct } @activities ] } );
+} ## end sub get_handler_user_activitystream
+
 sub post_handler_user_activity_like {
     my $self = shift;
 
@@ -68,7 +106,6 @@ sub post_handler_user_activity_comment {
     my $user_id     = $self->param('user_id');
     my $body        = $self->req->json->{'body'};
     my $rid         = $self->param('rid');
-
     my $environment = ActivityStream::Environment->new;
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );

@@ -62,6 +62,13 @@ sub prepare_load {
     return;
 }
 
+sub load {
+    my ( $self, $environment, $args ) = @_;
+
+    $self->prepare_load( $environment, $args );
+    return $environment->get_async_user_agent->load_all;
+}
+
 __PACKAGE__->meta->make_immutable;
 no Moose;
 

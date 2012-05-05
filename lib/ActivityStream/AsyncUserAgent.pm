@@ -2,6 +2,7 @@ package ActivityStream::AsyncUserAgent;
 use Moose;
 use MooseX::FollowPBP;
 
+use Carp;
 use Data::Dumper;
 use HTTP::Request::Common;
 use Mojo::JSON;
@@ -99,6 +100,9 @@ sub load_all {
 
 sub create_request_person {
     my ( $self, $data ) = @_;
+    confess 'object_id not defined' if not defined $data->{'object_id'};
+    confess 'rid not defined' if not defined $data->{'rid'};
+
     return GET("http://person/$data->{'object_id'}/$data->{'rid'}");
 }
 
