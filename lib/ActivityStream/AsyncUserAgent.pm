@@ -118,7 +118,7 @@ sub create_test_response_person {
                 profile_url => $data->{'profile_url'} // 'http://profile/helena_ferrua',
                 large_image => $data->{'large_image'} // 'http://profile/helena_ferrua/large_image',
                 small_image => $data->{'small_image'} // 'http://profile/helena_ferrua/small_image',
-                company     => $data->{'company'}     // 'XING AG',
+                company     => $data->{'company'}     // 'OLEBER AG',
             },
         ),
     );
