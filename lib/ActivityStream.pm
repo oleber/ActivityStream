@@ -3,6 +3,8 @@ use Mojo::Base 'Mojolicious';
 
 use Try::Tiny;
 
+our $VERSION = 0.0;
+
 # This method will run once at server start
 sub startup {
     my $self = shift;
