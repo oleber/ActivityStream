@@ -21,7 +21,7 @@ sub startup {
             catch {
                 my $exception = $_;
 
-                return $c->render_json( {}, status => 404 ) if $exception->isa('ActivityStream::X::ActivityNotFound');
+                return $c->render_json( {error => 'ACTIVITY_NOT_FOUND'}, status => 404 ) if $exception->isa('ActivityStream::X::ActivityNotFound');
 
                 warn "EXCEPTION: $_";
                 die $_;
@@ -46,6 +46,9 @@ sub startup {
 
     $r->post("/rest/activitystream/user/:user_id/like/activity/:activity_id")
           ->to( namespace => 'ActivityStream::REST::Activity', action => 'post_handler_user_activity_like' );
+
+    $r->delete('/rest/activitystream/activity/:activity_id/like/:like_id')
+          ->to( namespace => 'ActivityStream::REST::Activity', action => 'delete_handler_activity_like' );
 
     $r->post("/rest/activitystream/user/:user_id/comment/activity/:activity_id")
           ->to( namespace => 'ActivityStream::REST::Activity', action => 'post_handler_user_activity_comment' );

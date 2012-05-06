@@ -2,7 +2,9 @@ package ActivityStream::REST::Activity;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
-use List::Util qw(min);
+use HTTP::Status qw(:constants);
+use List::Util qw(min first);
+use List::MoreUtils qw(any);
 use Readonly;
 
 use ActivityStream::API::ActivityFactory;
@@ -39,7 +41,7 @@ sub get_handler_activity {
         $activity->load( $environment, { 'rid' => $rid } );
         return $self->render_json( $activity->to_rest_response_struct );
     } else {
-        return $self->render_json( {}, status => 404 );
+        return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
     }
 }
 
@@ -95,9 +97,40 @@ sub post_handler_user_activity_like {
         my $like = $activity->save_like( $environment, { 'user_id' => $user_id } );
         return $self->render_json( { 'like_id' => $like->get_like_id, 'creation_time' => $like->get_creation_time } );
     } else {
-        return $self->render_json( {}, status => 404 );
+        return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
     }
 }
+
+Readonly my $ERROR_MESSAGE_LIKE_NOT_FOUND => 'LIKE_NOT_FOUND';
+Readonly my $ERROR_MESSAGE_NO_RID_DEFINED => 'NO_RID_DEFINED';
+Readonly my $ERROR_MESSAGE_BAD_RID        => 'BAD_RID';
+
+sub delete_handler_activity_like {
+    my $self = shift;
+
+    my $activity_id = $self->param('activity_id');
+    my $like_id     = $self->param('like_id');
+    my $rid         = $self->param('rid');
+
+    return $self->render_json( { 'error' => $ERROR_MESSAGE_NO_RID_DEFINED }, 'status' => HTTP_FORBIDDEN )
+          if not defined $rid;
+
+    my $environment = ActivityStream::Environment->new;
+
+    my $activity
+          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
+
+    my $activity_like = first { $like_id eq $_->get_like_id } values( %{ $activity->get_likers } );
+    return $self->render_json( { 'error' => $ERROR_MESSAGE_LIKE_NOT_FOUND }, 'status' => HTTP_NOT_FOUND )
+          if not defined $activity_like;
+
+    return $self->render_json( { 'error' => $ERROR_MESSAGE_BAD_RID }, 'status' => HTTP_FORBIDDEN )
+          if not any { $rid eq $_ } ( 'internal', $activity_like->get_user_id );
+
+    $activity->delete_like( $environment, $activity_like );
+
+    return $self->render_json( {} );
+} ## end sub delete_handler_activity_like
 
 sub post_handler_user_activity_comment {
     my $self = shift;
@@ -117,7 +150,7 @@ sub post_handler_user_activity_comment {
                 'creation_time' => $comment->get_creation_time,
         } );
     } else {
-        return $self->render_json( {}, status => 404 );
+        return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
     }
 } ## end sub post_handler_user_activity_comment
 

@@ -57,8 +57,9 @@ has 'likers' => (
     'default' => sub { {} },
     'traits'  => ['Hash'],
     'handles' => {
-        'put_like_from' => 'set',
-        'get_like_from' => 'get',
+        'put_like_from'    => 'set',
+        'get_like_from'    => 'get',
+        'delete_like_from' => 'delete',
     },
 );
 
@@ -292,6 +293,26 @@ sub save_like {
     );
 
     return $activity_like;
+}
+
+sub delete_like {
+    my ( $self, $environment, $activity_like ) = @_;
+
+    confess( "Can't like: " . ref($self) ) if not $self->is_likeable;
+
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+
+    $self->delete_like_from( $activity_like->get_user_id );
+
+    #    I'm sory, but in my machine I have MongoDB v: 1.2.2
+    #    $collection_activity->update_activity(
+    #        { 'activity_id' => $self->get_activity_id },
+    #        { '$unset'      => { sprintf( 'likers.%s', $activity_like->get_user_id ) => 1 }, },
+    #    );
+
+    $self->save_in_db($environment);
+
+    return;
 }
 
 sub save_comment {
