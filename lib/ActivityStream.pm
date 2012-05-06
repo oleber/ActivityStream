@@ -1,7 +1,10 @@
 package ActivityStream;
 use Mojo::Base 'Mojolicious';
 
+use HTTP::Status qw(:constants);
 use Try::Tiny;
+
+use ActivityStream::REST::Constants;
 
 our $VERSION = 0.0;
 
@@ -21,7 +24,9 @@ sub startup {
             catch {
                 my $exception = $_;
 
-                return $c->render_json( {error => 'ACTIVITY_NOT_FOUND'}, status => 404 ) if $exception->isa('ActivityStream::X::ActivityNotFound');
+                return $c->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_ACTIVITY_NOT_FOUND },
+                    'status' => HTTP_NOT_FOUND )
+                      if $exception->isa('ActivityStream::X::ActivityNotFound');
 
                 warn "EXCEPTION: $_";
                 die $_;

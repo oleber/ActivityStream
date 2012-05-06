@@ -56,7 +56,7 @@ sub request_for {
         'ignore_sources' => [$USER_3_ID],
     );
 
-    $t->get_ok($url)->status_is(200)->json_content_is( { 'activities' => [] } );
+    $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => [] } );
 }
 
 my $delay = 0;
@@ -99,7 +99,7 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 0 .. 4 ];
-    $t->get_ok($url)->status_is(200)->json_content_is( { 'activities' => \@expected } );
+    $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => \@expected } );
 }
 
 {
@@ -113,7 +113,7 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 0 .. 4 ];
-    $t->get_ok($url)->status_is(200)->json_content_is( { 'activities' => \@expected } );
+    $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => \@expected } );
 }
 
 {
@@ -129,7 +129,7 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 5 .. 9 ];
-    $t->get_ok($url)->status_is(200)->json_content_is( { 'activities' => \@expected } );
+    $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => \@expected } );
 }
 
 {
@@ -143,7 +143,7 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 5 .. 9 ];
-    $t->get_ok($url)->status_is(200)->json_content_is( { 'activities' => \@expected } );
+    $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => \@expected } );
 }
 
 

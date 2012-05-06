@@ -43,7 +43,7 @@ my $json = Mojo::JSON->new;
 my $t    = Test::Mojo->new('ActivityStream');
 
 {
-    $t->post_ok( "/rest/activitystream/activity", $json->encode( \%friendship_activity ) )->status_is(200);
+    $t->post_ok( "/rest/activitystream/activity", $json->encode( \%friendship_activity ) )->status_is(HTTP_OK);
     cmp_deeply( $t->tx->res->json, { 'activity_id' => ignore, 'creation_time' => num( time, 2 ) } );
     $friendship_activity{'activity_id'}   = $t->tx->res->json->{'activity_id'};
     $friendship_activity{'creation_time'} = $t->tx->res->json->{'creation_time'};
@@ -57,7 +57,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
 {
     note("GET single activity: existing");
-    $t->get_ok("/rest/activitystream/activity/$friendship_activity{'activity_id'}?rid=$RID")->status_is(200);
+    $t->get_ok("/rest/activitystream/activity/$friendship_activity{'activity_id'}?rid=$RID")->status_is(HTTP_OK);
 
     my $db_activity
           = $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } );
@@ -69,7 +69,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
 {
     note("GET single activity: not existing");
-    $t->get_ok("/rest/activitystream/activity/NotExisting?rid=$RID")->status_is(404)
+    $t->get_ok("/rest/activitystream/activity/NotExisting?rid=$RID")->status_is(HTTP_NOT_FOUND)
           ->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
 }
 
@@ -80,7 +80,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         note("POST User Like Existing activity");
 
         $t->post_ok( "/rest/activitystream/user/$user_creator_3_id/like/activity/$friendship_activity{'activity_id'}",
-            $json->encode( { 'rid' => 'internal' } ) )->status_is(200);
+            $json->encode( { 'rid' => 'internal' } ) )->status_is(HTTP_OK);
         cmp_deeply( $t->tx->res->json, { 'like_id' => re(qr/^[a-zA-Z]{10,}$/), 'creation_time' => num( time, 2 ) } );
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
@@ -100,7 +100,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         note("POST Second Like Existing activity");
 
         $t->post_ok( "/rest/activitystream/user/$user_creator_4_id/like/activity/$friendship_activity{'activity_id'}",
-            $json->encode( { 'rid' => 'internal' } ) )->status_is(200);
+            $json->encode( { 'rid' => 'internal' } ) )->status_is(HTTP_OK);
         cmp_deeply( $t->tx->res->json, { 'like_id' => re(qr/^[a-zA-Z]{10,}$/), 'creation_time' => num( time, 2 ) } );
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
@@ -120,7 +120,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         note("POST User Like Not Existing activity");
 
         $t->post_ok( "/rest/activitystream/user/$user_creator_3_id/like/activity/NotExisting",
-            $json->encode( { 'rid' => 'internal' } ) )->status_is(404)
+            $json->encode( { 'rid' => 'internal' } ) )->status_is(HTTP_NOT_FOUND)
               ->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
     }
 
@@ -132,7 +132,7 @@ my $t    = Test::Mojo->new('ActivityStream');
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
                 $friendship_activity{'activity_id'},
                 $expected_likes{$user_creator_4_id}->get_like_id, 'internal',
-            ) )->status_is(200)->json_content_is( {} );
+            ) )->status_is(HTTP_OK)->json_content_is( {} );
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
@@ -152,7 +152,7 @@ my $t    = Test::Mojo->new('ActivityStream');
                 $friendship_activity{'activity_id'},
                 'NotExisting', 'internal'
             ),
-        )->status_is(404)->json_content_is( { 'error' => 'LIKE_NOT_FOUND' } );
+        )->status_is(HTTP_NOT_FOUND)->json_content_is( { 'error' => 'LIKE_NOT_FOUND' } );
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
@@ -168,7 +168,7 @@ my $t    = Test::Mojo->new('ActivityStream');
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
                 'NotExisting', $expected_likes{$user_creator_3_id}->get_like_id, 'internal'
             ),
-        )->status_is(404)->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
+        )->status_is(HTTP_NOT_FOUND)->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
@@ -237,7 +237,7 @@ my $t    = Test::Mojo->new('ActivityStream');
     Readonly my $BODY => ActivityStream::Util::generate_id;
 
     $t->post_ok( "/rest/activitystream/user/$user_creator_3_id/comment/activity/$friendship_activity{'activity_id'}",
-        $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(200);
+        $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(HTTP_OK);
     cmp_deeply( $t->tx->res->json, { 'comment_id' => ignore, 'creation_time' => num( time, 2 ) } );
 
     my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,

@@ -10,6 +10,7 @@ use Readonly;
 use ActivityStream::API::ActivityFactory;
 use ActivityStream::API::Search;
 use ActivityStream::Environment;
+use ActivityStream::REST::Constants;
 
 sub post_handler_activity {
     my $self = shift;
@@ -101,10 +102,6 @@ sub post_handler_user_activity_like {
     }
 }
 
-Readonly my $ERROR_MESSAGE_LIKE_NOT_FOUND => 'LIKE_NOT_FOUND';
-Readonly my $ERROR_MESSAGE_NO_RID_DEFINED => 'NO_RID_DEFINED';
-Readonly my $ERROR_MESSAGE_BAD_RID        => 'BAD_RID';
-
 sub delete_handler_activity_like {
     my $self = shift;
 
@@ -112,7 +109,8 @@ sub delete_handler_activity_like {
     my $like_id     = $self->param('like_id');
     my $rid         = $self->param('rid');
 
-    return $self->render_json( { 'error' => $ERROR_MESSAGE_NO_RID_DEFINED }, 'status' => HTTP_FORBIDDEN )
+    return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_NO_RID_DEFINED },
+        'status' => HTTP_FORBIDDEN )
           if not defined $rid;
 
     my $environment = ActivityStream::Environment->new;
@@ -121,10 +119,12 @@ sub delete_handler_activity_like {
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
 
     my $activity_like = first { $like_id eq $_->get_like_id } values( %{ $activity->get_likers } );
-    return $self->render_json( { 'error' => $ERROR_MESSAGE_LIKE_NOT_FOUND }, 'status' => HTTP_NOT_FOUND )
+    return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_LIKE_NOT_FOUND },
+        'status' => HTTP_NOT_FOUND )
           if not defined $activity_like;
 
-    return $self->render_json( { 'error' => $ERROR_MESSAGE_BAD_RID }, 'status' => HTTP_FORBIDDEN )
+    return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_BAD_RID },
+        'status' => HTTP_FORBIDDEN )
           if not any { $rid eq $_ } ( 'internal', $activity_like->get_user_id );
 
     $activity->delete_like( $environment, $activity_like );
