@@ -1,0 +1,74 @@
+=pod
+
+=head2 Basic Idea
+
+An activity stream is a list of recent activities performed by an individual. One Activity can be split in minor 
+features:
+
+=over 2
+
+=item *
+
+Actor: Who has made the action
+
+=item *
+
+Verb: a simple one word string that describes the action.
+
+=item *
+
+Object: where the action was done.
+
+=item *
+
+Target: Some times the Objects may be grouped in another Object
+
+=back
+
+=head2 Implementation
+
+Activity Stream is a hard feature to do scalable. One Activity has a set status:
+
+=over 2
+
+=item *
+
+Something happens and a Activity is created. The Activity will be created via a REST call.
+
+=item *
+
+The Activity has to be stored in the Database. We are using MongoDB has storage device, most likely other storage 
+devices will be added in the future.
+
+=item *
+
+On request, the Activity will be loaded from the Database.
+
+=item *
+
+A filtering will be done at this point.
+
+=item *
+
+Since many things may have happened meanwhile, the Activity will be allow to do a set of Parallel REST calls to collect 
+data. Just GET calls are expected in here, and a local cache will be done in here for each single call.
+
+=item *
+
+All the necessary data shall be loaded at this point, so a second filtering is done at this point.
+
+=item *
+
+On request some aggregation may be done at this point on the Actor, Object, ...
+
+=item *
+
+We have arrived the moment to render. The first version will render a structure in JSON.
+
+=item *
+
+In a second step we will use the strut generated for the JSON and pass it via a Template and generate other Formats.
+
+=back
+
+=cut
