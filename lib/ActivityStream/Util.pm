@@ -7,10 +7,12 @@ use Digest::MD5 qw(md5_base64);
 use Data::UUID;
 use Readonly;
 
+use ActivityStream::Constants;
+
 {
-    my $root = join( ',', Data::UUID->new->create_str(), $$, time );
+    my $root = join( ',', Data::UUID->new->create_str(), $$, time, $ActivityStream::Constants::GENERATE_ID_SECRET );
     sub generate_id {
-        $root = time . md5_base64( $root . $$ . time );
+        $root = time . md5_base64( $root . $$ . time . $ActivityStream::Constants::GENERATE_ID_SECRET );
         $root =~ tr/0123456789\/\+/abcdefghijkl/;
         return $root;
     }
