@@ -5,6 +5,7 @@ use Test::Mojo;
 
 use Data::Dumper;
 use Mojo::JSON;
+use Storable qw(dclone);
 use Readonly;
 
 use ActivityStream::API::ActivityFactory;
@@ -49,12 +50,19 @@ Readonly my %DATA => (
 
 my $obj = $PKG->from_rest_request_struct( \%DATA );
 
-my %expected = (
+my %EXPECTED = (
     %DATA,
     'creation_time' => num( time, 5 ),
     'likers'        => {},
     'comments'      => [],
 );
+
+my %expected_db_struct = (
+    %{dclone(\%EXPECTED)},
+    'visibility' => 1,
+);
+
+my %expected_to_rest_response_struct = %{dclone(\%EXPECTED)};
 
 $obj->set_loaded_successfully(1);
 $obj->get_actor->set_loaded_successfully(1);
@@ -62,9 +70,9 @@ $obj->get_object->set_loaded_successfully(1);
 
 {
     note('Simple activity');
-    $expected{'activity_id'} = $obj->get_activity_id;
-    cmp_deeply( $obj->to_db_struct,            \%expected );
-    cmp_deeply( $obj->to_rest_response_struct, \%expected );
+    $expected_to_rest_response_struct{'activity_id'} = $expected_db_struct{'activity_id'} = $obj->get_activity_id;
+    cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+    cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
     $obj->save_in_db($environment);
     cmp_deeply(
         ActivityStream::API::ActivityFactory->instance_from_db( $environment,
@@ -80,8 +88,8 @@ $obj->get_object->set_loaded_successfully(1);
     {
         note('like a not likeable activity');
         dies_ok { $obj->save_like( $environment, { user_id => $USER_1_ID } ) };
-        cmp_deeply( $obj->to_db_struct,            \%expected );
-        cmp_deeply( $obj->to_rest_response_struct, \%expected );
+        cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+        cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
         $obj->save_in_db($environment);
         cmp_deeply(
             ActivityStream::API::ActivityFactory->instance_from_db( $environment,
@@ -99,13 +107,13 @@ $obj->get_object->set_loaded_successfully(1);
         {
             note('like a likeable activity');
             my $like = $obj->save_like( $environment, { user_id => $USER_1_ID } );
-            $expected{'likers'}{$USER_1_ID} = {
+            $expected_to_rest_response_struct{'likers'}{$USER_1_ID} = $expected_db_struct{'likers'}{$USER_1_ID} = {
                 'like_id'       => $like->get_like_id,
                 'user_id'       => $USER_1_ID,
                 'creation_time' => $like->get_creation_time,
             };
-            cmp_deeply( $obj->to_db_struct,            \%expected );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected );
+            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
             cmp_deeply(
                 ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                     { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
@@ -117,13 +125,13 @@ $obj->get_object->set_loaded_successfully(1);
             note('second like a likeable activity');
 
             my $like = $obj->save_like( $environment, { user_id => $USER_2_ID } );
-            $expected{'likers'}{$USER_2_ID} = {
+            $expected_to_rest_response_struct{'likers'}{$USER_2_ID} =  $expected_db_struct{'likers'}{$USER_2_ID} = {
                 'like_id'       => $like->get_like_id,
                 'user_id'       => $USER_2_ID,
                 'creation_time' => $like->get_creation_time,
             };
-            cmp_deeply( $obj->to_db_struct,            \%expected );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected );
+            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
             cmp_deeply(
                 ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                     { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
@@ -142,8 +150,8 @@ $obj->get_object->set_loaded_successfully(1);
     {
         note('comment a not commentable activity');
         dies_ok { $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } ) };
-        cmp_deeply( $obj->to_db_struct,            \%expected );
-        cmp_deeply( $obj->to_rest_response_struct, \%expected );
+        cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+        cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
         $obj->save_in_db($environment);
         cmp_deeply(
             ActivityStream::API::ActivityFactory->instance_from_db( $environment,
@@ -161,15 +169,23 @@ $obj->get_object->set_loaded_successfully(1);
             note('comment a commentable activity');
             my $comment = $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } );
             push(
-                @{ $expected{'comments'} },
+                @{ $expected_db_struct{'comments'} },
                 {
                     'comment_id'    => $comment->get_comment_id,
                     'user_id'       => $USER_1_ID,
                     'body'          => $BODY_1,
                     'creation_time' => $comment->get_creation_time,
                 } );
-            cmp_deeply( $obj->to_db_struct,            \%expected );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected );
+            push(
+                @{ $expected_to_rest_response_struct{'comments'} },
+                {
+                    'comment_id'    => $comment->get_comment_id,
+                    'user_id'       => $USER_1_ID,
+                    'body'          => $BODY_1,
+                    'creation_time' => $comment->get_creation_time,
+                } );
+            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
             cmp_deeply(
                 ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                     { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
@@ -182,15 +198,23 @@ $obj->get_object->set_loaded_successfully(1);
 
             my $comment = $obj->save_comment( $environment, { user_id => $USER_2_ID,, 'body' => $BODY_2 } );
             push(
-                @{ $expected{'comments'} },
+                @{ $expected_to_rest_response_struct{'comments'} },
                 {
                     'comment_id'    => $comment->get_comment_id,
                     'user_id'       => $USER_2_ID,
                     'body'          => $BODY_2,
                     'creation_time' => $comment->get_creation_time,
                 } );
-            cmp_deeply( $obj->to_db_struct,            \%expected );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected );
+            push(
+                @{ $expected_db_struct{'comments'} },
+                {
+                    'comment_id'    => $comment->get_comment_id,
+                    'user_id'       => $USER_2_ID,
+                    'body'          => $BODY_2,
+                    'creation_time' => $comment->get_creation_time,
+                } );
+            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
             cmp_deeply(
                 ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                     { 'activity_id' => $obj->get_activity_id } )->to_db_struct,

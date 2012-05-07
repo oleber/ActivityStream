@@ -46,6 +46,12 @@ has 'target' => (
     'isa' => 'Maybe[ActivityStream::API::Object]'
 );
 
+has 'visibility' => (
+    'is'      => 'rw',
+    'isa'     => 'Bool',
+    'default' => 1
+);
+
 has 'loaded_successfully' => (
     'is'  => 'rw',
     'isa' => 'Bool',
@@ -98,6 +104,7 @@ sub to_db_struct {
         'actor'       => $self->get_actor->to_db_struct,
         'verb'        => $self->get_verb,
         'object'      => $self->get_object->to_db_struct,
+        'visibility'  => $self->get_visibility,
         'likers'      => +{ map { $_->get_user_id => $_->to_db_struct } values %{ $self->get_likers } },
         'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
@@ -126,6 +133,21 @@ sub save_in_db {
     }
 
     return $self;
+}
+
+sub save_visibility {
+    my ( $self, $environment, $visibility ) = @_;
+
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+
+    $collection_activity->upsert_activity(
+        { 'activity_id' => $self->get_activity_id },
+        { '$set'        => { 'visibility' => $visibility } },
+    );
+
+    $self->set_visibility( $visibility);
+
+    return;
 }
 
 sub to_rest_response_struct {
@@ -336,6 +358,8 @@ sub save_comment {
 
 sub preload_filter_pass {
     my ( $self, $filter ) = @_;
+
+    return if not $self->get_visibility;
 
     return if any { $self->get_activity_id eq $_ } @{ $filter->get_ignore_activities };
 

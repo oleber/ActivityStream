@@ -6,6 +6,7 @@ use Test::Mojo;
 use Data::Dumper;
 use HTTP::Status qw(:constants);
 use Mojo::JSON;
+use Storable qw(dclone);
 use Readonly;
 
 use ActivityStream::Environment;
@@ -33,44 +34,167 @@ $async_user_agent->put_response_to( $user_1_request->as_string,
 $async_user_agent->put_response_to( $user_2_request->as_string,
     $async_user_agent->create_test_response_person( { 'first_name' => 'person 2', 'rid' => $RID } ) );
 
-my %friendship_activity = (
+Readonly my %FRIENDSHIP_ACTIVITY_TEMPLATE => (
     'actor'  => { 'object_id' => $user_creator_1_id },
     'verb'   => 'friendship',
     'object' => { 'object_id' => $user_creator_2_id },
 );
 
+my %friendship_activity = %{ dclone \%FRIENDSHIP_ACTIVITY_TEMPLATE };
+
 my $json = Mojo::JSON->new;
 my $t    = Test::Mojo->new('ActivityStream');
 
 {
-    $t->post_ok( "/rest/activitystream/activity", $json->encode( \%friendship_activity ) )->status_is(HTTP_OK);
-    cmp_deeply( $t->tx->res->json, { 'activity_id' => ignore, 'creation_time' => num( time, 2 ) } );
-    $friendship_activity{'activity_id'}   = $t->tx->res->json->{'activity_id'};
-    $friendship_activity{'creation_time'} = $t->tx->res->json->{'creation_time'};
-    cmp_deeply(
-        $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } ),
-        superhashof(
-            ActivityStream::API::Activity::Friendship->from_rest_request_struct( \%friendship_activity )->to_db_struct
-        ),
-    );
-}
+    {
+        note("POST a new Activity without rid");
 
-{
-    note("GET single activity: existing");
-    $t->get_ok("/rest/activitystream/activity/$friendship_activity{'activity_id'}?rid=$RID")->status_is(HTTP_OK);
+        $t->post_ok( "/rest/activitystream/activity", $json->encode( \%friendship_activity ) )
+              ->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'NO_RID_DEFINED' } );
+    }
 
-    my $db_activity
-          = $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } );
-    my $activity = ActivityStream::API::Activity::Friendship->from_db_struct($db_activity);
-    $activity->load( $environment, { 'rid' => $RID } );
+    {
+        note("POST a new Activity bad rid");
 
-    cmp_deeply( $t->tx->res->json, $activity->to_rest_response_struct );
-}
+        $t->post_ok( sprintf( "/rest/activitystream/activity?rid=%s", "x:person:" . ActivityStream::Util::generate_id ),
+            $json->encode( \%friendship_activity ) )->status_is(HTTP_FORBIDDEN)
+              ->json_content_is( { 'error' => 'BAD_RID' } );
+    }
 
-{
-    note("GET single activity: not existing");
-    $t->get_ok("/rest/activitystream/activity/NotExisting?rid=$RID")->status_is(HTTP_NOT_FOUND)
-          ->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
+    {
+        note("POST a new Activity with rid to a source");
+        $t->post_ok( sprintf( "/rest/activitystream/activity?rid=%s", $user_creator_2_id ),
+            $json->encode( \%friendship_activity ) )->status_is(HTTP_OK);
+        cmp_deeply( $t->tx->res->json, { 'activity_id' => ignore, 'creation_time' => num( time, 2 ) } );
+        $friendship_activity{'activity_id'}   = $t->tx->res->json->{'activity_id'};
+        $friendship_activity{'creation_time'} = $t->tx->res->json->{'creation_time'};
+        cmp_deeply(
+            $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } ),
+            superhashof(
+                ActivityStream::API::Activity::Friendship->from_rest_request_struct( \%friendship_activity )
+                      ->to_db_struct
+            ),
+        );
+    }
+
+    my %second_friendship_activity = %{ dclone \%FRIENDSHIP_ACTIVITY_TEMPLATE };
+    {
+        note("POST a second Activity with rid internal");
+        $t->post_ok( sprintf( '/rest/activitystream/activity?rid=%s' => 'internal' ),
+            $json->encode( \%friendship_activity ) )->status_is(HTTP_OK);
+        cmp_deeply( $t->tx->res->json, { 'activity_id' => ignore, 'creation_time' => num( time, 2 ) } );
+
+        $second_friendship_activity{'activity_id'}   = $t->tx->res->json->{'activity_id'};
+        $second_friendship_activity{'creation_time'} = $t->tx->res->json->{'creation_time'};
+
+        cmp_deeply(
+            $collection_activity->find_one_activity( { 'activity_id' => $second_friendship_activity{'activity_id'} } ),
+            superhashof(
+                ActivityStream::API::Activity::Friendship->from_rest_request_struct( \%second_friendship_activity )
+                      ->to_db_struct
+            ),
+        );
+    }
+
+    {
+        note("GET single activity: existing");
+        $t->get_ok("/rest/activitystream/activity/$friendship_activity{'activity_id'}?rid=$RID")->status_is(HTTP_OK);
+
+        my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            { 'activity_id' => $friendship_activity{'activity_id'} } );
+        $activity->load( $environment, { 'rid' => $RID } );
+
+        cmp_deeply( $t->tx->res->json, $activity->to_rest_response_struct );
+    }
+
+    {
+        note("GET single activity: not existing");
+        $t->get_ok("/rest/activitystream/activity/NotExisting?rid=$RID")->status_is(HTTP_NOT_FOUND)
+              ->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
+    }
+
+    {
+        note("GET single activity: existing");
+        my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            { 'activity_id' => $friendship_activity{'activity_id'} } );
+        $activity->load( $environment, { 'rid' => $RID } );
+
+        $t->get_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
+              ->status_is(HTTP_OK)->json_content_is( $activity->to_rest_response_struct );
+    }
+
+    {
+        note("DELETE single activity: without rid");
+
+        my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            { 'activity_id' => $second_friendship_activity{'activity_id'} } );
+
+        $t->delete_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}")
+              ->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'NO_RID_DEFINED' } );
+
+        $activity->set_visibility(1);
+
+        cmp_deeply(
+            ActivityStream::API::ActivityFactory->instance_from_db(
+                $environment,
+                { 'activity_id' => $second_friendship_activity{'activity_id'} }
+            ),
+            $activity
+        );
+
+        $activity->load( $environment, { 'rid' => $RID } );
+        $t->get_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
+              ->status_is(HTTP_OK)->json_content_is( $activity->to_rest_response_struct );
+    }
+
+    {
+        note("DELETE single activity: BAD rid");
+
+        my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            { 'activity_id' => $second_friendship_activity{'activity_id'} } );
+
+        $t->delete_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
+              ->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'BAD_RID' } );
+
+        $activity->set_visibility(1);
+
+        cmp_deeply(
+            ActivityStream::API::ActivityFactory->instance_from_db(
+                $environment,
+                { 'activity_id' => $second_friendship_activity{'activity_id'} }
+            ),
+            $activity
+        );
+
+        $activity->load( $environment, { 'rid' => $RID } );
+
+        $t->get_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
+              ->status_is(HTTP_OK)->json_content_is( $activity->to_rest_response_struct );
+    }
+
+    {
+        note("DELETE single activity: good rid");
+
+        my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            { 'activity_id' => $second_friendship_activity{'activity_id'} } );
+
+        $t->delete_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$user_creator_2_id")
+              ->status_is(HTTP_OK)->json_content_is( {} );
+
+        $activity->set_visibility(0);
+
+        cmp_deeply(
+            ActivityStream::API::ActivityFactory->instance_from_db(
+                $environment,
+                { 'activity_id' => $second_friendship_activity{'activity_id'} }
+            ),
+            $activity
+        );
+
+        $t->get_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
+              ->status_is(HTTP_NOT_FOUND)->json_content_is( {} );
+    }
+
 }
 
 {
@@ -186,8 +310,7 @@ my $t    = Test::Mojo->new('ActivityStream');
                 $user_creator_4_id
             ) )->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'BAD_RID' } );
 
-        my $activity = ActivityStream::API::ActivityFactory->instance_from_db(
-            $environment,
+        my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
 
         cmp_deeply( $activity->get_likers, \%expected_likes );

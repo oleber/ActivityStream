@@ -15,8 +15,21 @@ use ActivityStream::REST::Constants;
 sub post_handler_activity {
     my $self = shift;
 
+    my $rid = $self->param('rid');
+
+    return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_NO_RID_DEFINED },
+        'status' => HTTP_FORBIDDEN )
+          if not defined $rid;
+
+    my $environment = ActivityStream::Environment->new;
+
     my $activity = ActivityStream::API::ActivityFactory->instance_from_rest_request_struct( $self->tx->req->json );
-    $activity->save_in_db( ActivityStream::Environment->new );
+
+    return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_BAD_RID },
+        'status' => HTTP_FORBIDDEN )
+          if not any { $rid eq $_ } ( 'internal', $activity->get_sources );
+
+    $activity->save_in_db($environment);
 
     $self->render_json( {
             'activity_id'   => $activity->get_activity_id,
@@ -25,7 +38,35 @@ sub post_handler_activity {
     );
 
     return;
-}
+} ## end sub post_handler_activity
+
+sub delete_handler_activity {
+    my $self = shift;
+
+    my $activity_id = $self->param('activity_id');
+    my $rid         = $self->param('rid');
+
+    return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_NO_RID_DEFINED },
+        'status' => HTTP_FORBIDDEN )
+          if not defined $rid;
+
+    my $environment = ActivityStream::Environment->new;
+
+    my $activity
+          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
+
+    if ( defined $activity ) {
+        return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_BAD_RID },
+            'status' => HTTP_FORBIDDEN )
+              if not any { $rid eq $_ } ( 'internal', $activity->get_sources );
+
+        $activity->save_visibility( $environment, 0 );
+
+        return $self->render_json( {} );
+    } else {
+        return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
+    }
+} ## end sub delete_handler_activity
 
 sub get_handler_activity {
     my $self = shift;
@@ -38,7 +79,7 @@ sub get_handler_activity {
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
 
-    if ( defined $activity ) {
+    if ( defined($activity) and $activity->get_visibility ) {
         $activity->load( $environment, { 'rid' => $rid } );
         return $self->render_json( $activity->to_rest_response_struct );
     } else {

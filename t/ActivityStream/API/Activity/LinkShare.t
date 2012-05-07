@@ -32,8 +32,17 @@ Readonly my $RID => ActivityStream::Util::generate_id();
     my $activity = $PKG->from_rest_request_struct( \%DATA );
 
     is( $activity->get_type, 'person:share:link' );
-    cmp_deeply( $activity->to_db_struct,
-        { %DATA, 'activity_id' => ignore, 'likers' => {}, 'comments' => [], 'creation_time' => num( time, 2 ) } );
+    cmp_deeply(
+        $activity->to_db_struct,
+        {
+            %DATA,
+            'activity_id'   => ignore,
+            'visibility'    => 1,
+            'creation_time' => num( time, 2 ),
+            'likers'        => {},
+            'comments'      => [],
+        },
+    );
     cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );
 }
 
@@ -57,7 +66,7 @@ my $activityect_request = $async_user_agent->create_request_link( { 'object_id' 
     ok( $PKG->is_recomendable );
 
     my $activity = $PKG->from_rest_request_struct( \%DATA );
-    cmp_deeply( [ $activity->get_sources ], [ $PERSON_ACTOR_ID ] );
+    cmp_deeply( [ $activity->get_sources ], [$PERSON_ACTOR_ID] );
 }
 
 {

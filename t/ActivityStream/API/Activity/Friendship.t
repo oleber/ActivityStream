@@ -32,8 +32,16 @@ Readonly my $RID => ActivityStream::Util::generate_id();
     my $activity = $PKG->from_rest_request_struct( \%DATA );
 
     is( $activity->get_type, 'person:friendship:person' );
-    cmp_deeply( $activity->to_db_struct,
-        { %DATA, 'activity_id' => ignore, 'creation_time' => num( time, 2 ), 'likers' => {}, 'comments' => [] },
+    cmp_deeply(
+        $activity->to_db_struct,
+        {
+            %DATA,
+            'activity_id'   => ignore,
+            'visibility'    => 1,
+            'creation_time' => num( time, 2 ),
+            'likers'        => {},
+            'comments'      => [],
+        },
     );
     cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );
 }
