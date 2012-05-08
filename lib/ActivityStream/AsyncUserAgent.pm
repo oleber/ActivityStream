@@ -24,12 +24,12 @@ has 'request_tasks' => (
     default => sub { {} },
 );
 
-my $cache = {};
+our $GLOBAL_CACHE_FOR_TEST;
 
 has 'cache' => (
     is      => 'rw',
     isa     => 'HashRef[HTTP::Response]',
-    default => sub { $cache // {} },
+    default => sub { $GLOBAL_CACHE_FOR_TEST // {} },
     traits  => ['Hash'],
     handles => {
         put_response_to => 'set',

@@ -13,6 +13,8 @@ use ActivityStream::API::Object::Person;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
+local $ActivityStream::AsyncUserAgent::GLOBAL_CACHE_FOR_TEST = {};
+
 use_ok 'ActivityStream';
 
 Readonly my $RID => ActivityStream::Util::generate_id();
