@@ -15,7 +15,7 @@ has 'comment_id' => (
 
 has 'user_id' => (
     'is'  => 'rw',
-    'isa' => subtype( 'Str' => where {/^\w+:person:\w+$/} ),
+    'isa' => subtype( 'Str' => where {/^person:\w+$/} ),
 );
 
 has 'body' => (

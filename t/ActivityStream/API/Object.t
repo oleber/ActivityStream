@@ -11,7 +11,7 @@ Readonly my $PKG => 'ActivityStream::API::Object';
 
 use_ok($PKG);
 
-Readonly my %DATA => ( 'object_id' => 'x:person:125' );
+Readonly my %DATA => ( 'object_id' => 'person:125' );
 
 my $obj = lives_ok { $PKG->new( %DATA ) };
 

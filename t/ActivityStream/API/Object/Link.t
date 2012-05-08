@@ -15,7 +15,7 @@ Readonly my $PKG => 'ActivityStream::API::Object::Link';
 use_ok($PKG);
 isa_ok( $PKG, 'ActivityStream::API::Object' );
 
-Readonly my %DATA => ( 'object_id' => 'x:link:125' );
+Readonly my %DATA => ( 'object_id' => 'link:125' );
 Readonly my %DATA_REQUEST => ( %DATA, 'rid' => 'rid_1' );
 Readonly my %DATA_RESPONSE => (
     %DATA,

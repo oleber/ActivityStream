@@ -7,7 +7,7 @@ use Carp;
 
 has 'object_id' => (
     'is'       => 'rw',
-    'isa'      => subtype( 'Str' => where sub {/^\w+:\w+:\w+$/} ),
+    'isa'      => subtype( 'Str' => where sub {/^\w+:\w+$/} ),
     'required' => 1,
 );
 
@@ -52,7 +52,7 @@ sub from_rest_request_struct {
 sub get_type {
     my ($self) = @_;
 
-    if ( $self->get_object_id =~ /:(.*):/ ) {
+    if ( $self->get_object_id =~ /^(\w*):/ ) {
         return $1;
     }
 }

@@ -18,11 +18,11 @@ use_ok($PKG);
 
 Readonly my $EPOCH => time;
 
-my @USERS = ( map { sprintf( "x:person:%s", ActivityStream::Util::generate_id ) } ( 0 .. 9 ) );
+my @USERS = ( map { sprintf( "person:%s", ActivityStream::Util::generate_id ) } ( 0 .. 9 ) );
 
-Readonly my $USER_1_ID => sprintf( "x:person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_2_ID => sprintf( "x:person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_3_ID => sprintf( "x:person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 
 my $delay = 0;
 

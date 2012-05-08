@@ -16,9 +16,9 @@ Readonly my $environment => ActivityStream::Environment->new;
 
 Readonly my $PKG => 'ActivityStream::API::Activity';
 
-Readonly my $USER_1_ID => sprintf( "x:person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_2_ID => sprintf( "x:person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_3_ID => sprintf( "x:person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 
 use_ok($PKG);
 
@@ -35,9 +35,9 @@ local *ActivityStream::API::ActivityFactory::_structure_class = sub {
 };
 
 Readonly my %DATA => (
-    'actor'  => { 'object_id' => 'x:xxx:123' },
+    'actor'  => { 'object_id' => 'xxx:123' },
     'verb'   => 'friendship',
-    'object' => { 'object_id' => 'x:xxx:321' },
+    'object' => { 'object_id' => 'xxx:321' },
 );
 
 {

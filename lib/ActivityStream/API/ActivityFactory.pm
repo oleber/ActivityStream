@@ -20,7 +20,7 @@ sub _structure_class {
 
     my @peaces;
 
-    if ( $data->{'actor'} and $data->{'actor'}{'object_id'} and ( $data->{'actor'}{'object_id'} =~ /:(.*):/ ) ) {
+    if ( $data->{'actor'} and $data->{'actor'}{'object_id'} and ( $data->{'actor'}{'object_id'} =~ /^(\w*):/ ) ) {
         push( @peaces, $1 );
     } else {
         confess q(Can't parse actor);
@@ -28,13 +28,13 @@ sub _structure_class {
 
     push( @peaces, $data->{'verb'} );
 
-    if ( $data->{'object'} and $data->{'object'}{'object_id'} and ( $data->{'object'}{'object_id'} =~ /:(.*):/ ) ) {
+    if ( $data->{'object'} and $data->{'object'}{'object_id'} and ( $data->{'object'}{'object_id'} =~ /^(\w*):/ ) ) {
         push( @peaces, $1 );
     } else {
         confess q(Can't parse object);
     }
 
-    if ( $data->{'target'} and $data->{'target'}{'object_id'} and ( $data->{'target'}{'object_id'} =~ /:(.*):/ ) ) {
+    if ( $data->{'target'} and $data->{'target'}{'object_id'} and ( $data->{'target'}{'object_id'} =~ /^(\w*):/ ) ) {
         push( @peaces, $1 );
     }
 

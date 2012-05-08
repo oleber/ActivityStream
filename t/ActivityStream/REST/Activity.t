@@ -20,10 +20,10 @@ my $environment         = ActivityStream::Environment->new;
 my $collection_activity = $environment->get_collection_factory->collection_activity;
 my $async_user_agent    = $environment->get_async_user_agent;
 
-my $user_creator_1_id = "x:person:" . ActivityStream::Util::generate_id();
-my $user_creator_2_id = "x:person:" . ActivityStream::Util::generate_id();
-my $user_creator_3_id = "x:person:" . ActivityStream::Util::generate_id();
-my $user_creator_4_id = "x:person:" . ActivityStream::Util::generate_id();
+my $user_creator_1_id = "person:" . ActivityStream::Util::generate_id();
+my $user_creator_2_id = "person:" . ActivityStream::Util::generate_id();
+my $user_creator_3_id = "person:" . ActivityStream::Util::generate_id();
+my $user_creator_4_id = "person:" . ActivityStream::Util::generate_id();
 
 my $user_1_request = $async_user_agent->create_request_person( { 'object_id' => $user_creator_1_id, 'rid' => $RID } );
 my $user_2_request = $async_user_agent->create_request_person( { 'object_id' => $user_creator_2_id, 'rid' => $RID } );
@@ -56,7 +56,7 @@ my $t    = Test::Mojo->new('ActivityStream');
     {
         note("POST a new Activity bad rid");
 
-        $t->post_ok( sprintf( "/rest/activitystream/activity?rid=%s", "x:person:" . ActivityStream::Util::generate_id ),
+        $t->post_ok( sprintf( "/rest/activitystream/activity?rid=%s", "person:" . ActivityStream::Util::generate_id ),
             $json->encode( \%friendship_activity ) )->status_is(HTTP_FORBIDDEN)
               ->json_content_is( { 'error' => 'BAD_RID' } );
     }

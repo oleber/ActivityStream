@@ -18,8 +18,8 @@ isa_ok( $PKG => 'ActivityStream::API::Activity' );
 is( $PKG->get_attribute_base_class('actor'),  'ActivityStream::API::Object::Person' );
 is( $PKG->get_attribute_base_class('object'), 'ActivityStream::API::Object::Person' );
 
-Readonly my $PERSON_ACTOR_ID  => 'x:person:1';
-Readonly my $PERSON_OBJECT_ID => 'x:person:2';
+Readonly my $PERSON_ACTOR_ID  => 'person:1';
+Readonly my $PERSON_OBJECT_ID => 'person:2';
 
 Readonly my %DATA => (
     'actor'  => { 'object_id' => $PERSON_ACTOR_ID },
@@ -54,9 +54,9 @@ my $object_request = $async_user_agent->create_request_person( { 'object_id' => 
 
 {
     note('Test bad Creation');
-    dies_ok { $PKG->from_rest_request_struct( { %DATA, 'actor'  => { 'object_id' => 'x:link:1' } } ) };
+    dies_ok { $PKG->from_rest_request_struct( { %DATA, 'actor'  => { 'object_id' => 'link:1' } } ) };
     dies_ok { $PKG->from_rest_request_struct( { %DATA, 'verb'   => 'share' } ) };
-    dies_ok { $PKG->from_rest_request_struct( { %DATA, 'object' => { 'object_id' => 'x:link:1' } } ) };
+    dies_ok { $PKG->from_rest_request_struct( { %DATA, 'object' => { 'object_id' => 'link:1' } } ) };
 }
 
 {
