@@ -159,7 +159,7 @@ sub to_rest_response_struct {
         'verb'        => $self->get_verb,
         'object'      => $self->get_object->to_rest_response_struct,
         'likers'      => +{ map { $_->get_user_id => $_->to_rest_response_struct } values %{ $self->get_likers } },
-        'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
+        'comments'      => [ map { $_->to_rest_response_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
     );
 
