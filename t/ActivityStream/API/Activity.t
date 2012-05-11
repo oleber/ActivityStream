@@ -13,6 +13,7 @@ use ActivityStream::Environment;
 use ActivityStream::Util;
 
 Readonly my $environment => ActivityStream::Environment->new;
+my $async_user_agent = $environment->get_async_user_agent;
 
 Readonly my $PKG => 'ActivityStream::API::Activity';
 
@@ -20,18 +21,26 @@ Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_i
 Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 
+Readonly my $RID => ActivityStream::Util::generate_id();
+
 use_ok($PKG);
 
 {
+
     package ActivityStream::API::Activity::JustForTest;
     use Moose;
 
     extends 'ActivityStream::API::Activity';
 }
 
-no warnings 'redefine';
+no warnings 'redefine', 'once';
+
 local *ActivityStream::API::ActivityFactory::_structure_class = sub {
     return 'ActivityStream::API::Activity::JustForTest';
+};
+local *ActivityStream::API::Object::prepare_load = sub {
+    my ( $self, $environment, $args ) = @_;
+    $self->set_loaded_successfully(1);
 };
 
 Readonly my %DATA => (
@@ -48,7 +57,10 @@ Readonly my %DATA => (
     ok( not $obj->is_recomendable );
 }
 
-my $obj = $PKG->from_rest_request_struct( \%DATA );
+my $obj = ActivityStream::API::Activity::JustForTest->from_rest_request_struct( \%DATA );
+Readonly my $ACTIVITY_ID => $obj->get_activity_id;
+
+like( $obj->get_activity_id, qr/^activity:\w{20}$/ );
 
 my %EXPECTED = (
     %DATA,
@@ -57,86 +69,154 @@ my %EXPECTED = (
     'comments'      => [],
 );
 
-my %expected_db_struct = (
-    %{dclone(\%EXPECTED)},
-    'visibility' => 1,
-);
+my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, );
 
-my %expected_to_rest_response_struct = %{dclone(\%EXPECTED)};
+my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
 
-$obj->set_loaded_successfully(1);
-$obj->get_actor->set_loaded_successfully(1);
-$obj->get_object->set_loaded_successfully(1);
+foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
+    my $user_request = $async_user_agent->create_request_person( { 'object_id' => $person_id, 'rid' => $RID } );
+    $async_user_agent->put_response_to( $user_request->as_string,
+        $async_user_agent->create_test_response_person( { 'first_name' => "first name $person_id", 'rid' => $RID } ),
+    );
+}
 
 {
     note('Simple activity');
-    $expected_to_rest_response_struct{'activity_id'} = $expected_db_struct{'activity_id'} = $obj->get_activity_id;
-    cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
-    cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
+    $expected_to_rest_response_struct{'activity_id'} = $expected_db_struct{'activity_id'} = $ACTIVITY_ID;
+
     $obj->save_in_db($environment);
-    cmp_deeply(
-        ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-            { 'activity_id' => $obj->get_activity_id },
-              )->to_db_struct,
-        $obj->to_db_struct,
-    );
+    my $activity_in_db
+          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID }, );
+
+    cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+    cmp_deeply( $activity_in_db->to_db_struct, $obj->to_db_struct );
+
+    {
+        note('to_rest_response_struct dies without load');
+        throws_ok { $obj->to_rest_response_struct } qr/^Activity '$ACTIVITY_ID' didn't load correctly/;
+        is( $obj->get_loaded_successfully, undef );
+    }
+
+    {
+        note('to_rest_response_struct fail without prepare_load overwritten and loaded_successfully set');
+        $obj->load( $environment, { 'rid' => $RID } );
+        throws_ok( sub { $obj->to_rest_response_struct }, qr/^Activity '$ACTIVITY_ID' didn't load correctly/ );
+    }
+
+    {
+        note('to_rest_response_struct success with prepare_load overwritten and loaded_successfully set');
+
+        package ActivityStream::API::Activity::JustForTest;
+        local *ActivityStream::API::Activity::JustForTest::prepare_load = sub {
+            my ( $self, $environment, $args ) = @_;
+            $self->set_loaded_successfully(1);
+            $self->SUPER::prepare_load( $environment, $args );
+        };
+
+        $obj->load( $environment, { 'rid' => $RID } );
+        $activity_in_db->load( $environment, { 'rid' => $RID } );
+
+        main::cmp_deeply( $obj->to_rest_response_struct,            \%expected_to_rest_response_struct );
+        main::cmp_deeply( $activity_in_db->to_rest_response_struct, $obj->to_rest_response_struct );
+    }
 }
+
+{
+
+    package ActivityStream::API::Activity::JustForTest;
+    *prepare_load = sub {
+        my ( $self, $environment, $args ) = @_;
+        $self->SUPER::prepare_load( $environment, $args );
+        $self->set_loaded_successfully(1);
+    };
+}
+
+sub test_db_status {
+    my $activity_in_db
+          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
+
+    cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
+    cmp_deeply( $activity_in_db->to_db_struct, $obj->to_db_struct );
+
+    $obj->load( $environment, { 'rid' => $RID } );
+    $activity_in_db->load( $environment, { 'rid' => $RID } );
+
+    cmp_deeply( $obj->to_rest_response_struct,            \%expected_to_rest_response_struct );
+    cmp_deeply( $activity_in_db->to_rest_response_struct, $obj->to_rest_response_struct );
+
+}
+
+is( $obj->get_loaded_successfully, 1 );
 
 {
     note('test likes');
 
     {
         note('like a not likeable activity');
-        dies_ok { $obj->save_like( $environment, { user_id => $USER_1_ID } ) };
+
+        {
+            my $activity_in_db_before_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                { 'activity_id' => $ACTIVITY_ID } );
+
+            dies_ok { $obj->save_like( $environment, { user_id => $USER_1_ID } ) };
+
+            my $activity_in_db_after_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                { 'activity_id' => $ACTIVITY_ID } );
+
+            cmp_deeply( $activity_in_db_before_like, $activity_in_db_after_like );
+            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
+        }
+
+        $obj->load( $environment, { 'rid' => $RID } );
+        is( $obj->get_loaded_successfully, 1 );
+
         cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
         cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
+
         $obj->save_in_db($environment);
-        cmp_deeply(
-            ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                { 'activity_id' => $obj->get_activity_id },
-                  )->to_db_struct,
-            $obj->to_db_struct,
-        );
+
+        test_db_status;
     }
 
     {
-        no strict 'refs';
-        no warnings 'redefine';
-        local *{ sprintf( '%s::is_likeable', $PKG ) } = sub { return 1 };
+        {
+
+            package ActivityStream::API::Activity::JustForTest;
+            *is_likeable = sub { return 1 };
+        }
 
         {
             note('like a likeable activity');
+
             my $like = $obj->save_like( $environment, { user_id => $USER_1_ID } );
+
             $expected_to_rest_response_struct{'likers'}{$USER_1_ID} = $expected_db_struct{'likers'}{$USER_1_ID} = {
                 'like_id'       => $like->get_like_id,
                 'user_id'       => $USER_1_ID,
                 'creation_time' => $like->get_creation_time,
             };
-            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
-            cmp_deeply(
-                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct,
-            );
+
+            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
+
+            test_db_status;
+
         }
 
         {
             note('second like a likeable activity');
 
             my $like = $obj->save_like( $environment, { user_id => $USER_2_ID } );
-            $expected_to_rest_response_struct{'likers'}{$USER_2_ID} =  $expected_db_struct{'likers'}{$USER_2_ID} = {
+
+            $expected_to_rest_response_struct{'likers'}{$USER_2_ID} = $expected_db_struct{'likers'}{$USER_2_ID} = {
                 'like_id'       => $like->get_like_id,
                 'user_id'       => $USER_2_ID,
                 'creation_time' => $like->get_creation_time,
             };
-            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
-            cmp_deeply(
-                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct,
-            );
+
+            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
+
+            test_db_status;
+
         }
     }
 }
@@ -149,21 +229,38 @@ $obj->get_object->set_loaded_successfully(1);
 
     {
         note('comment a not commentable activity');
-        dies_ok { $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } ) };
+
+        {
+            my $activity_in_db_before_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                { 'activity_id' => $ACTIVITY_ID } );
+
+            dies_ok { $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } ) };
+
+            my $activity_in_db_after_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+                { 'activity_id' => $ACTIVITY_ID } );
+
+            cmp_deeply( $activity_in_db_before_like, $activity_in_db_after_like );
+            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
+        }
+
+        $obj->load( $environment, { 'rid' => $RID } );
+        is( $obj->get_loaded_successfully, 1 );
+
         cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
         cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
+
         $obj->save_in_db($environment);
-        cmp_deeply(
-            ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-            $obj->to_db_struct,
-        );
+
+        test_db_status;
+
     }
 
     {
-        no strict 'refs';
-        no warnings 'redefine';
-        local *{ sprintf( '%s::is_commentable', $PKG ) } = sub { return 1 };
+        {
+
+            package ActivityStream::API::Activity::JustForTest;
+            *is_commentable = sub { return 1 };
+        }
 
         {
             note('comment a commentable activity');
@@ -184,13 +281,9 @@ $obj->get_object->set_loaded_successfully(1);
                     'body'          => $BODY_1,
                     'creation_time' => $comment->get_creation_time,
                 } );
-            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
-            cmp_deeply(
-                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct,
-            );
+
+            test_db_status;
+
         }
 
         {
@@ -213,13 +306,8 @@ $obj->get_object->set_loaded_successfully(1);
                     'body'          => $BODY_2,
                     'creation_time' => $comment->get_creation_time,
                 } );
-            cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
-            cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
-            cmp_deeply(
-                ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                    { 'activity_id' => $obj->get_activity_id } )->to_db_struct,
-                $obj->to_db_struct,
-            );
+
+            test_db_status;
         }
     }
 }

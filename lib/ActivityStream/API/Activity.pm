@@ -14,7 +14,7 @@ use ActivityStream::Util;
 has 'activity_id' => (
     'is'      => 'rw',
     'isa'     => 'Str',
-    'default' => sub {ActivityStream::Util::generate_id},
+    'default' => sub {'activity:' . ActivityStream::Util::generate_id},
 );
 
 has 'creation_time' => (
@@ -76,6 +76,12 @@ has 'comments' => (
     'traits'  => ['Array'],
     'handles' => { 'add_comment' => 'push' },
 );
+
+has 'loaded_successfully' => (
+    'is'       => 'rw',
+    'isa'      => 'Maybe[Bool]',
+);
+
 
 around BUILDARGS => sub {
     my ( $orig, $class, @args ) = @_;
@@ -152,6 +158,9 @@ sub save_visibility {
 
 sub to_rest_response_struct {
     my ($self) = @_;
+
+    confess sprintf( "Activity '%s' didn't load correctly", $self->get_activity_id) 
+        if not $self->get_loaded_successfully;
 
     my %data = (
         'activity_id' => $self->get_activity_id,
@@ -301,6 +310,8 @@ sub target_loaded_successfully {
 sub save_like {
     my ( $self, $environment, $param ) = @_;
 
+    $self->set_loaded_successfully( undef );
+
     confess( "Can't like: " . ref($self) ) if not $self->is_likeable;
 
     my $collection_activity = $environment->get_collection_factory->collection_activity;
@@ -339,6 +350,8 @@ sub delete_like {
 
 sub save_comment {
     my ( $self, $environment, $param ) = @_;
+
+    $self->set_loaded_successfully( undef );
 
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
 
