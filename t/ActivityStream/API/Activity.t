@@ -132,19 +132,30 @@ foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
 }
 
 sub test_db_status {
+    local $Test::Builder::Level = $Test::Builder::Level + 1;
+
     my $activity_in_db
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
 
-    cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
-    cmp_deeply( $activity_in_db->to_db_struct, $obj->to_db_struct );
+    cmp_deeply( $obj->to_db_struct,            \%expected_db_struct, 'Check $obj to_db_struct' );
+    cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
     $obj->load( $environment, { 'rid' => $RID } );
     $activity_in_db->load( $environment, { 'rid' => $RID } );
 
-    cmp_deeply( $obj->to_rest_response_struct,            \%expected_to_rest_response_struct );
-    cmp_deeply( $activity_in_db->to_rest_response_struct, $obj->to_rest_response_struct );
+    cmp_deeply(
+        $obj->to_rest_response_struct,
+        \%expected_to_rest_response_struct,
+        'Check $obj to_rest_response_struct'
+    );
 
-}
+    cmp_deeply(
+        $activity_in_db->to_rest_response_struct,
+        \%expected_to_rest_response_struct,
+        'Check $activity_in_db to_rest_response_struct'
+    );
+
+} ## end sub test_db_status
 
 is( $obj->get_loaded_successfully, 1 );
 
@@ -190,9 +201,19 @@ is( $obj->get_loaded_successfully, 1 );
 
             my $like = $obj->save_like( $environment, { user_id => $USER_1_ID } );
 
-            $expected_to_rest_response_struct{'likers'}{$USER_1_ID} = $expected_db_struct{'likers'}{$USER_1_ID} = {
+            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_1_ID });
+            $object_person->load( $environment, { 'rid' => $RID } );
+
+            $expected_db_struct{'likers'}{$USER_1_ID} = {
                 'like_id'       => $like->get_like_id,
                 'user_id'       => $USER_1_ID,
+                'creation_time' => $like->get_creation_time,
+            };
+
+            $expected_to_rest_response_struct{'likers'}{$USER_1_ID} = {
+                'like_id'       => $like->get_like_id,
+                'user'          => $object_person->to_rest_response_struct,
+                'load'          => 'success',
                 'creation_time' => $like->get_creation_time,
             };
 
@@ -207,9 +228,19 @@ is( $obj->get_loaded_successfully, 1 );
 
             my $like = $obj->save_like( $environment, { user_id => $USER_2_ID } );
 
-            $expected_to_rest_response_struct{'likers'}{$USER_2_ID} = $expected_db_struct{'likers'}{$USER_2_ID} = {
+            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_2_ID });
+            $object_person->load( $environment, { 'rid' => $RID } );
+
+            $expected_db_struct{'likers'}{$USER_2_ID} = {
                 'like_id'       => $like->get_like_id,
                 'user_id'       => $USER_2_ID,
+                'creation_time' => $like->get_creation_time,
+            };
+
+            $expected_to_rest_response_struct{'likers'}{$USER_2_ID} = {
+                'like_id'       => $like->get_like_id,
+                'user'          => $object_person->to_rest_response_struct,
+                'load'          => 'success',
                 'creation_time' => $like->get_creation_time,
             };
 
@@ -226,6 +257,7 @@ is( $obj->get_loaded_successfully, 1 );
 
     Readonly my $BODY_1 => ActivityStream::Util::generate_id;
     Readonly my $BODY_2 => ActivityStream::Util::generate_id;
+    Readonly my $BODY_3 => ActivityStream::Util::generate_id;
 
     {
         note('comment a not commentable activity');
@@ -264,7 +296,12 @@ is( $obj->get_loaded_successfully, 1 );
 
         {
             note('comment a commentable activity');
+
             my $comment = $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } );
+
+            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_1_ID });
+            $object_person->load( $environment, { 'rid' => $RID } );
+
             push(
                 @{ $expected_db_struct{'comments'} },
                 {
@@ -277,27 +314,23 @@ is( $obj->get_loaded_successfully, 1 );
                 @{ $expected_to_rest_response_struct{'comments'} },
                 {
                     'comment_id'    => $comment->get_comment_id,
-                    'user_id'       => $USER_1_ID,
+                    'user'          => $object_person->to_rest_response_struct,
                     'body'          => $BODY_1,
                     'creation_time' => $comment->get_creation_time,
+                    'load'          => 'success',
                 } );
 
             test_db_status;
-
         }
 
         {
             note('second comment a commentable activity');
 
-            my $comment = $obj->save_comment( $environment, { user_id => $USER_2_ID,, 'body' => $BODY_2 } );
-            push(
-                @{ $expected_to_rest_response_struct{'comments'} },
-                {
-                    'comment_id'    => $comment->get_comment_id,
-                    'user_id'       => $USER_2_ID,
-                    'body'          => $BODY_2,
-                    'creation_time' => $comment->get_creation_time,
-                } );
+            my $comment = $obj->save_comment( $environment, { user_id => $USER_2_ID, 'body' => $BODY_2 } );
+
+            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_2_ID });
+            $object_person->load( $environment, { 'rid' => $RID } );
+
             push(
                 @{ $expected_db_struct{'comments'} },
                 {
@@ -306,9 +339,48 @@ is( $obj->get_loaded_successfully, 1 );
                     'body'          => $BODY_2,
                     'creation_time' => $comment->get_creation_time,
                 } );
+            push(
+                @{ $expected_to_rest_response_struct{'comments'} },
+                {
+                    'comment_id'    => $comment->get_comment_id,
+                    'user'          => $object_person->to_rest_response_struct,
+                    'body'          => $BODY_2,
+                    'creation_time' => $comment->get_creation_time,
+                    'load'          => 'success',
+                } );
 
             test_db_status;
         }
+
+        {
+            note('third comment a commentable activity');
+
+            my $comment = $obj->save_comment( $environment, { 'user_id' => $USER_3_ID, 'body' => $BODY_3 } );
+
+            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_3_ID });
+            $object_person->load( $environment, { 'rid' => $RID } );
+
+            push(
+                @{ $expected_db_struct{'comments'} },
+                {
+                    'comment_id'    => $comment->get_comment_id,
+                    'user_id'       => $USER_3_ID,
+                    'body'          => $BODY_3,
+                    'creation_time' => $comment->get_creation_time,
+                } );
+            push(
+                @{ $expected_to_rest_response_struct{'comments'} },
+                {
+                    'comment_id'    => $comment->get_comment_id,
+                    'user'          => $object_person->to_rest_response_struct,
+                    'body'          => $BODY_3,
+                    'creation_time' => $comment->get_creation_time,
+                    'load'          => 'success',
+                } );
+
+            test_db_status;
+        }
+
     }
 }
 

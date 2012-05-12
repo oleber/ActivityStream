@@ -27,14 +27,12 @@ my $user_creator_2_id = "person:" . ActivityStream::Util::generate_id();
 my $user_creator_3_id = "person:" . ActivityStream::Util::generate_id();
 my $user_creator_4_id = "person:" . ActivityStream::Util::generate_id();
 
-my $user_1_request = $async_user_agent->create_request_person( { 'object_id' => $user_creator_1_id, 'rid' => $RID } );
-my $user_2_request = $async_user_agent->create_request_person( { 'object_id' => $user_creator_2_id, 'rid' => $RID } );
-
-$async_user_agent->put_response_to( $user_1_request->as_string,
-    $async_user_agent->create_test_response_person( { 'first_name' => 'person 1', 'rid' => $RID } ) );
-
-$async_user_agent->put_response_to( $user_2_request->as_string,
-    $async_user_agent->create_test_response_person( { 'first_name' => 'person 2', 'rid' => $RID } ) );
+foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id, $user_creator_4_id ) {
+    my $user_request = $async_user_agent->create_request_person( { 'object_id' => $user_id, 'rid' => $RID } );
+    $async_user_agent->put_response_to( $user_request->as_string,
+        $async_user_agent->create_test_response_person( { 'first_name' => 'person ' . $user_id, 'rid' => $RID } ),
+    );
+}
 
 Readonly my %FRIENDSHIP_ACTIVITY_TEMPLATE => (
     'actor'  => { 'object_id' => $user_creator_1_id },
@@ -138,8 +136,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
         cmp_deeply(
             ActivityStream::API::ActivityFactory->instance_from_db(
-                $environment,
-                { 'activity_id' => $second_friendship_activity{'activity_id'} }
+                $environment, { 'activity_id' => $second_friendship_activity{'activity_id'} }
             ),
             $activity
         );
@@ -162,8 +159,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
         cmp_deeply(
             ActivityStream::API::ActivityFactory->instance_from_db(
-                $environment,
-                { 'activity_id' => $second_friendship_activity{'activity_id'} }
+                $environment, { 'activity_id' => $second_friendship_activity{'activity_id'} }
             ),
             $activity
         );
@@ -187,8 +183,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
         cmp_deeply(
             ActivityStream::API::ActivityFactory->instance_from_db(
-                $environment,
-                { 'activity_id' => $second_friendship_activity{'activity_id'} }
+                $environment, { 'activity_id' => $second_friendship_activity{'activity_id'} }
             ),
             $activity
         );
@@ -218,6 +213,7 @@ my $t    = Test::Mojo->new('ActivityStream');
             'user_id'       => $user_creator_3_id,
             'creation_time' => $t->tx->res->json->{'creation_time'},
         );
+        $expected_likes{$user_creator_3_id}->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \%expected_likes );
     }
@@ -238,6 +234,7 @@ my $t    = Test::Mojo->new('ActivityStream');
             'user_id'       => $user_creator_4_id,
             'creation_time' => $t->tx->res->json->{'creation_time'},
         );
+        $expected_likes{$user_creator_4_id}->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \%expected_likes );
     }
@@ -282,6 +279,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
+        $activity->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \%expected_likes );
     }
@@ -298,6 +296,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
+        $activity->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \%expected_likes );
     }
@@ -314,6 +313,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
+        $activity->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \%expected_likes );
     }
@@ -331,6 +331,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
+        $activity->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \%expected_likes );
     }
@@ -369,17 +370,15 @@ my $t    = Test::Mojo->new('ActivityStream');
         { 'activity_id' => $friendship_activity{'activity_id'} } );
     $activity->load( $environment, { 'rid' => $RID } );
 
-    cmp_deeply(
-        $activity->get_comments,
-        [
-            ActivityStream::API::ActivityComment->new(
-                'comment_id'    => $t->tx->res->json->{'comment_id'},
-                'user_id'       => $user_creator_3_id,
-                'body'          => $BODY,
-                'creation_time' => $t->tx->res->json->{'creation_time'},
-            ),
-        ],
+    my $activity_comment = ActivityStream::API::ActivityComment->new(
+        'comment_id'    => $t->tx->res->json->{'comment_id'},
+        'user_id'       => $user_creator_3_id,
+        'body'          => $BODY,
+        'creation_time' => $t->tx->res->json->{'creation_time'},
     );
+    $activity_comment->load( $environment, { 'rid' => $RID } );
+
+    cmp_deeply( $activity->get_comments, [$activity_comment], );
 }
 
 done_testing();

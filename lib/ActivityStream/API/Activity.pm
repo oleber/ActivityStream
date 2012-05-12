@@ -239,6 +239,9 @@ sub get_attribute_base_class {
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
 
+    $self->prepare_load_comments( $environment, $args );
+    $self->prepare_load_likers( $environment, $args );
+
     $self->prepare_load_actor( $environment, $args );
     $self->prepare_load_object( $environment, $args );
     $self->prepare_load_target( $environment, $args );
@@ -269,6 +272,27 @@ sub prepare_load_target {
 
     return;
 }
+
+sub prepare_load_comments {
+    my ( $self, $environment, $args ) = @_;
+
+    foreach my $comment ( @{$self->get_comments}) {
+        $comment->prepare_load( $environment, $args );
+    }
+
+    return;
+}
+
+sub prepare_load_likers {
+    my ( $self, $environment, $args ) = @_;
+
+    foreach my $liker ( values %{$self->get_likers}) {
+        $liker->prepare_load( $environment, $args );
+    }
+
+    return;
+}
+
 
 sub load {
     my ( $self, $environment, $args ) = @_;
