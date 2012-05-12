@@ -201,7 +201,7 @@ is( $obj->get_loaded_successfully, 1 );
 
             my $like = $obj->save_like( $environment, { user_id => $USER_1_ID } );
 
-            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_1_ID });
+            my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_1_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
 
             $expected_db_struct{'likers'}{$USER_1_ID} = {
@@ -228,7 +228,7 @@ is( $obj->get_loaded_successfully, 1 );
 
             my $like = $obj->save_like( $environment, { user_id => $USER_2_ID } );
 
-            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_2_ID });
+            my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_2_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
 
             $expected_db_struct{'likers'}{$USER_2_ID} = {
@@ -249,138 +249,6 @@ is( $obj->get_loaded_successfully, 1 );
             test_db_status;
 
         }
-    }
-}
-
-{
-    note('test comments');
-
-    Readonly my $BODY_1 => ActivityStream::Util::generate_id;
-    Readonly my $BODY_2 => ActivityStream::Util::generate_id;
-    Readonly my $BODY_3 => ActivityStream::Util::generate_id;
-
-    {
-        note('comment a not commentable activity');
-
-        {
-            my $activity_in_db_before_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                { 'activity_id' => $ACTIVITY_ID } );
-
-            dies_ok { $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } ) };
-
-            my $activity_in_db_after_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
-                { 'activity_id' => $ACTIVITY_ID } );
-
-            cmp_deeply( $activity_in_db_before_like, $activity_in_db_after_like );
-            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
-        }
-
-        $obj->load( $environment, { 'rid' => $RID } );
-        is( $obj->get_loaded_successfully, 1 );
-
-        cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
-        cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
-
-        $obj->save_in_db($environment);
-
-        test_db_status;
-
-    }
-
-    {
-        {
-
-            package ActivityStream::API::Activity::JustForTest;
-            *is_commentable = sub { return 1 };
-        }
-
-        {
-            note('comment a commentable activity');
-
-            my $comment = $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } );
-
-            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_1_ID });
-            $object_person->load( $environment, { 'rid' => $RID } );
-
-            push(
-                @{ $expected_db_struct{'comments'} },
-                {
-                    'comment_id'    => $comment->get_comment_id,
-                    'user_id'       => $USER_1_ID,
-                    'body'          => $BODY_1,
-                    'creation_time' => $comment->get_creation_time,
-                } );
-            push(
-                @{ $expected_to_rest_response_struct{'comments'} },
-                {
-                    'comment_id'    => $comment->get_comment_id,
-                    'user'          => $object_person->to_rest_response_struct,
-                    'body'          => $BODY_1,
-                    'creation_time' => $comment->get_creation_time,
-                    'load'          => 'success',
-                } );
-
-            test_db_status;
-        }
-
-        {
-            note('second comment a commentable activity');
-
-            my $comment = $obj->save_comment( $environment, { user_id => $USER_2_ID, 'body' => $BODY_2 } );
-
-            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_2_ID });
-            $object_person->load( $environment, { 'rid' => $RID } );
-
-            push(
-                @{ $expected_db_struct{'comments'} },
-                {
-                    'comment_id'    => $comment->get_comment_id,
-                    'user_id'       => $USER_2_ID,
-                    'body'          => $BODY_2,
-                    'creation_time' => $comment->get_creation_time,
-                } );
-            push(
-                @{ $expected_to_rest_response_struct{'comments'} },
-                {
-                    'comment_id'    => $comment->get_comment_id,
-                    'user'          => $object_person->to_rest_response_struct,
-                    'body'          => $BODY_2,
-                    'creation_time' => $comment->get_creation_time,
-                    'load'          => 'success',
-                } );
-
-            test_db_status;
-        }
-
-        {
-            note('third comment a commentable activity');
-
-            my $comment = $obj->save_comment( $environment, { 'user_id' => $USER_3_ID, 'body' => $BODY_3 } );
-
-            my $object_person = ActivityStream::API::Object::Person->new({ 'object_id' => $USER_3_ID });
-            $object_person->load( $environment, { 'rid' => $RID } );
-
-            push(
-                @{ $expected_db_struct{'comments'} },
-                {
-                    'comment_id'    => $comment->get_comment_id,
-                    'user_id'       => $USER_3_ID,
-                    'body'          => $BODY_3,
-                    'creation_time' => $comment->get_creation_time,
-                } );
-            push(
-                @{ $expected_to_rest_response_struct{'comments'} },
-                {
-                    'comment_id'    => $comment->get_comment_id,
-                    'user'          => $object_person->to_rest_response_struct,
-                    'body'          => $BODY_3,
-                    'creation_time' => $comment->get_creation_time,
-                    'load'          => 'success',
-                } );
-
-            test_db_status;
-        }
-
     }
 }
 

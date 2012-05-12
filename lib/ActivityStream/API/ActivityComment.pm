@@ -17,6 +17,7 @@ has 'comment_id' => (
 has 'user_id' => (
     'is'  => 'rw',
     'isa' => subtype( 'Str' => where {/^person:\w+$/} ),
+    'required' => 1,
 );
 
 has 'user' => (
@@ -27,6 +28,7 @@ has 'user' => (
 has 'body' => (
     'is'  => 'rw',
     'isa' => 'Str',
+    'required' => 1,
 );
 
 has 'creation_time' => (
@@ -40,23 +42,35 @@ no Moose::Util::TypeConstraints;
 sub to_db_struct {
     my ($self) = @_;
     return {
-        'comment_id' => $self->get_comment_id,
-        'user_id'    => $self->get_user_id,
-              'body' => $self->get_body,
+        'comment_id'    => $self->get_comment_id,
+        'user_id'       => $self->get_user_id,
+        'body'          => $self->get_body,
         'creation_time' => $self->get_creation_time,
     };
 }
 
 sub to_rest_response_struct {
     my ($self) = @_;
-    return {
-        'comment_id' => $self->get_comment_id,
-        'user'          => $self->get_user->to_rest_response_struct,
-        'load'          => 'success',
+
+    my %data = (
+        'comment_id'    => $self->get_comment_id,
+        'user_id'       => $self->get_user_id,
         'body'          => $self->get_body,
         'creation_time' => $self->get_creation_time,
-    };
-}
+    );
+
+    if ( defined $self->get_user ) {
+        %data = (
+            %data,
+            'user' => $self->get_user->to_rest_response_struct,
+            'load' => 'success'
+        );
+    } else {
+        %data = ( %data, 'load' => 'not requested');
+    }
+
+    return \%data;
+} ## end sub to_rest_response_struct
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
@@ -65,7 +79,6 @@ sub prepare_load {
 
     return;
 }
-
 
 sub load {
     my ( $self, $environment, $args ) = @_;

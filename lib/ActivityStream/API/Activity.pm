@@ -14,7 +14,7 @@ use ActivityStream::Util;
 has 'activity_id' => (
     'is'      => 'rw',
     'isa'     => 'Str',
-    'default' => sub {'activity:' . ActivityStream::Util::generate_id},
+    'default' => sub { 'activity:' . ActivityStream::Util::generate_id },
 );
 
 has 'creation_time' => (
@@ -78,10 +78,9 @@ has 'comments' => (
 );
 
 has 'loaded_successfully' => (
-    'is'       => 'rw',
-    'isa'      => 'Maybe[Bool]',
+    'is'  => 'rw',
+    'isa' => 'Maybe[Bool]',
 );
-
 
 around BUILDARGS => sub {
     my ( $orig, $class, @args ) = @_;
@@ -151,7 +150,7 @@ sub save_visibility {
         { '$set'        => { 'visibility' => $visibility } },
     );
 
-    $self->set_visibility( $visibility);
+    $self->set_visibility($visibility);
 
     return;
 }
@@ -159,8 +158,8 @@ sub save_visibility {
 sub to_rest_response_struct {
     my ($self) = @_;
 
-    confess sprintf( "Activity '%s' didn't load correctly", $self->get_activity_id) 
-        if not $self->get_loaded_successfully;
+    confess sprintf( "Activity '%s' didn't load correctly", $self->get_activity_id )
+          if not $self->get_loaded_successfully;
 
     my %data = (
         'activity_id' => $self->get_activity_id,
@@ -177,7 +176,7 @@ sub to_rest_response_struct {
     }
 
     return \%data;
-}
+} ## end sub to_rest_response_struct
 
 sub get_sources {
     my ($self) = @_;
@@ -273,26 +272,31 @@ sub prepare_load_target {
     return;
 }
 
+use List::Util qw(max);
+
 sub prepare_load_comments {
     my ( $self, $environment, $args ) = @_;
 
-    foreach my $comment ( @{$self->get_comments}) {
-        $comment->prepare_load( $environment, $args );
+    my $max_comments = $args->{'max_comments'};
+
+    $max_comments ||= @{ $self->get_comments };    # default and 0 go to all
+
+    foreach my $index ( max( 0, @{ $self->get_comments } - $max_comments ) .. (@{ $self->get_comments } - 1) ) {
+        $self->get_comments->[$index]->prepare_load( $environment, $args );
     }
 
     return;
-}
+} ## end sub prepare_load_comments
 
 sub prepare_load_likers {
     my ( $self, $environment, $args ) = @_;
 
-    foreach my $liker ( values %{$self->get_likers}) {
+    foreach my $liker ( values %{ $self->get_likers } ) {
         $liker->prepare_load( $environment, $args );
     }
 
     return;
 }
-
 
 sub load {
     my ( $self, $environment, $args ) = @_;
@@ -334,7 +338,7 @@ sub target_loaded_successfully {
 sub save_like {
     my ( $self, $environment, $param ) = @_;
 
-    $self->set_loaded_successfully( undef );
+    $self->set_loaded_successfully(undef);
 
     confess( "Can't like: " . ref($self) ) if not $self->is_likeable;
 
@@ -350,7 +354,7 @@ sub save_like {
     );
 
     return $activity_like;
-}
+} ## end sub save_like
 
 sub delete_like {
     my ( $self, $environment, $activity_like ) = @_;
@@ -375,7 +379,7 @@ sub delete_like {
 sub save_comment {
     my ( $self, $environment, $param ) = @_;
 
-    $self->set_loaded_successfully( undef );
+    $self->set_loaded_successfully(undef);
 
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
 
@@ -391,7 +395,7 @@ sub save_comment {
     );
 
     return $activity_comment;
-}
+} ## end sub save_comment
 
 sub preload_filter_pass {
     my ( $self, $filter ) = @_;
