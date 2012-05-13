@@ -15,8 +15,8 @@ has 'comment_id' => (
 );
 
 has 'user_id' => (
-    'is'  => 'rw',
-    'isa' => subtype( 'Str' => where {/^person:\w+$/} ),
+    'is'       => 'rw',
+    'isa'      => subtype( 'Str' => where {/^person:\w+$/} ),
     'required' => 1,
 );
 
@@ -26,8 +26,8 @@ has 'user' => (
 );
 
 has 'body' => (
-    'is'  => 'rw',
-    'isa' => 'Str',
+    'is'       => 'rw',
+    'isa'      => 'Str',
     'required' => 1,
 );
 
@@ -59,14 +59,17 @@ sub to_rest_response_struct {
         'creation_time' => $self->get_creation_time,
     );
 
-    if ( defined $self->get_user ) {
-        %data = (
-            %data,
-            'user' => $self->get_user->to_rest_response_struct,
-            'load' => 'success'
-        );
+    my $user = $self->get_user;
+
+    if ( defined $user ) {
+        if ( $user->get_loaded_successfully ) {
+            $data{'user'} = $self->get_user->to_rest_response_struct;
+            $data{'load'} = 'SUCCESS';
+        } else {
+            $data{'load'} = 'FAIL_LOAD';
+        }
     } else {
-        %data = ( %data, 'load' => 'not requested');
+        $data{'load'} = 'NOT_REQUESTED';
     }
 
     return \%data;

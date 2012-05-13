@@ -21,6 +21,10 @@ Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_i
 Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 
+Readonly my $BODY_1 => ActivityStream::Util::generate_id;
+Readonly my $BODY_2 => ActivityStream::Util::generate_id;
+Readonly my $BODY_3 => ActivityStream::Util::generate_id;
+
 Readonly my $RID => ActivityStream::Util::generate_id();
 
 use_ok($PKG);
@@ -107,10 +111,6 @@ foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
 $obj->save_in_db($environment);
 $obj->load( $environment, { 'rid' => $RID } );
 
-Readonly my $BODY_1 => ActivityStream::Util::generate_id;
-Readonly my $BODY_2 => ActivityStream::Util::generate_id;
-Readonly my $BODY_3 => ActivityStream::Util::generate_id;
-
 {
     note('Save a comment');
 
@@ -173,7 +173,7 @@ Readonly my $BODY_3 => ActivityStream::Util::generate_id;
                     'user'          => $object_person->to_rest_response_struct,
                     'body'          => $BODY_1,
                     'creation_time' => $comment->get_creation_time,
-                    'load'          => 'success',
+                    'load'          => 'SUCCESS',
                 } );
 
             test_db_status;
@@ -203,7 +203,7 @@ Readonly my $BODY_3 => ActivityStream::Util::generate_id;
                     'user'          => $object_person->to_rest_response_struct,
                     'body'          => $BODY_2,
                     'creation_time' => $comment->get_creation_time,
-                    'load'          => 'success',
+                    'load'          => 'SUCCESS',
                 } );
 
             test_db_status;
@@ -233,7 +233,7 @@ Readonly my $BODY_3 => ActivityStream::Util::generate_id;
                     'user'          => $object_person->to_rest_response_struct,
                     'body'          => $BODY_3,
                     'creation_time' => $comment->get_creation_time,
-                    'load'          => 'success',
+                    'load'          => 'SUCCESS',
                 } );
 
             test_db_status;
@@ -269,15 +269,15 @@ Readonly my $BODY_3 => ActivityStream::Util::generate_id;
 
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 1 } );
 
-        my %comment_0 = %{$expected_to_rest_response_struct{'comments'}[0]};
-        my %comment_1 = %{$expected_to_rest_response_struct{'comments'}[1]};
+        my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
+        my %comment_1 = %{ $expected_to_rest_response_struct{'comments'}[1] };
 
         delete $comment_0{'user'};
         delete $comment_1{'user'};
 
         local $expected_to_rest_response_struct{'comments'} = [
-            { %comment_0, 'load' => 'not requested' },
-            { %comment_1, 'load' => 'not requested' },
+            { %comment_0, 'load' => 'NOT_REQUESTED' },
+            { %comment_1, 'load' => 'NOT_REQUESTED' },
             $expected_to_rest_response_struct{'comments'}[2],
         ];
 
@@ -297,12 +297,11 @@ Readonly my $BODY_3 => ActivityStream::Util::generate_id;
 
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 2 } );
 
-        my %comment_0 = %{$expected_to_rest_response_struct{'comments'}[0]};
+        my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
         delete $comment_0{'user'};
 
         local $expected_to_rest_response_struct{'comments'} = [
-            { %comment_0, 'load' => 'not requested' },
-            $expected_to_rest_response_struct{'comments'}[1],
+            { %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'comments'}[1],
             $expected_to_rest_response_struct{'comments'}[2],
         ];
 
@@ -344,6 +343,41 @@ Readonly my $BODY_3 => ActivityStream::Util::generate_id;
             'Check $obj to_rest_response_struct'
         );
     }
+}
+
+{
+    note("Fail user load");
+
+    my $user_2_request = $async_user_agent->create_request_person( { 'object_id' => $USER_2_ID, 'rid' => $RID } );
+    my $previous_response = $async_user_agent->get_response_to( $user_2_request->as_string );
+    $async_user_agent->put_response_to( $user_2_request->as_string, HTTP::Response->new(403) );
+
+    my $activity_in_db
+          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
+
+    cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
+
+    $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 2 } );
+
+    my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
+    delete $comment_0{'user'};
+
+    my %comment_1 = %{ $expected_to_rest_response_struct{'comments'}[1] };
+    delete $comment_1{'user'};
+
+    local $expected_to_rest_response_struct{'comments'} = [
+        { %comment_0, 'load' => 'NOT_REQUESTED' },
+        { %comment_1, 'load' => 'FAIL_LOAD' },
+        $expected_to_rest_response_struct{'comments'}[2],
+    ];
+
+    cmp_deeply(
+        $activity_in_db->to_rest_response_struct,
+        \%expected_to_rest_response_struct,
+        'Check $obj to_rest_response_struct'
+    );
+
+    $async_user_agent->put_response_to( $user_2_request->as_string, $previous_response );
 }
 
 done_testing();
