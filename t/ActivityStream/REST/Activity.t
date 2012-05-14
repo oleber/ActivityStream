@@ -195,7 +195,7 @@ my $t    = Test::Mojo->new('ActivityStream');
 }
 
 {
-    my %expected_likes;
+    my @expected_likes;
 
     {
         note("POST User Like Existing activity");
@@ -208,14 +208,14 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        $expected_likes{$user_creator_3_id} = ActivityStream::API::ActivityLike->new(
+        push( @expected_likes,  ActivityStream::API::ActivityLike->new(
             'like_id'       => $t->tx->res->json->{'like_id'},
             'user_id'       => $user_creator_3_id,
             'creation_time' => $t->tx->res->json->{'creation_time'},
-        );
-        $expected_likes{$user_creator_3_id}->load( $environment, { 'rid' => $RID } );
+        ));
+        $expected_likes[-1]->load( $environment, { 'rid' => $RID } );
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
 
     {
@@ -229,14 +229,14 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        $expected_likes{$user_creator_4_id} = ActivityStream::API::ActivityLike->new(
+        push( @expected_likes,  ActivityStream::API::ActivityLike->new(
             'like_id'       => $t->tx->res->json->{'like_id'},
             'user_id'       => $user_creator_4_id,
             'creation_time' => $t->tx->res->json->{'creation_time'},
-        );
-        $expected_likes{$user_creator_4_id}->load( $environment, { 'rid' => $RID } );
+        ));
+        $expected_likes[-1]->load( $environment, { 'rid' => $RID } );
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
 
     {
@@ -254,16 +254,16 @@ my $t    = Test::Mojo->new('ActivityStream');
             sprintf(
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
                 $friendship_activity{'activity_id'},
-                $expected_likes{$user_creator_4_id}->get_like_id, 'internal',
+                $expected_likes[-1]->get_like_id, 'internal',
             ) )->status_is(HTTP_OK)->json_content_is( {} );
 
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        delete $expected_likes{$user_creator_4_id};
+        pop @expected_likes;
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
 
     {
@@ -281,7 +281,7 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
 
     {
@@ -290,7 +290,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         $t->delete_ok(
             sprintf(
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
-                'NotExisting', $expected_likes{$user_creator_3_id}->get_like_id, 'internal'
+                'NotExisting', $expected_likes[-1]->get_like_id, 'internal'
             ),
         )->status_is(HTTP_NOT_FOUND)->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
 
@@ -298,7 +298,7 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
 
     {
@@ -307,7 +307,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         $t->delete_ok(
             sprintf(
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
-                $friendship_activity{'activity_id'}, $expected_likes{$user_creator_3_id}->get_like_id,
+                $friendship_activity{'activity_id'}, $expected_likes[-1]->get_like_id,
                 $user_creator_4_id
             ) )->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'BAD_RID' } );
 
@@ -315,7 +315,7 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
 
     {
@@ -325,7 +325,7 @@ my $t    = Test::Mojo->new('ActivityStream');
             sprintf(
                 '/rest/activitystream/activity/%s/like/%s',
                 $friendship_activity{'activity_id'},
-                $expected_likes{$user_creator_3_id}->get_like_id
+                $expected_likes[-1]->get_like_id
             ),
             $json->encode( {} ) )->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'NO_RID_DEFINED' } );
 
@@ -333,7 +333,7 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
 
     {
@@ -342,7 +342,7 @@ my $t    = Test::Mojo->new('ActivityStream');
         $t->delete_ok(
             sprintf(
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
-                $friendship_activity{'activity_id'}, $expected_likes{$user_creator_3_id}->get_like_id,
+                $friendship_activity{'activity_id'}, $expected_likes[-1]->get_like_id,
                 $user_creator_3_id
             ),
             $json->encode( { 'rid' => $user_creator_3_id } ) )->status_is(HTTP_OK)->json_content_is( {} );
@@ -350,11 +350,10 @@ my $t    = Test::Mojo->new('ActivityStream');
         my $activity = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $friendship_activity{'activity_id'} } );
 
-        delete $expected_likes{$user_creator_3_id};
+        pop @expected_likes;
 
-        cmp_deeply( $activity->get_likers, \%expected_likes );
+        cmp_deeply( $activity->get_likers, \@expected_likes );
     }
-
 }
 
 {

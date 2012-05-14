@@ -21,17 +21,13 @@ Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_i
 Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 
-Readonly my $BODY_1 => ActivityStream::Util::generate_id;
-Readonly my $BODY_2 => ActivityStream::Util::generate_id;
-Readonly my $BODY_3 => ActivityStream::Util::generate_id;
-
 Readonly my $RID => ActivityStream::Util::generate_id();
 
 use_ok($PKG);
 
 {
 
-    package ActivityStream::API::Activity_Comments::JustForTest;
+    package ActivityStream::API::Activity_Likers::JustForTest;
     use Moose;
 
     extends 'ActivityStream::API::Activity';
@@ -46,7 +42,7 @@ use_ok($PKG);
 no warnings 'redefine', 'once';
 
 local *ActivityStream::API::ActivityFactory::_structure_class = sub {
-    return 'ActivityStream::API::Activity_Comments::JustForTest';
+    return 'ActivityStream::API::Activity_Likers::JustForTest';
 };
 local *ActivityStream::API::Object::prepare_load = sub {
     my ( $self, $environment, $args ) = @_;
@@ -59,7 +55,7 @@ Readonly my %DATA => (
     'object' => { 'object_id' => 'xxx:321' },
 );
 
-my $obj = ActivityStream::API::Activity_Comments::JustForTest->from_rest_request_struct( \%DATA );
+my $obj = ActivityStream::API::Activity_Likers::JustForTest->from_rest_request_struct( \%DATA );
 Readonly my $ACTIVITY_ID => $obj->get_activity_id;
 
 like( $obj->get_activity_id, qr/^activity:\w{20}$/ );
@@ -112,16 +108,16 @@ $obj->save_in_db($environment);
 $obj->load( $environment, { 'rid' => $RID } );
 
 {
-    note('Save a comment');
+    note('test likers');
 
     {
-        note('comment a not commentable activity');
+        note('like a not likeable activity');
 
         {
             my $activity_in_db_before_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                 { 'activity_id' => $ACTIVITY_ID } );
 
-            dies_ok { $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } ) };
+            dies_ok { $obj->save_like( $environment, { user_id => $USER_1_ID } ) };
 
             my $activity_in_db_after_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                 { 'activity_id' => $ACTIVITY_ID } );
@@ -139,102 +135,104 @@ $obj->load( $environment, { 'rid' => $RID } );
         $obj->save_in_db($environment);
 
         test_db_status;
-
     }
 
     {
         {
 
-            package ActivityStream::API::Activity_Comments::JustForTest;
-            *is_commentable = sub { return 1 };
+            package ActivityStream::API::Activity_Likers::JustForTest;
+            *is_likeable = sub { return 1 };
         }
 
         {
-            note('comment a commentable activity');
+            note('like a likeable activity');
 
-            my $comment = $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } );
+            my $like = $obj->save_like( $environment, { user_id => $USER_1_ID } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_1_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
 
             push(
-                @{ $expected_db_struct{'comments'} },
+                @{ $expected_db_struct{'likers'} },
                 {
-                    'comment_id'    => $comment->get_comment_id,
+                    'like_id'       => $like->get_like_id,
                     'user_id'       => $USER_1_ID,
-                    'body'          => $BODY_1,
-                    'creation_time' => $comment->get_creation_time,
+                    'creation_time' => $like->get_creation_time,
                 } );
+
             push(
-                @{ $expected_to_rest_response_struct{'comments'} },
+                @{ $expected_to_rest_response_struct{'likers'} },
                 {
-                    'comment_id'    => $comment->get_comment_id,
+                    'like_id'       => $like->get_like_id,
                     'user_id'       => $USER_1_ID,
                     'user'          => $object_person->to_rest_response_struct,
-                    'body'          => $BODY_1,
-                    'creation_time' => $comment->get_creation_time,
                     'load'          => 'SUCCESS',
+                    'creation_time' => $like->get_creation_time,
                 } );
+
+            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
 
             test_db_status;
         }
 
         {
-            note('second comment a commentable activity');
+            note('second like a likeable activity');
 
-            my $comment = $obj->save_comment( $environment, { user_id => $USER_2_ID, 'body' => $BODY_2 } );
+            my $like = $obj->save_like( $environment, { user_id => $USER_2_ID } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_2_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
 
             push(
-                @{ $expected_db_struct{'comments'} },
+                @{ $expected_db_struct{'likers'} },
                 {
-                    'comment_id'    => $comment->get_comment_id,
+                    'like_id'       => $like->get_like_id,
                     'user_id'       => $USER_2_ID,
-                    'body'          => $BODY_2,
-                    'creation_time' => $comment->get_creation_time,
+                    'creation_time' => $like->get_creation_time,
                 } );
+
             push(
-                @{ $expected_to_rest_response_struct{'comments'} },
+                @{ $expected_to_rest_response_struct{'likers'} },
                 {
-                    'comment_id'    => $comment->get_comment_id,
+                    'like_id'       => $like->get_like_id,
                     'user_id'       => $USER_2_ID,
                     'user'          => $object_person->to_rest_response_struct,
-                    'body'          => $BODY_2,
-                    'creation_time' => $comment->get_creation_time,
                     'load'          => 'SUCCESS',
+                    'creation_time' => $like->get_creation_time,
                 } );
+
+            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
 
             test_db_status;
         }
 
         {
-            note('third comment a commentable activity');
+            note('third like a likeable activity');
 
-            my $comment = $obj->save_comment( $environment, { 'user_id' => $USER_3_ID, 'body' => $BODY_3 } );
+            my $like = $obj->save_like( $environment, { user_id => $USER_3_ID } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_3_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
 
             push(
-                @{ $expected_db_struct{'comments'} },
+                @{ $expected_db_struct{'likers'} },
                 {
-                    'comment_id'    => $comment->get_comment_id,
+                    'like_id'       => $like->get_like_id,
                     'user_id'       => $USER_3_ID,
-                    'body'          => $BODY_3,
-                    'creation_time' => $comment->get_creation_time,
+                    'creation_time' => $like->get_creation_time,
                 } );
+
             push(
-                @{ $expected_to_rest_response_struct{'comments'} },
+                @{ $expected_to_rest_response_struct{'likers'} },
                 {
-                    'comment_id'    => $comment->get_comment_id,
+                    'like_id'       => $like->get_like_id,
                     'user_id'       => $USER_3_ID,
                     'user'          => $object_person->to_rest_response_struct,
-                    'body'          => $BODY_3,
-                    'creation_time' => $comment->get_creation_time,
                     'load'          => 'SUCCESS',
+                    'creation_time' => $like->get_creation_time,
                 } );
+
+            is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
 
             test_db_status;
         }
@@ -242,16 +240,16 @@ $obj->load( $environment, { 'rid' => $RID } );
 }
 
 {
-    note('limite load of part of the comment users');
+    note('limite load of part of the likers users');
 
     {
-        note('max_comments = 0 show all');
+        note('max_likers = 0 show all');
 
         my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 0 } );
+        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 0 } );
 
         cmp_deeply(
             $activity_in_db->to_rest_response_struct,
@@ -261,24 +259,24 @@ $obj->load( $environment, { 'rid' => $RID } );
     }
 
     {
-        note('max_comments = 1');
+        note('max_likers = 1');
 
         my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 1 } );
+        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 1 } );
 
-        my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
-        my %comment_1 = %{ $expected_to_rest_response_struct{'comments'}[1] };
+        my %comment_0 = %{ $expected_to_rest_response_struct{'likers'}[0] };
+        my %comment_1 = %{ $expected_to_rest_response_struct{'likers'}[1] };
 
         delete $comment_0{'user'};
         delete $comment_1{'user'};
 
-        local $expected_to_rest_response_struct{'comments'} = [
+        local $expected_to_rest_response_struct{'likers'} = [
             { %comment_0, 'load' => 'NOT_REQUESTED' },
             { %comment_1, 'load' => 'NOT_REQUESTED' },
-            $expected_to_rest_response_struct{'comments'}[2],
+            $expected_to_rest_response_struct{'likers'}[2],
         ];
 
         cmp_deeply(
@@ -289,20 +287,20 @@ $obj->load( $environment, { 'rid' => $RID } );
     }
 
     {
-        note('max_comments = 2');
+        note('max_likers = 2');
 
         my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 2 } );
+        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 2 } );
 
-        my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
+        my %comment_0 = %{ $expected_to_rest_response_struct{'likers'}[0] };
         delete $comment_0{'user'};
 
-        local $expected_to_rest_response_struct{'comments'} = [
-            { %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'comments'}[1],
-            $expected_to_rest_response_struct{'comments'}[2],
+        local $expected_to_rest_response_struct{'likers'} = [
+            { %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'likers'}[1],
+            $expected_to_rest_response_struct{'likers'}[2],
         ];
 
         cmp_deeply(
@@ -313,13 +311,13 @@ $obj->load( $environment, { 'rid' => $RID } );
     }
 
     {
-        note('max_comments = 3');
+        note('max_likers = 3');
 
         my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 3 } );
+        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 3 } );
 
         cmp_deeply(
             $activity_in_db->to_rest_response_struct,
@@ -329,13 +327,13 @@ $obj->load( $environment, { 'rid' => $RID } );
     }
 
     {
-        note('max_comments = 4');
+        note('max_likers = 4');
 
         my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 4 } );
+        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 4 } );
 
         cmp_deeply(
             $activity_in_db->to_rest_response_struct,
@@ -357,18 +355,18 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-    $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 2 } );
+    $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 2 } );
 
-    my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
-    delete $comment_0{'user'};
+    my %liker_0 = %{ $expected_to_rest_response_struct{'likers'}[0] };
+    delete $liker_0{'user'};
 
-    my %comment_1 = %{ $expected_to_rest_response_struct{'comments'}[1] };
-    delete $comment_1{'user'};
+    my %liker_1 = %{ $expected_to_rest_response_struct{'likers'}[1] };
+    delete $liker_1{'user'};
 
-    local $expected_to_rest_response_struct{'comments'} = [
-        { %comment_0, 'load' => 'NOT_REQUESTED' },
-        { %comment_1, 'load' => 'FAIL_LOAD' },
-        $expected_to_rest_response_struct{'comments'}[2],
+    local $expected_to_rest_response_struct{'likers'} = [
+        { %liker_0, 'load' => 'NOT_REQUESTED' },
+        { %liker_1, 'load' => 'FAIL_LOAD' },
+        $expected_to_rest_response_struct{'likers'}[2],
     ];
 
     cmp_deeply(
@@ -381,50 +379,51 @@ $obj->load( $environment, { 'rid' => $RID } );
 }
 
 {
-    note('remove comments');
+    note('remove likers');
 
     {
-        note('delete not existing comment');
+        note('delete not existing liker');
         throws_ok(
-            sub { $obj->delete_comment( $environment, { 'comment_id' => 'not existing' } ) },
-            'ActivityStream::X::CommentNotFound',
+            sub { $obj->delete_liker( $environment, { 'like_id' => 'not existing' } ) },
+            'ActivityStream::X::LikerNotFound',
         );
         test_db_status;
     }
 
     {
-        note('delete first existing comment');
-        $obj->delete_comment( $environment,
-            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[1]{'comment_id'} },
+        note('delete first existing liker');
+        $obj->delete_liker( $environment,
+            { 'like_id' => $expected_to_rest_response_struct{'likers'}[1]{'like_id'} },
         );
 
-        $expected_db_struct{'comments'} = [ $expected_db_struct{'comments'}[0], $expected_db_struct{'comments'}[2] ];
-        $expected_to_rest_response_struct{'comments'}
-              = [ $expected_to_rest_response_struct{'comments'}[0], $expected_to_rest_response_struct{'comments'}[2] ];
+        $expected_db_struct{'likers'} = [ $expected_db_struct{'likers'}[0], $expected_db_struct{'likers'}[2] ];
+        $expected_to_rest_response_struct{'likers'}
+              = [ $expected_to_rest_response_struct{'likers'}[0], $expected_to_rest_response_struct{'likers'}[2] ];
         test_db_status;
     }
 
     {
-        note('delete second existing comment');
-        $obj->delete_comment( $environment,
-            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} },
+        note('delete second existing liker');
+        $obj->delete_liker( $environment,
+            { 'like_id' => $expected_to_rest_response_struct{'likers'}[0]{'like_id'} },
         );
 
-        $expected_db_struct{'comments'}               = [ $expected_db_struct{'comments'}[1] ];
-        $expected_to_rest_response_struct{'comments'} = [ $expected_to_rest_response_struct{'comments'}[1] ];
+        $expected_db_struct{'likers'}               = [ $expected_db_struct{'likers'}[1] ];
+        $expected_to_rest_response_struct{'likers'} = [ $expected_to_rest_response_struct{'likers'}[1] ];
         test_db_status;
     }
 
     {
-        note('delete first existing comment');
-        $obj->delete_comment( $environment,
-            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} },
+        note('delete first existing liker');
+        $obj->delete_liker( $environment,
+            { 'like_id' => $expected_to_rest_response_struct{'likers'}[0]{'like_id'} },
         );
 
-        $expected_db_struct{'comments'}               = [];
-        $expected_to_rest_response_struct{'comments'} = [];
+        $expected_db_struct{'likers'}               = [];
+        $expected_to_rest_response_struct{'likers'} = [];
         test_db_status;
     }
 }
+
 
 done_testing();

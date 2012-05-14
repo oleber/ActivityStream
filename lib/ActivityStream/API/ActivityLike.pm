@@ -43,18 +43,33 @@ sub to_db_struct {
 
 sub to_rest_response_struct {
     my ($self) = @_;
-    return {
+
+    my %data = (
         'like_id'       => $self->get_like_id,
-        'user' =>       $self->get_user->to_rest_response_struct,
-        'load'          => 'success',
+        'user_id'       => $self->get_user_id,
         'creation_time' => $self->get_creation_time,
-    };
-}
+    );
+
+    my $user = $self->get_user;
+
+    if ( defined $user ) {
+        if ( $user->get_loaded_successfully ) {
+            $data{'user'} = $self->get_user->to_rest_response_struct;
+            $data{'load'} = 'SUCCESS';
+        } else {
+            $data{'load'} = 'FAIL_LOAD';
+        }
+    } else {
+        $data{'load'} = 'NOT_REQUESTED';
+    }
+
+    return \%data;
+} ## end sub to_rest_response_struct
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
-    $self->set_user( ActivityStream::API::Object::Person->new({'object_id' => $self->get_user_id}) );
-    $self->get_user->prepare_load($environment, $args);
+    $self->set_user( ActivityStream::API::Object::Person->new( { 'object_id' => $self->get_user_id } ) );
+    $self->get_user->prepare_load( $environment, $args );
 
     return;
 }
@@ -65,7 +80,6 @@ sub load {
     $self->prepare_load( $environment, $args );
     return $environment->get_async_user_agent->load_all;
 }
-
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

@@ -11,6 +11,7 @@ use ActivityStream::API::ActivityComment;
 use ActivityStream::API::Object;
 use ActivityStream::Util;
 use ActivityStream::X::CommentNotFound;
+use ActivityStream::X::LikerNotFound;
 
 has 'activity_id' => (
     'is'      => 'rw',
@@ -60,14 +61,10 @@ has 'loaded_successfully' => (
 
 has 'likers' => (
     'is'      => 'rw',
-    'isa'     => 'HashRef[ActivityStream::API::ActivityLike]',
-    'default' => sub { {} },
-    'traits'  => ['Hash'],
-    'handles' => {
-        'put_like_from'    => 'set',
-        'get_like_from'    => 'get',
-        'delete_like_from' => 'delete',
-    },
+    'isa'     => 'ArrayRef[ActivityStream::API::ActivityLike]',
+    'default' => sub { [] },
+    'traits'  => ['Array'],
+    'handles' => { 'add_like' => 'push' },
 );
 
 has 'comments' => (
@@ -88,7 +85,7 @@ around BUILDARGS => sub {
 
     my $args = $class->$orig(@args);
 
-    foreach my $value ( values %{ $args->{'likers'} // {} } ) {
+    foreach my $value ( @{ $args->{'likers'} // [] } ) {
         $value = ActivityStream::API::ActivityLike->new($value);    # change inline
     }
 
@@ -106,12 +103,12 @@ sub is_recomendable { return 0 }
 sub to_db_struct {
     my ($self) = @_;
     my %data = (
-        'activity_id' => $self->get_activity_id,
-        'actor'       => $self->get_actor->to_db_struct,
-        'verb'        => $self->get_verb,
-        'object'      => $self->get_object->to_db_struct,
-        'visibility'  => $self->get_visibility,
-        'likers'      => +{ map { $_->get_user_id => $_->to_db_struct } values %{ $self->get_likers } },
+        'activity_id'   => $self->get_activity_id,
+        'actor'         => $self->get_actor->to_db_struct,
+        'verb'          => $self->get_verb,
+        'object'        => $self->get_object->to_db_struct,
+        'visibility'    => $self->get_visibility,
+        'likers'        => [ map { $_->to_db_struct } @{ $self->get_likers } ],
         'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
     );
@@ -163,11 +160,11 @@ sub to_rest_response_struct {
           if not $self->get_loaded_successfully;
 
     my %data = (
-        'activity_id' => $self->get_activity_id,
-        'actor'       => $self->get_actor->to_rest_response_struct,
-        'verb'        => $self->get_verb,
-        'object'      => $self->get_object->to_rest_response_struct,
-        'likers'      => +{ map { $_->get_user_id => $_->to_rest_response_struct } values %{ $self->get_likers } },
+        'activity_id'   => $self->get_activity_id,
+        'actor'         => $self->get_actor->to_rest_response_struct,
+        'verb'          => $self->get_verb,
+        'object'        => $self->get_object->to_rest_response_struct,
+        'likers'        => [ map { $_->to_rest_response_struct } @{ $self->get_likers } ],
         'comments'      => [ map { $_->to_rest_response_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
     );
@@ -282,18 +279,22 @@ sub prepare_load_comments {
 
     $max_comments ||= @{ $self->get_comments };    # default and 0 go to all
 
-    foreach my $index ( max( 0, @{ $self->get_comments } - $max_comments ) .. (@{ $self->get_comments } - 1) ) {
+    foreach my $index ( max( 0, @{ $self->get_comments } - $max_comments ) .. ( @{ $self->get_comments } - 1 ) ) {
         $self->get_comments->[$index]->prepare_load( $environment, $args );
     }
 
     return;
-} ## end sub prepare_load_comments
+}
 
 sub prepare_load_likers {
     my ( $self, $environment, $args ) = @_;
 
-    foreach my $liker ( values %{ $self->get_likers } ) {
-        $liker->prepare_load( $environment, $args );
+    my $max_likers = $args->{'max_likers'};
+
+    $max_likers ||= @{ $self->get_likers };    # default and 0 go to all
+
+    foreach my $index ( max( 0, @{ $self->get_likers } - $max_likers ) .. ( @{ $self->get_likers } - 1 ) ) {
+        $self->get_likers->[$index]->prepare_load( $environment, $args );
     }
 
     return;
@@ -347,32 +348,36 @@ sub save_like {
 
     my $activity_like = blessed($param) ? $param : ActivityStream::API::ActivityLike->new($param);
 
-    $self->put_like_from( $activity_like->get_user_id => $activity_like );
+    $self->add_like( $activity_like );
 
     $collection_activity->update_activity(
         { 'activity_id' => $self->get_activity_id },
-        { '$set'        => { sprintf( 'likers.%s', $activity_like->get_user_id ) => $activity_like->to_db_struct }, },
+        { '$push'       => { 'likers' => $activity_like->to_db_struct } },
     );
 
     return $activity_like;
 } ## end sub save_like
 
-sub delete_like {
-    my ( $self, $environment, $activity_like ) = @_;
+sub delete_liker {
+    my ( $self, $environment, $param ) = @_;
 
-    confess( "Can't like: " . ref($self) ) if not $self->is_likeable;
+    $self->set_loaded_successfully(undef);
+
+    confess( "Can't liker: " . ref($self) ) if not $self->is_likeable;
+
+    my $like_id = $param->{'like_id'};
+    my @new_likers = grep { $_->get_like_id ne $like_id } @{ $self->get_likers };
+
+    die ActivityStream::X::LikerNotFound->new if scalar(@new_likers) == scalar( @{ $self->get_likers } );
 
     my $collection_activity = $environment->get_collection_factory->collection_activity;
 
-    $self->delete_like_from( $activity_like->get_user_id );
+    $self->set_likers( \@new_likers );
 
-    #    I'm sory, but in my machine I have MongoDB v: 1.2.2
-    #    $collection_activity->update_activity(
-    #        { 'activity_id' => $self->get_activity_id },
-    #        { '$unset'      => { sprintf( 'likers.%s', $activity_like->get_user_id ) => 1 }, },
-    #    );
-
-    $self->save_in_db($environment);
+    $collection_activity->update_activity(
+        { 'activity_id' => $self->get_activity_id },
+        { '$set'        => { 'likers' => [ map { $_->to_db_struct } @{ $self->get_likers } ] } },
+    );
 
     return;
 }
@@ -406,21 +411,21 @@ sub delete_comment {
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
 
     my $comment_id = $param->{'comment_id'};
-    my @new_comments = grep { $_->get_comment_id ne $comment_id } @{$self->get_comments};
+    my @new_comments = grep { $_->get_comment_id ne $comment_id } @{ $self->get_comments };
 
-    die ActivityStream::X::CommentNotFound->new if scalar(@new_comments) == scalar(@{$self->get_comments});
+    die ActivityStream::X::CommentNotFound->new if scalar(@new_comments) == scalar( @{ $self->get_comments } );
 
     my $collection_activity = $environment->get_collection_factory->collection_activity;
 
-    $self->set_comments(\@new_comments);
+    $self->set_comments( \@new_comments );
 
     $collection_activity->update_activity(
         { 'activity_id' => $self->get_activity_id },
-        { '$set'       => { 'comments' => [ map { $_->to_db_struct } @{ $self->get_comments } ] } },
+        { '$set'        => { 'comments' => [ map { $_->to_db_struct } @{ $self->get_comments } ] } },
     );
 
     return;
-} ## end sub save_comment
+} ## end sub delete_comment
 
 sub preload_filter_pass {
     my ( $self, $filter ) = @_;

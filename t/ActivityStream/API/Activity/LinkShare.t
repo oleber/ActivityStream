@@ -39,7 +39,7 @@ Readonly my $RID => ActivityStream::Util::generate_id();
             'activity_id'   => ignore,
             'visibility'    => 1,
             'creation_time' => num( time, 2 ),
-            'likers'        => {},
+            'likers'        => [],
             'comments'      => [],
         },
     );
@@ -108,7 +108,7 @@ my $activityect_request = $async_user_agent->create_request_link( { 'object_id' 
             'verb'          => 'share',
             'object'        => $person_object->to_rest_response_struct,
             'activity_id'   => ignore,
-            'likers'        => {},
+            'likers'        => [],
             'comments'      => [],
             'creation_time' => num( time, 2 ),
         },

@@ -159,7 +159,7 @@ sub delete_handler_activity_like {
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
 
-    my $activity_like = first { $like_id eq $_->get_like_id } values( %{ $activity->get_likers } );
+    my $activity_like = first { $like_id eq $_->get_like_id } @{ $activity->get_likers };
     return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_LIKE_NOT_FOUND },
         'status' => HTTP_NOT_FOUND )
           if not defined $activity_like;
@@ -168,7 +168,7 @@ sub delete_handler_activity_like {
         'status' => HTTP_FORBIDDEN )
           if not any { $rid eq $_ } ( 'internal', $activity_like->get_user_id );
 
-    $activity->delete_like( $environment, $activity_like );
+    $activity->delete_liker( $environment, { 'like_id' => $like_id } );
 
     return $self->render_json( {} );
 } ## end sub delete_handler_activity_like
