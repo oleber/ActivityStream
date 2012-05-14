@@ -10,6 +10,7 @@ use ActivityStream::API::ActivityLike;
 use ActivityStream::API::ActivityComment;
 use ActivityStream::API::Object;
 use ActivityStream::Util;
+use ActivityStream::X::CommentNotFound;
 
 has 'activity_id' => (
     'is'      => 'rw',
@@ -395,6 +396,30 @@ sub save_comment {
     );
 
     return $activity_comment;
+} ## end sub save_comment
+
+sub delete_comment {
+    my ( $self, $environment, $param ) = @_;
+
+    $self->set_loaded_successfully(undef);
+
+    confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
+
+    my $comment_id = $param->{'comment_id'};
+    my @new_comments = grep { $_->get_comment_id ne $comment_id } @{$self->get_comments};
+
+    die ActivityStream::X::CommentNotFound->new if scalar(@new_comments) == scalar(@{$self->get_comments});
+
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+
+    $self->set_comments(\@new_comments);
+
+    $collection_activity->update_activity(
+        { 'activity_id' => $self->get_activity_id },
+        { '$set'       => { 'comments' => [ map { $_->to_db_struct } @{ $self->get_comments } ] } },
+    );
+
+    return;
 } ## end sub save_comment
 
 sub preload_filter_pass {

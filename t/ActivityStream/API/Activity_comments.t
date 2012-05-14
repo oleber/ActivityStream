@@ -380,4 +380,51 @@ $obj->load( $environment, { 'rid' => $RID } );
     $async_user_agent->put_response_to( $user_2_request->as_string, $previous_response );
 }
 
+{
+    note('remove comments');
+
+    {
+        note('delete not existing comment');
+        throws_ok(
+            sub { $obj->delete_comment( $environment, { 'comment_id' => 'not existing' } ) },
+            'ActivityStream::X::CommentNotFound',
+        );
+        test_db_status;
+    }
+
+    {
+        note('delete first existing comment');
+        $obj->delete_comment( $environment,
+            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[1]{'comment_id'} },
+        );
+
+        $expected_db_struct{'comments'} = [ $expected_db_struct{'comments'}[0], $expected_db_struct{'comments'}[2] ];
+        $expected_to_rest_response_struct{'comments'}
+              = [ $expected_to_rest_response_struct{'comments'}[0], $expected_to_rest_response_struct{'comments'}[2] ];
+        test_db_status;
+    }
+
+    {
+        note('delete second existing comment');
+        $obj->delete_comment( $environment,
+            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} },
+        );
+
+        $expected_db_struct{'comments'}               = [ $expected_db_struct{'comments'}[1] ];
+        $expected_to_rest_response_struct{'comments'} = [ $expected_to_rest_response_struct{'comments'}[1] ];
+        test_db_status;
+    }
+
+    {
+        note('delete first existing comment');
+        $obj->delete_comment( $environment,
+            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} },
+        );
+
+        $expected_db_struct{'comments'}               = [];
+        $expected_to_rest_response_struct{'comments'} = [];
+        test_db_status;
+    }
+}
+
 done_testing();
