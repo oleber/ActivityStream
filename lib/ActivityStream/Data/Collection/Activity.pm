@@ -5,6 +5,39 @@ use MooseX::FollowPBP;
 
 use ActivityStream::Data::Collection;
 
+#{
+#    "activity_id" : <ACTIVITY_ID>,
+#    "actor" : {
+#        "object_id" : <OBJECT_ID>
+#    }
+#    "verb"        : <VERB>,
+#    "object"      : {
+#        "object_id" : <OBJECT_ID>
+#    },
+#    "target"      : {
+#        "object_id" : <OBJECT_ID>
+#    },
+#    "visibility"  : <BOOLEAN>,
+#    "likers"      : [
+#        {
+#            "like_id"       : <LIKE_ID>,
+#            "user_id"       : <USER_ID>,
+#            "creation_time" : <CREATION TIME IN EPOC>
+#        },
+#        ...
+#    ],
+#    "comments"    : [
+#        {
+#            "comment_id"    : <LIKE_ID>,
+#            "user_id"       : <USER_ID>,
+#            "body"          : <BODY>,
+#            "creation_time" : <CREATION TIME IN EPOC>
+#        },
+#        ...
+#    ],
+#    "creation_time" : <CREATION TIME IN EPOC>
+#}
+
 has 'collection' => ( is => 'rw', isa => 'ActivityStream::Data::Collection', 'required' => 1 );
 
 sub insert_activity {

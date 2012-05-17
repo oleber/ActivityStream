@@ -7,6 +7,16 @@ use Data::Dumper;
 
 use ActivityStream::Data::Collection;
 
+#{
+#    "source_id"   : <SOURCE_ID>,
+#    "day"         : <EPOCH / SECONDS_IN_A_DAY>,
+#    "status"      : <LAST_STATUS>,
+#    "activity"    : {
+#        <ACTIVITY_ID>: <EPOCH>,
+#        ...
+#    }
+#}
+
 has 'collection' => ( is => 'rw', isa => 'ActivityStream::Data::Collection', 'required' => 1 );
 
 sub upsert_source {
@@ -15,7 +25,7 @@ sub upsert_source {
      return $self->get_collection->upsert( $criteria, $object );
 }
 
-sub find_source {
+sub find_sources {
      my ( $self, $criteria) = @_;
 
      return $self->get_collection->find( $criteria );

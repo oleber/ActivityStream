@@ -7,8 +7,8 @@ use Data::Dumper;
 use Carp;
 use Readonly;
 
-Readonly my $SECONDS_IN_A_DAY => 24 * 60 * 60;
-Readonly my $SECONDS_IN_A_YEAR => 365*24 * 60 * 60;
+Readonly my $SECONDS_IN_A_DAY  => 24 * 60 * 60;
+Readonly my $SECONDS_IN_A_YEAR => 365 * 24 * 60 * 60;
 
 use ActivityStream::Data::Collection::Source;
 use ActivityStream::API::Activity;
@@ -52,24 +52,32 @@ sub next_activity {
             return $activity if defined $activity;
         }
 
-        # nead to search furder
-        my $source_cursor = $self->get_environment->get_collection_factory->collection_source->find_source( {
-                'source_id' => { '$in' => $self->get_filter->get_see_sources },
-                'day' => ActivityStream::Util::get_day_of( $self->get_next_time )+0,
-        } );
-
-        my %activities;
-        while ( my $source_doc = $source_cursor->next ) {
-            %activities = ( %activities, %{ $source_doc->{'activity'} } );
-        }
-
-        $self->set_next_activity_ids( [ sort { $activities{$b} <=> $activities{$a} } keys %activities ] );
-
-        $self->set_next_time( $self->get_next_time - $SECONDS_IN_A_DAY );
-    } ## end while ( $self->get_next_time...)
+        $self->load_next_days_activity_ids;
+    }
 
     return;
-} ## end sub next_activity
+}
+
+sub load_next_days_activity_ids {
+    my ($self) = @_;
+
+    # nead to search furder
+    my $source_cursor = $self->get_environment->get_collection_factory->collection_source->find_sources( {
+            'source_id' => { '$in' => $self->get_filter->get_see_sources },
+            'day' => ActivityStream::Util::get_day_of( $self->get_next_time ) + 0,
+    } );
+
+    my %activities;
+    while ( my $source_doc = $source_cursor->next ) {
+        %activities = ( %activities, %{ $source_doc->{'activity'} } );
+    }
+
+    $self->set_next_activity_ids( [ sort { $activities{$b} <=> $activities{$a} } keys %activities ] );
+
+    $self->set_next_time( $self->get_next_time - $SECONDS_IN_A_DAY );
+
+    return;
+}
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

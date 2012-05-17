@@ -131,12 +131,17 @@ sub save_in_db {
     foreach my $source ( $self->get_sources ) {
         $collection_source->upsert_source(
             { 'source_id' => $source, 'day' => ActivityStream::Util::get_day_of( $self->get_creation_time ) },
-            { '$set' => { 'activity.' . $self->get_activity_id => $self->get_creation_time } },
+            {
+                '$set' => {
+                    sprintf( 'activity.%s', $self->get_activity_id ) => $self->get_creation_time,
+                    'status' => ActivityStream::Util::generate_id,
+                }
+            },
         );
     }
 
     return $self;
-}
+} ## end sub save_in_db
 
 sub save_visibility {
     my ( $self, $environment, $visibility ) = @_;
@@ -348,7 +353,7 @@ sub save_like {
 
     my $activity_like = blessed($param) ? $param : ActivityStream::API::ActivityLike->new($param);
 
-    $self->add_like( $activity_like );
+    $self->add_like($activity_like);
 
     $collection_activity->update_activity(
         { 'activity_id' => $self->get_activity_id },
@@ -380,7 +385,7 @@ sub delete_liker {
     );
 
     return;
-}
+} ## end sub delete_liker
 
 sub save_comment {
     my ( $self, $environment, $param ) = @_;

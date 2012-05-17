@@ -6,6 +6,12 @@ use MooseX::FollowPBP;
 
 use Carp;
 
+has 'user' => (
+    'is'       => 'rw',
+    'isa'      => 'Str',
+    'required' => 1,
+);
+
 has 'see_sources' => (
     'is'       => 'rw',
     'isa'      => 'ArrayRef[Str]',
