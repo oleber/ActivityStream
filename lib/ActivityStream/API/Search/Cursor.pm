@@ -58,7 +58,6 @@ sub next_activity {
             return $activity if defined $activity;
         }
 
-        # nead to search furder
         $self->load_next_days_activity_ids;
     }
 

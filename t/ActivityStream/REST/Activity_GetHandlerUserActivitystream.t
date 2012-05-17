@@ -55,8 +55,8 @@ sub request_for {
     note('Empty ActivityStream');
     my $url = request_for(
         $VIEWER_USER_ID,
-        'see_source_ids'    => [ $USER_1_ID, $USER_2_ID ],
-        'ignore_source_ids' => [$USER_3_ID],
+        'see_source_id'    => [ $USER_1_ID, $USER_2_ID ],
+        'ignore_source_id' => [$USER_3_ID],
     );
 
     $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => [] } );
@@ -95,10 +95,10 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     note('Not Empty ActivityStream');
     my $url = request_for(
         $VIEWER_USER_ID,
-        'see_source_ids'    => [ $USER_1_ID, $USER_2_ID ],
-        'ignore_source_ids' => [$USER_3_ID],
-        'limit'          => 5,
-        'rid'            => $RID,
+        'see_source_id'    => [ $USER_1_ID, $USER_2_ID ],
+        'ignore_source_id' => [$USER_3_ID],
+        'limit'            => 5,
+        'rid'              => $RID,
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 0 .. 4 ];
@@ -109,10 +109,10 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     note('Invert Sources');
     my $url = request_for(
         $VIEWER_USER_ID,
-        'see_source_ids'    => [ $USER_1_ID, $USER_2_ID ],
-        'ignore_source_ids' => [$USER_3_ID],
-        'limit'          => 5,
-        'rid'            => $RID,
+        'see_source_id'    => [ $USER_1_ID, $USER_2_ID ],
+        'ignore_source_id' => [$USER_3_ID],
+        'limit'            => 5,
+        'rid'              => $RID,
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 0 .. 4 ];
@@ -124,9 +124,9 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
 
     my $url = request_for(
         $VIEWER_USER_ID,
-        'see_source_ids'       => [ $USER_1_ID, $USER_2_ID ],
-        'ignore_source_ids'    => [$USER_3_ID],
-        'ignore_activities' => [ map { $_->get_activity_id } @user_1_activities[ 0 .. 4 ] ],
+        'see_source_id'     => [ $USER_1_ID, $USER_2_ID ],
+        'ignore_source_id'  => [$USER_3_ID],
+        'ignore_activity'   => [ map         { $_->get_activity_id } @user_1_activities[ 0 .. 4 ] ],
         'limit'             => 5,
         'rid'               => $RID,
     );
@@ -139,15 +139,14 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     note('Ignore sources');
     my $url = request_for(
         $VIEWER_USER_ID,
-        'see_source_ids'    => [ $USER_1_ID, $USER_2_ID ],
-        'ignore_source_ids' => [ @USERS[ 0 .. 4 ] ],
-        'limit'          => 5,
-        'rid'            => $RID,
+        'see_source_id'    => [ $USER_1_ID, $USER_2_ID ],
+        'ignore_source_id' => [ @USERS[ 0 .. 4 ] ],
+        'limit'            => 5,
+        'rid'              => $RID,
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 5 .. 9 ];
     $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => \@expected } );
 }
-
 
 done_testing();

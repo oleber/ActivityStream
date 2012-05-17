@@ -122,6 +122,7 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
     {
         note('1 source');
         Readonly my $CONSUMER_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+
         my $cursor = ActivityStream::API::Search->search(
             $environment,
             {
@@ -359,6 +360,7 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
             bag(@expected_consumer_rows),
         );
     }
+
 }
 
 done_testing;
