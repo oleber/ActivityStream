@@ -58,6 +58,7 @@ sub next_activity {
             return $activity if defined $activity;
         }
 
+        # nead to search furder
         $self->load_next_days_activity_ids;
     }
 
@@ -164,6 +165,7 @@ sub load_next_days_activity_ids {
         }
 
         # update DB asynchronously
+
         $self->get_environment->get_async_user_agent->add(
             undef,
             sub {
