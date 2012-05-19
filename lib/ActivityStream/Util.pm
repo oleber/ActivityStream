@@ -6,6 +6,7 @@ use warnings;
 use Digest::MD5 qw(md5_base64);
 use Data::UUID;
 use MIME::Base64;
+use POSIX qw(floor);
 use Readonly;
 
 use ActivityStream::Constants;
@@ -24,7 +25,7 @@ Readonly my $SECONDS_IN_A_DAY => 60 * 60 * 24;
 
 sub get_day_of {
     my ($time) = @_;
-    return int( $time / $SECONDS_IN_A_DAY );
+    return floor( $time / $SECONDS_IN_A_DAY );
 }
 
 1;

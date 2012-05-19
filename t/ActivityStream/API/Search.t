@@ -17,9 +17,9 @@ Readonly my $environment => ActivityStream::Environment->new;
 Readonly my $PKG => 'ActivityStream::API::Search';
 use_ok($PKG);
 
-Readonly my $TODAY            => timelocal( 0, 0, 1, ( localtime( time - 0 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
-Readonly my $YESTERDAY        => timelocal( 0, 0, 1, ( localtime( time - 1 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
-Readonly my $BEFORE_YESTERDAY => timelocal( 0, 0, 1, ( localtime( time - 2 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
+Readonly my $TODAY            => timelocal( 0, 0, 6, ( localtime( time - 0 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
+Readonly my $YESTERDAY        => timelocal( 0, 0, 6, ( localtime( time - 1 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
+Readonly my $BEFORE_YESTERDAY => timelocal( 0, 0, 6, ( localtime( time - 2 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
 
 my @USERS = ( map { sprintf( "person:%s", ActivityStream::Util::generate_id ) } ( 0 .. 9 ) );
 
@@ -122,7 +122,7 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
     {
         note('1 source');
         Readonly my $CONSUMER_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-        my $cursor = $PKG->search( $environment,
+        my $cursor = ActivityStream::API::Search->search( $environment,
             { 'user' => sprintf( "person:%s", ActivityStream::Util::generate_id ), 'see_sources' => [$USER_1_ID] } );
 
         foreach my $activity ( reverse @user_1_activities ) {
@@ -148,17 +148,12 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
 }
 
 {
-    note('Search with 1 Source');
+    note('Search with Sources on a single day');
 
     Readonly my $CONSUMER_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
 
-    cmp_deeply( [
-            $collection_consumer->find_consumers(
-                { 'consumer_id' => $CONSUMER_ID, 'day' => [ '$in' => $today_day, $yesterday_day ] }
-                  )->all
-        ],
-        [],
-    );
+    cmp_deeply( [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+        [], 'Verify that is empty' );
 
     my $cursor = ActivityStream::API::Search->search(
         $environment,
@@ -167,31 +162,196 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
         ),
     );
     cmp_deeply( $cursor->next_activity, $activities_map{$USER_1_ID}{ $USERS[-1] } );
+    $environment->get_async_user_agent->load_all;
 
-#    cmp_deeply(
-#        [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
-#        [ {
-#                'consumer_id' => $CONSUMER_ID,
-#                'day'         => $today_day,
-#                'sources'     => {
-#                    $USER_1_ID => {
-#                        'last_status' => ignore,
-#                        'activity'    => { map { $_->get_activity_id => $_->get_creation_time } @user_1_activities },
-#                    },
-#                },
-#            },
-#            {
-#                'consumer_id' => $CONSUMER_ID,
-#                'day'         => $yesterday_day,
-#                'sources'     => {
-#                    $USER_2_ID => {
-#                        'last_status' => ignore,
-#                        'activity'    => { map { $_->get_activity_id => $_->get_creation_time } @user_2_activities },
-#                    },
-#                },
-#            }
-#        ],
-#    );
+    cmp_deeply(
+        [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+        bag( {
+                '_id'         => ignore,
+                'consumer_id' => $CONSUMER_ID,
+                'day'         => $today_day,
+                'sources'     => {
+                    $USER_1_ID => {
+                        'status'   => ignore,
+                        'activity' => { map { $_->get_activity_id => $_->get_creation_time } @user_1_activities },
+                    },
+                },
+            },
+            {
+                '_id'         => ignore,
+                'consumer_id' => $CONSUMER_ID,
+                'day'         => $yesterday_day,
+                'sources'     => {
+                    $USER_2_ID => {
+                        'status'   => ignore,
+                        'activity' => { map { $_->get_activity_id => $_->get_creation_time } @user_2_activities },
+                    },
+                },
+            }
+        ),
+    );
+}
+
+{
+    note('Search with Sources on multiple days');
+
+    Readonly my $CONSUMER_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+
+    cmp_deeply( [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+        [], 'Verify that is empty' );
+
+    my $cursor
+          = ActivityStream::API::Search->search( $environment,
+        ActivityStream::API::Search::Filter->new( { 'user' => $CONSUMER_ID, 'see_sources' => [@USERS] } ),
+          );
+    cmp_deeply( $cursor->next_activity, $activities_map{$USER_1_ID}{ $USERS[-1] } );
+    $environment->get_async_user_agent->load_all;
+
+    cmp_deeply(
+        [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+        bag( {
+                '_id'         => ignore,
+                'consumer_id' => $CONSUMER_ID,
+                'day'         => $today_day,
+                'sources'     => {
+                    map {
+                        $_ => {
+                            'status'   => ignore,
+                            'activity' => {
+                                $activities_map{$USER_1_ID}{$_}->get_activity_id =>
+                                      $activities_map{$USER_1_ID}{$_}->get_creation_time
+                            } }
+                          } @USERS
+                },
+            },
+            {
+                '_id'         => ignore,
+                'consumer_id' => $CONSUMER_ID,
+                'day'         => $yesterday_day,
+                'sources'     => {
+                    map {
+                        $_ => {
+                            'status'   => ignore,
+                            'activity' => {
+                                $activities_map{$USER_2_ID}{$_}->get_activity_id =>
+                                      $activities_map{$USER_2_ID}{$_}->get_creation_time
+                            } }
+                          } @USERS
+                },
+            }
+        ),
+    );
+}
+
+{
+    note('Search with Sources on multiple days');
+
+    Readonly my $CONSUMER_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+
+    cmp_deeply( [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+        [], 'Verify that is empty' );
+
+    my $cursor
+          = ActivityStream::API::Search->search( $environment,
+        ActivityStream::API::Search::Filter->new( { 'user' => $CONSUMER_ID, 'see_sources' => [ $USERS[0] ] } ),
+          );
+
+    my @expected_consumer_rows;
+
+    {
+        note('Get first Activity');
+
+        cmp_deeply( $cursor->next_activity, $activities_map{$USER_1_ID}{ $USERS[0] } );
+        cmp_deeply(
+            [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+            bag(@expected_consumer_rows),
+        );
+
+        push(
+            @expected_consumer_rows,
+            {
+                '_id'         => ignore,
+                'consumer_id' => $CONSUMER_ID,
+                'day'         => $today_day,
+                'sources'     => {
+                    $USERS[0] => {
+                        'status'   => ignore,
+                        'activity' => {
+                            $activities_map{$USER_1_ID}{ $USERS[0] }->get_activity_id =>
+                                  $activities_map{$USER_1_ID}{ $USERS[0] }->get_creation_time
+                        },
+                    },
+                },
+            },
+            {
+                '_id'         => ignore,
+                'consumer_id' => $CONSUMER_ID,
+                'day'         => $yesterday_day,
+                'sources'     => {
+                    $USERS[0] => {
+                        'status'   => ignore,
+                        'activity' => {
+                            $activities_map{$USER_2_ID}{ $USERS[0] }->get_activity_id =>
+                                  $activities_map{$USER_2_ID}{ $USERS[0] }->get_creation_time
+                        },
+                    },
+                }
+            },
+        );
+        $environment->get_async_user_agent->load_all;
+        cmp_deeply(
+            [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+            bag(@expected_consumer_rows),
+        );
+    }
+
+    {
+        note('Get Second activity, no Costumer needed');
+        cmp_deeply( $cursor->next_activity, $activities_map{$USER_2_ID}{ $USERS[0] } );
+        cmp_deeply(
+            [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+            bag(@expected_consumer_rows),
+        );
+        $environment->get_async_user_agent->load_all;
+        cmp_deeply(
+            [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+            bag(@expected_consumer_rows),
+        );
+    }
+
+    {
+        note('Get Third activity, Costumer updated');
+
+        cmp_deeply( $cursor->next_activity, $activities_map{$USER_3_ID}{ $USERS[0] } );
+        cmp_deeply(
+            [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+            bag(@expected_consumer_rows),
+        );
+
+        push(
+            @expected_consumer_rows,
+            {
+                '_id'         => ignore,
+                'consumer_id' => $CONSUMER_ID,
+                'day'         => $before_yesterday_day,
+                'sources'     => {
+                    $USERS[0] => {
+                        'status'   => ignore,
+                        'activity' => {
+                            $activities_map{$USER_3_ID}{ $USERS[0] }->get_activity_id =>
+                                  $activities_map{$USER_3_ID}{ $USERS[0] }->get_creation_time
+                        },
+                    },
+                }
+            },
+        );
+
+        $environment->get_async_user_agent->load_all;
+        cmp_deeply(
+            [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
+            bag(@expected_consumer_rows),
+        );
+    }
 }
 
 done_testing;
