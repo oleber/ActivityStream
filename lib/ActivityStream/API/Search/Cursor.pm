@@ -65,11 +65,22 @@ sub next_activity {
     return;
 }
 
-sub load_next_days_activity_ids {
-    my ($self) = @_;
+sub _old_status_for {
+    my ( $self, @consumer_docs ) = @_;
 
-    my $collection_consumer = $self->get_environment->get_collection_factory->collection_consumer;
-    my $collection_source   = $self->get_environment->get_collection_factory->collection_source;
+    my %status;
+    foreach my $consumer_doc (@consumer_docs) {
+        foreach my $consumer_source_doc ( values( %{ $consumer_doc->{'sources'} } ) ) {
+            $status{ $consumer_source_doc->{'status'} } = 1;
+        }
+        @status{ map { $_->{'status'} } values( %{ $consumer_doc->{'sources'} } ) } = ();
+    }
+
+    return keys %status;
+}
+
+sub _next_interval {
+    my ($self) = @_;
 
     my @days;
     foreach ( 1 .. $self->get_interval_size ) {
@@ -78,38 +89,61 @@ sub load_next_days_activity_ids {
     }
     $self->set_interval_size( 2 * $self->get_interval_size );
 
-    my $consumer_cursor = $collection_consumer->find_consumers( {
+    return @days;
+}
+
+sub _extract_activities {
+    my ( $self, %consumer_doc_for ) = @_;
+
+    my %activities;
+    foreach my $consumer_doc ( values %consumer_doc_for ) {
+        foreach my $consumer_source_doc ( values %{ $consumer_doc->{'sources'} } ) {
+            %activities = ( %activities, %{ $consumer_source_doc->{'activity'} } );
+        }
+    }
+
+    return sort { $activities{$b} <=> $activities{$a} } keys %activities;
+}
+
+sub load_next_days_activity_ids {
+    my ($self) = @_;
+
+    my $collection_consumer = $self->get_environment->get_collection_factory->collection_consumer;
+    my $collection_source   = $self->get_environment->get_collection_factory->collection_source;
+
+    my @days = $self->_next_interval;
+
+    my @consumer_docs = $collection_consumer->find_consumers( {
             'consumer_id' => $self->get_filter->get_user,
             'day'         => { '$in' => \@days },
-    } );
-    my @consumer_docs = $consumer_cursor->all;
-    my %status;
+        } )->all;
 
-    my %consumer_doc_for;
-    foreach my $consumer_doc (@consumer_docs) {
-        @status{ map { $_->{'status'} } values( %{ $consumer_doc->{'sources'} } ) } = ();
-        $consumer_doc_for{ $consumer_doc->{'day'} } = $consumer_doc;
-    }
+    my %consumer_doc_for = map { $_->{'day'} => $_ } @consumer_docs;
 
     my $source_cursor = $collection_source->find_sources( {
             'source_id' => { '$in'  => $self->get_filter->get_see_sources },
             'day'       => { '$in'  => \@days },
-            'status'    => { '$nin' => [ keys %status ] },
+            'status'    => { '$nin' => [ $self->_old_status_for(@consumer_docs) ] },
     } );
 
-    while ( my $source_doc = $source_cursor->next ) {
-        # prepare consumer updates
+    while ( my $source_doc = $source_cursor->next ) {    # Just new or changed sources
+
         my %updates;
         while ( my ( $activity_id, $creation_time ) = each %{ $source_doc->{'activity'} } ) {
             my $day = ActivityStream::Util::get_day_of($creation_time);
- 
-            my $update_data = ( $updates{$day}{ sprintf( 'sources.%s', $source_doc->{'source_id'} ) } //= {} );
-            my $consumer_data = ( $consumer_doc_for{$day}->{'sources'}{ $source_doc->{'source_id'} } //= {} );
 
-            $update_data->{'status'} = $consumer_data->{'status'} = $source_doc->{'status'};
-            $update_data->{'activity'}{$activity_id} = $consumer_data->{'activity'}{$activity_id} = $creation_time;
+            # prepare consumer updates
+            my $update_data = ( $updates{$day}{ sprintf( 'sources.%s', $source_doc->{'source_id'} ) } //= {} );
+            $update_data->{'status'} = $source_doc->{'status'};
+            $update_data->{'activity'}{$activity_id} = $creation_time;
+
+            # update consumer objects
+            my $consumer_source_doc = ( $consumer_doc_for{$day}->{'sources'}{ $source_doc->{'source_id'} } //= {} );
+            $consumer_source_doc->{'status'} = $source_doc->{'status'};
+            $consumer_source_doc->{'activity'}{$activity_id} = $creation_time;
         }
 
+        # update DB asynchronously
         $self->get_environment->get_async_user_agent->add(
             undef,
             sub {
@@ -123,14 +157,7 @@ sub load_next_days_activity_ids {
         );
     } ## end while ( my $source_doc = ...)
 
-    my %activities;
-    foreach my $consumer_doc ( values %consumer_doc_for ) {
-        foreach my $source_doc ( values %{$consumer_doc->{'sources'}} ) {
-            %activities = ( %activities, %{ $source_doc->{'activity'} } );
-        }
-    }
-
-    $self->set_next_activity_ids( [ sort { $activities{$b} <=> $activities{$a} } keys %activities ] );    # sout by time
+    $self->set_next_activity_ids( [ $self->_extract_activities(%consumer_doc_for) ] );    # sout by time
 
     return;
 } ## end sub load_next_days_activity_ids

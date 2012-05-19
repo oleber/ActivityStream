@@ -90,7 +90,7 @@ sub get_handler_activity {
 sub get_handler_user_activitystream {
     my $self = shift;
 
-    my $user_id           = $self->param('activity_id');
+    my $user_id           = $self->param('user_id');
     my @see_sources       = $self->param('see_sources');
     my @ignore_sources    = $self->param('ignore_sources');
     my @ignore_activities = $self->param('ignore_activities');
@@ -100,6 +100,7 @@ sub get_handler_user_activitystream {
     my $environment = ActivityStream::Environment->new;
 
     my $filter = ActivityStream::API::Search::Filter->new( {
+            'user'              => $user_id,
             'see_sources'       => \@see_sources,
             'ignore_sources'    => \@ignore_sources,
             'ignore_activities' => \@ignore_activities,
