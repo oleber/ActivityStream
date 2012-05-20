@@ -9,7 +9,7 @@ use Readonly;
 use Time::Local;
 
 use ActivityStream::API::ActivityFactory;
-use ActivityStream::Environment;
+use ActivityStream::Environment; 
 use ActivityStream::Util;
 
 Readonly my $environment => ActivityStream::Environment->new;
