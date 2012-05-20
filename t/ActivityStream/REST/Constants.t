@@ -29,4 +29,4 @@ cmp_deeply(
     },
 );
 
-done_testing();
+done_testing;

@@ -90,14 +90,14 @@ sub get_handler_activity {
 sub get_handler_user_activitystream {
     my $self = shift;
 
-    my $user_id           = $self->param('user_id');
+    my $user_id = $self->param('user_id');
 
     my @see_source_ids    = $self->param('see_source_id');
     my @ignore_source_ids = $self->param('ignore_source_id');
     my @ignore_activities = $self->param('ignore_activity');
 
-    my $limit             = $self->param('limit');
-    my $rid               = $self->param('rid');
+    my $limit = $self->param('limit');
+    my $rid   = $self->param('rid');
 
     my $environment = ActivityStream::Environment->new;
 

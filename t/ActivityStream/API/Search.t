@@ -144,7 +144,9 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
             $environment,
             {
                 'consumer_id'    => sprintf( "person:%s", ActivityStream::Util::generate_id ),
-                'see_source_ids' => [ $USER_2_ID,         $USER_3_ID ], }, );
+                'see_source_ids' => [ $USER_2_ID,         $USER_3_ID ],
+            },
+        );
 
         foreach my $activity ( reverse( @user_3_activities, @user_2_activities ) ) {
             cmp_deeply( $cursor->next_activity->to_db_struct, $activity->to_db_struct );

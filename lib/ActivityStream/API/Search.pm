@@ -17,8 +17,7 @@ sub search {
         $filter = ActivityStream::API::Search::Filter->new($filter);
     }
 
-    return ActivityStream::API::Search::Cursor->new(
-        { 'environment' => $environment, 'filter' => $filter } );
+    return ActivityStream::API::Search::Cursor->new( { 'environment' => $environment, 'filter' => $filter } );
 }
 
 __PACKAGE__->meta->make_immutable;

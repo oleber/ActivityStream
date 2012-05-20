@@ -5,7 +5,6 @@ use warnings;
 
 use Readonly;
 
-
 # > RID
 Readonly our $ERROR_MESSAGE_NO_RID_DEFINED => 'NO_RID_DEFINED';
 Readonly our $ERROR_MESSAGE_BAD_RID        => 'BAD_RID';

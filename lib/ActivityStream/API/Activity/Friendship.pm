@@ -1,7 +1,6 @@
 package ActivityStream::API::Activity::Friendship;
 use Moose;
 use Moose::Util::TypeConstraints;
-use MooseX::FollowPBP;
 
 use ActivityStream::API::Object::Person;
 
@@ -17,7 +16,7 @@ sub is_recomendable { return 0 }
 
 sub get_sources {
     my ($self) = @_;
-    return ( $self->get_actor->get_object_id, $self->get_object->get_object_id);
+    return ( $self->get_actor->get_object_id, $self->get_object->get_object_id );
 }
 
 sub prepare_load {

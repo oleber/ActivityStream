@@ -19,8 +19,8 @@ has 'see_source_ids' => (
 );
 
 has 'ignore_source_ids' => (
-    'is'       => 'rw',
-    'isa'      => 'ArrayRef[Str]',
+    'is'      => 'rw',
+    'isa'     => 'ArrayRef[Str]',
     'default' => sub { [] },
 );
 

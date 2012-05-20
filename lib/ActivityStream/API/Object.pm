@@ -12,8 +12,8 @@ has 'object_id' => (
 );
 
 has 'loaded_successfully' => (
-    'is'       => 'rw',
-    'isa'      => 'Maybe[Bool]',
+    'is'  => 'rw',
+    'isa' => 'Maybe[Bool]',
 );
 
 sub to_struct {
@@ -29,7 +29,7 @@ sub to_db_struct {
 sub to_rest_response_struct {
     my ($self) = @_;
 
-    confess sprintf( "Object '%s' didn't load correctly", $self->get_object_id) if not $self->get_loaded_successfully;
+    confess sprintf( "Object '%s' didn't load correctly", $self->get_object_id ) if not $self->get_loaded_successfully;
 
     return $self->to_struct;
 }

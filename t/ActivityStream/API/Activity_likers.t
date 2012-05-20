@@ -98,9 +98,13 @@ sub test_db_status {
 } ## end sub test_db_status
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
-    my $user_request = $async_user_agent->create_request_person( { 'object_id' => $person_id, 'rid' => $RID } );
-    $async_user_agent->put_response_to( $user_request->as_string,
-        $async_user_agent->create_test_response_person( { 'first_name' => "first name $person_id", 'rid' => $RID } ),
+    my $user_request
+          = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
+    $async_user_agent->put_response_to(
+        $user_request->as_string,
+        ActivityStream::API::Object::Person->create_test_response(
+            { 'first_name' => "first name $person_id", 'rid' => $RID }
+        ),
     );
 }
 
@@ -346,7 +350,8 @@ $obj->load( $environment, { 'rid' => $RID } );
 {
     note("Fail user load");
 
-    my $user_2_request = $async_user_agent->create_request_person( { 'object_id' => $USER_2_ID, 'rid' => $RID } );
+    my $user_2_request
+          = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )->create_request( { 'rid' => $RID } );
     my $previous_response = $async_user_agent->get_response_to( $user_2_request->as_string );
     $async_user_agent->put_response_to( $user_2_request->as_string, HTTP::Response->new(403) );
 
@@ -392,9 +397,7 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     {
         note('delete first existing liker');
-        $obj->delete_liker( $environment,
-            { 'like_id' => $expected_to_rest_response_struct{'likers'}[1]{'like_id'} },
-        );
+        $obj->delete_liker( $environment, { 'like_id' => $expected_to_rest_response_struct{'likers'}[1]{'like_id'} }, );
 
         $expected_db_struct{'likers'} = [ $expected_db_struct{'likers'}[0], $expected_db_struct{'likers'}[2] ];
         $expected_to_rest_response_struct{'likers'}
@@ -404,9 +407,7 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     {
         note('delete second existing liker');
-        $obj->delete_liker( $environment,
-            { 'like_id' => $expected_to_rest_response_struct{'likers'}[0]{'like_id'} },
-        );
+        $obj->delete_liker( $environment, { 'like_id' => $expected_to_rest_response_struct{'likers'}[0]{'like_id'} }, );
 
         $expected_db_struct{'likers'}               = [ $expected_db_struct{'likers'}[1] ];
         $expected_to_rest_response_struct{'likers'} = [ $expected_to_rest_response_struct{'likers'}[1] ];
@@ -415,9 +416,7 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     {
         note('delete first existing liker');
-        $obj->delete_liker( $environment,
-            { 'like_id' => $expected_to_rest_response_struct{'likers'}[0]{'like_id'} },
-        );
+        $obj->delete_liker( $environment, { 'like_id' => $expected_to_rest_response_struct{'likers'}[0]{'like_id'} }, );
 
         $expected_db_struct{'likers'}               = [];
         $expected_to_rest_response_struct{'likers'} = [];
@@ -425,5 +424,4 @@ $obj->load( $environment, { 'rid' => $RID } );
     }
 }
 
-
-done_testing();
+done_testing;

@@ -74,9 +74,13 @@ my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, );
 my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
-    my $user_request = $async_user_agent->create_request_person( { 'object_id' => $person_id, 'rid' => $RID } );
-    $async_user_agent->put_response_to( $user_request->as_string,
-        $async_user_agent->create_test_response_person( { 'first_name' => "first name $person_id", 'rid' => $RID } ),
+    my $user_request
+          = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
+    $async_user_agent->put_response_to(
+        $user_request->as_string,
+        ActivityStream::API::Object::Person->create_test_response(
+            { 'first_name' => "first name $person_id", 'rid' => $RID }
+        ),
     );
 }
 
@@ -157,4 +161,4 @@ sub test_db_status {
 
 } ## end sub test_db_status
 
-done_testing();
+done_testing;

@@ -450,3 +450,8 @@ __PACKAGE__->meta->make_immutable;
 no Moose;
 
 1;
+
+=head1 NAME
+ActivityStream::API::Activity - Base class of all the Activities
+
+=head1 SYNOPSIS

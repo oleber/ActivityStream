@@ -13,8 +13,8 @@ use_ok($PKG);
 
 Readonly my %DATA => ( 'object_id' => 'person:125' );
 
-my $obj = lives_ok { $PKG->new( %DATA ) };
+my $obj = lives_ok { $PKG->new(%DATA) };
 
 dies_ok { $PKG->new( %DATA, 'object_id' => 'x:-.,:125' ) };
 
-done_testing();
+done_testing;

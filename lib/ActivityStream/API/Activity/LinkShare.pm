@@ -1,7 +1,6 @@
 package ActivityStream::API::Activity::LinkShare;
 use Moose;
 use Moose::Util::TypeConstraints;
-use MooseX::FollowPBP;
 
 use ActivityStream::API::Activity;
 use ActivityStream::API::Object::Person;

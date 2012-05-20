@@ -4,6 +4,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use Carp;
+use HTTP::Request::Common;
 use Readonly;
 
 extends 'ActivityStream::API::Object';
@@ -22,6 +23,29 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 
 no Moose::Util::TypeConstraints;
 
+sub create_request {
+    my ( $self, $data ) = @_;
+    return GET( sprintf( 'http://link/%s/%s', $self->get_object_id, $data->{'rid'} ) );
+}
+
+sub create_test_response {
+    my ( undef, $data ) = @_;
+
+    my $res = HTTP::Response->new;
+    $res->code(200);
+    $res->content(
+        Mojo::JSON->new->encode( {
+                'title'       => $data->{'title'}       // 'Link Title',
+                'description' => $data->{'description'} // 'Link Description',
+                'url'         => $data->{'url'}         // 'http://link/link_response',
+                'image_url'   => $data->{'image_url'}   // 'http://link/link_response/large_image',
+            },
+        ),
+    );
+
+    return $res;
+}
+
 sub to_rest_response_struct {
     my ($self) = @_;
 
@@ -37,7 +61,7 @@ sub prepare_load {
     my ( $self, $environment, $args ) = @_;
     my $async_user_agent = $environment->get_async_user_agent;
     $async_user_agent->add(
-        $async_user_agent->create_request_link( { 'object_id' => $self->get_object_id, %{$args} } ),
+        $self->create_request($args),
         sub {
             my ( undef, $response ) = @_;
 

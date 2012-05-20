@@ -20,15 +20,15 @@ use ActivityStream::Data::Collection;
 has 'collection' => ( is => 'rw', isa => 'ActivityStream::Data::Collection', 'required' => 1 );
 
 sub upsert_source {
-     my ( $self, $criteria, $object ) = @_;
+    my ( $self, $criteria, $object ) = @_;
 
-     return $self->get_collection->upsert( $criteria, $object );
+    return $self->get_collection->upsert( $criteria, $object );
 }
 
 sub find_sources {
-     my ( $self, $criteria) = @_;
+    my ( $self, $criteria ) = @_;
 
-     return $self->get_collection->find( $criteria );
+    return $self->get_collection->find($criteria);
 }
 
 __PACKAGE__->meta->make_immutable;

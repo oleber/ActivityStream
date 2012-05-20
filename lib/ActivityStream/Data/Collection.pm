@@ -25,20 +25,19 @@ sub upsert {
 }
 
 sub find_one {
-    my ( $self, $criteria) = @_;
-    return $self->get_collection->find_one( $criteria );
+    my ( $self, $criteria ) = @_;
+    return $self->get_collection->find_one($criteria);
 }
 
 sub find {
-    my ( $self, $criteria) = @_;
-    return $self->get_collection->find( $criteria );
+    my ( $self, $criteria ) = @_;
+    return $self->get_collection->find($criteria);
 }
 
 sub ensure_index {
-    my ( $self, @params) = @_;
-    return $self->get_collection->ensure_index( @params );
+    my ( $self, @params ) = @_;
+    return $self->get_collection->ensure_index(@params);
 }
-
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

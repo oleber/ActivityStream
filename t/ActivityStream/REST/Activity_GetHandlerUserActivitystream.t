@@ -34,9 +34,13 @@ Readonly my $USER_3_ID => "person:" . ActivityStream::Util::generate_id();
 #   prepare load of all persons
 my %person_object_for;
 foreach my $person_id ( @USERS, $USER_1_ID, $USER_2_ID, $USER_3_ID, $VIEWER_USER_ID ) {
-    my $user_request = $async_user_agent->create_request_person( { 'object_id' => $person_id, 'rid' => $RID } );
-    $async_user_agent->put_response_to( $user_request->as_string,
-        $async_user_agent->create_test_response_person( { 'first_name' => "first name $person_id", 'rid' => $RID } ),
+    my $user_request
+          = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
+    $async_user_agent->put_response_to(
+        $user_request->as_string,
+        ActivityStream::API::Object::Person->create_test_response(
+            { 'first_name' => "first name $person_id", 'rid' => $RID }
+        ),
     );
     my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $person_id } );
     $object_person->load( $environment, { 'rid' => $RID } );
@@ -124,11 +128,11 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
 
     my $url = request_for(
         $VIEWER_USER_ID,
-        'see_source_id'     => [ $USER_1_ID, $USER_2_ID ],
-        'ignore_source_id'  => [$USER_3_ID],
-        'ignore_activity'   => [ map         { $_->get_activity_id } @user_1_activities[ 0 .. 4 ] ],
-        'limit'             => 5,
-        'rid'               => $RID,
+        'see_source_id'    => [ $USER_1_ID, $USER_2_ID ],
+        'ignore_source_id' => [$USER_3_ID],
+        'ignore_activity'  => [ map         { $_->get_activity_id } @user_1_activities[ 0 .. 4 ] ],
+        'limit'            => 5,
+        'rid'              => $RID,
     );
 
     my @expected = map { $_->to_rest_response_struct } @user_1_activities[ 5 .. 9 ];
@@ -149,4 +153,4 @@ foreach my $activity ( @user_1_activities, @user_2_activities ) {
     $t->get_ok($url)->status_is(HTTP_OK)->json_content_is( { 'activities' => \@expected } );
 }
 
-done_testing();
+done_testing;

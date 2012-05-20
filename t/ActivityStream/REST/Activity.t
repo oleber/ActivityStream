@@ -9,6 +9,7 @@ use Mojo::JSON;
 use Storable qw(dclone);
 use Readonly;
 
+use ActivityStream::API::Object::Person;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
@@ -28,9 +29,13 @@ my $user_creator_3_id = "person:" . ActivityStream::Util::generate_id();
 my $user_creator_4_id = "person:" . ActivityStream::Util::generate_id();
 
 foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id, $user_creator_4_id ) {
-    my $user_request = $async_user_agent->create_request_person( { 'object_id' => $user_id, 'rid' => $RID } );
-    $async_user_agent->put_response_to( $user_request->as_string,
-        $async_user_agent->create_test_response_person( { 'first_name' => 'person ' . $user_id, 'rid' => $RID } ),
+    my $user_request
+          = ActivityStream::API::Object::Person->new( 'object_id' => $user_id )->create_request( { 'rid' => $RID } );
+    $async_user_agent->put_response_to(
+        $user_request->as_string,
+        ActivityStream::API::Object::Person->create_test_response(
+            { 'first_name' => 'person ' . $user_id, 'rid' => $RID }
+        ),
     );
 }
 
@@ -208,11 +213,13 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        push( @expected_likes,  ActivityStream::API::ActivityLike->new(
-            'like_id'       => $t->tx->res->json->{'like_id'},
-            'user_id'       => $user_creator_3_id,
-            'creation_time' => $t->tx->res->json->{'creation_time'},
-        ));
+        push(
+            @expected_likes,
+            ActivityStream::API::ActivityLike->new(
+                'like_id'       => $t->tx->res->json->{'like_id'},
+                'user_id'       => $user_creator_3_id,
+                'creation_time' => $t->tx->res->json->{'creation_time'},
+            ) );
         $expected_likes[-1]->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
@@ -229,11 +236,13 @@ my $t    = Test::Mojo->new('ActivityStream');
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
-        push( @expected_likes,  ActivityStream::API::ActivityLike->new(
-            'like_id'       => $t->tx->res->json->{'like_id'},
-            'user_id'       => $user_creator_4_id,
-            'creation_time' => $t->tx->res->json->{'creation_time'},
-        ));
+        push(
+            @expected_likes,
+            ActivityStream::API::ActivityLike->new(
+                'like_id'       => $t->tx->res->json->{'like_id'},
+                'user_id'       => $user_creator_4_id,
+                'creation_time' => $t->tx->res->json->{'creation_time'},
+            ) );
         $expected_likes[-1]->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
@@ -307,7 +316,8 @@ my $t    = Test::Mojo->new('ActivityStream');
         $t->delete_ok(
             sprintf(
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
-                $friendship_activity{'activity_id'}, $expected_likes[-1]->get_like_id,
+                $friendship_activity{'activity_id'},
+                $expected_likes[-1]->get_like_id,
                 $user_creator_4_id
             ) )->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'BAD_RID' } );
 
@@ -342,7 +352,8 @@ my $t    = Test::Mojo->new('ActivityStream');
         $t->delete_ok(
             sprintf(
                 '/rest/activitystream/activity/%s/like/%s?rid=%s',
-                $friendship_activity{'activity_id'}, $expected_likes[-1]->get_like_id,
+                $friendship_activity{'activity_id'},
+                $expected_likes[-1]->get_like_id,
                 $user_creator_3_id
             ),
             $json->encode( { 'rid' => $user_creator_3_id } ) )->status_is(HTTP_OK)->json_content_is( {} );
@@ -380,4 +391,4 @@ my $t    = Test::Mojo->new('ActivityStream');
     cmp_deeply( $activity->get_comments, [$activity_comment], );
 }
 
-done_testing();
+done_testing;
