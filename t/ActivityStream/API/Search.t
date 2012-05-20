@@ -122,8 +122,13 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
     {
         note('1 source');
         Readonly my $CONSUMER_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-        my $cursor = ActivityStream::API::Search->search( $environment,
-            { 'user' => sprintf( "person:%s", ActivityStream::Util::generate_id ), 'see_sources' => [$USER_1_ID] } );
+        my $cursor = ActivityStream::API::Search->search(
+            $environment,
+            {
+                'consumer_id'    => sprintf( "person:%s", ActivityStream::Util::generate_id ),
+                'see_source_ids' => [$USER_1_ID],
+            },
+        );
 
         foreach my $activity ( reverse @user_1_activities ) {
             cmp_deeply( $cursor->next_activity->to_db_struct, $activity->to_db_struct );
@@ -137,8 +142,8 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
         my $cursor = $PKG->search(
             $environment,
             {
-                'user'        => sprintf( "person:%s", ActivityStream::Util::generate_id ),
-                'see_sources' => [ $USER_2_ID,         $USER_3_ID ] } );
+                'consumer_id'    => sprintf( "person:%s", ActivityStream::Util::generate_id ),
+                'see_source_ids' => [ $USER_2_ID,         $USER_3_ID ], }, );
 
         foreach my $activity ( reverse( @user_3_activities, @user_2_activities ) ) {
             cmp_deeply( $cursor->next_activity->to_db_struct, $activity->to_db_struct );
@@ -158,7 +163,7 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
     my $cursor = ActivityStream::API::Search->search(
         $environment,
         ActivityStream::API::Search::Filter->new(
-            { 'user' => $CONSUMER_ID, 'see_sources' => [ $USER_1_ID, $USER_2_ID, $USER_3_ID, ] }
+            { 'consumer_id' => $CONSUMER_ID, 'see_source_ids' => [ $USER_1_ID, $USER_2_ID, $USER_3_ID, ] }
         ),
     );
     cmp_deeply( $cursor->next_activity, $activities_map{$USER_1_ID}{ $USERS[-1] } );
@@ -202,7 +207,7 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
 
     my $cursor
           = ActivityStream::API::Search->search( $environment,
-        ActivityStream::API::Search::Filter->new( { 'user' => $CONSUMER_ID, 'see_sources' => [@USERS] } ),
+        ActivityStream::API::Search::Filter->new( { 'consumer_id' => $CONSUMER_ID, 'see_source_ids' => [@USERS] } ),
           );
     cmp_deeply( $cursor->next_activity, $activities_map{$USER_1_ID}{ $USERS[-1] } );
     $environment->get_async_user_agent->load_all;
@@ -251,10 +256,12 @@ my $before_yesterday_day = ActivityStream::Util::get_day_of($BEFORE_YESTERDAY);
     cmp_deeply( [ $collection_consumer->find_consumers( { 'consumer_id' => $CONSUMER_ID } )->all ],
         [], 'Verify that is empty' );
 
-    my $cursor
-          = ActivityStream::API::Search->search( $environment,
-        ActivityStream::API::Search::Filter->new( { 'user' => $CONSUMER_ID, 'see_sources' => [ $USERS[0] ] } ),
-          );
+    my $cursor = ActivityStream::API::Search->search(
+        $environment,
+        ActivityStream::API::Search::Filter->new(
+            { 'consumer_id' => $CONSUMER_ID, 'see_source_ids' => [ $USERS[0] ] }
+        ),
+    );
 
     my @expected_consumer_rows;
 

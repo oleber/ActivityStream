@@ -6,19 +6,19 @@ use MooseX::FollowPBP;
 
 use Carp;
 
-has 'user' => (
+has 'consumer_id' => (
     'is'       => 'rw',
     'isa'      => 'Str',
     'required' => 1,
 );
 
-has 'see_sources' => (
+has 'see_source_ids' => (
     'is'       => 'rw',
     'isa'      => 'ArrayRef[Str]',
     'required' => 1,
 );
 
-has 'ignore_sources' => (
+has 'ignore_source_ids' => (
     'is'       => 'rw',
     'isa'      => 'ArrayRef[Str]',
     'default' => sub { [] },

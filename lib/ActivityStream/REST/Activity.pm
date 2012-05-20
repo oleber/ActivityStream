@@ -91,18 +91,18 @@ sub get_handler_user_activitystream {
     my $self = shift;
 
     my $user_id           = $self->param('user_id');
-    my @see_sources       = $self->param('see_sources');
-    my @ignore_sources    = $self->param('ignore_sources');
-    my @ignore_activities = $self->param('ignore_activities');
+    my @see_source_ids    = $self->param('see_source_id');
+    my @ignore_source_ids = $self->param('ignore_source_id');
+    my @ignore_activities = $self->param('ignore_activity');
     my $limit             = $self->param('limit');
     my $rid               = $self->param('rid');
 
     my $environment = ActivityStream::Environment->new;
 
     my $filter = ActivityStream::API::Search::Filter->new( {
-            'user'              => $user_id,
-            'see_sources'       => \@see_sources,
-            'ignore_sources'    => \@ignore_sources,
+            'consumer_id'       => $user_id,
+            'see_source_ids'    => \@see_source_ids,
+            'ignore_source_ids' => \@ignore_source_ids,
             'ignore_activities' => \@ignore_activities,
             'limit'             => ( $limit // 25 ),
     } );

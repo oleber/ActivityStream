@@ -440,7 +440,7 @@ sub preload_filter_pass {
     return if any { $self->get_activity_id eq $_ } @{ $filter->get_ignore_activities };
 
     foreach my $source ( $self->get_sources ) {
-        return if any { $source eq $_ } @{ $filter->get_ignore_sources };
+        return if any { $source eq $_ } @{ $filter->get_ignore_source_ids };
     }
 
     return 1;

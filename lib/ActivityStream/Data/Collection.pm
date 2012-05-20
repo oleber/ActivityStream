@@ -34,6 +34,12 @@ sub find {
     return $self->get_collection->find( $criteria );
 }
 
+sub ensure_index {
+    my ( $self, @params) = @_;
+    return $self->get_collection->ensure_index( @params );
+}
+
+
 __PACKAGE__->meta->make_immutable;
 no Moose;
 
