@@ -139,7 +139,7 @@ sub post_handler_user_activity_like {
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
 
     if ( defined $activity ) {
-        my $like = $activity->save_like( $environment, { 'user_id' => $user_id } );
+        my $like = $activity->save_liker( $environment, { 'user_id' => $user_id } );
         return $self->render_json( { 'like_id' => $like->get_like_id, 'creation_time' => $like->get_creation_time } );
     } else {
         return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );

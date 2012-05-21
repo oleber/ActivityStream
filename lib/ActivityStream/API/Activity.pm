@@ -138,21 +138,6 @@ sub save_in_db {
     return $self;
 } ## end sub save_in_db
 
-sub save_visibility {
-    my ( $self, $environment, $visibility ) = @_;
-
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
-
-    $collection_activity->upsert_activity(
-        { 'activity_id' => $self->get_activity_id },
-        { '$set'        => { 'visibility' => $visibility } },
-    );
-
-    $self->set_visibility($visibility);
-
-    return;
-}
-
 sub to_rest_response_struct {
     my ($self) = @_;
 
@@ -341,7 +326,22 @@ sub target_loaded_successfully {
     return $self->get_actor->get_loaded_successfully;
 }
 
-sub save_like {
+sub save_visibility {
+    my ( $self, $environment, $visibility ) = @_;
+
+    my $collection_activity = $environment->get_collection_factory->collection_activity;
+
+    $collection_activity->upsert_activity(
+        { 'activity_id' => $self->get_activity_id },
+        { '$set'        => { 'visibility' => $visibility } },
+    );
+
+    $self->set_visibility($visibility);
+
+    return;
+}
+
+sub save_liker {
     my ( $self, $environment, $param ) = @_;
 
     $self->set_loaded_successfully(undef);
@@ -360,7 +360,7 @@ sub save_like {
     );
 
     return $activity_like;
-} ## end sub save_like
+} ## end sub save_liker
 
 sub delete_liker {
     my ( $self, $environment, $param ) = @_;
@@ -518,5 +518,123 @@ A list of C<ActivityStream::API::ActivityLike> describing the likers of the acti
 =head2 C<comments>
 
 A list of C<ActivityStream::API::ActivityComment> describing the comments of the activity.
+
+
+
+
+=head1 METHODS
+
+=head2 C<is_likeable>
+
+Mark the Activity as likeable, if it returns a false value C<save_liker> will die.
+
+=head2 C<is_commentable>
+
+Mark the Activity as commentable, if it returns a false value C<save_comment> will die.
+
+=head2 C<is_recomendable>
+
+Mark the Activity as recomendable, doing nothing for now TODO.
+
+=head2 C<to_db_struct>
+
+Creates the structure that will end on the Database. It's usefull for test and will be called from save_in_db.
+
+=head2 C<from_db_struct>
+
+Creates the Activity from the data in the DB.
+
+=head2 C<get_sources>
+
+Get the Sources where this activity shall be created, it will default to the actor object_id.
+
+=head2 C<save_visibility>
+
+Changes in the object and saves in the DB the visibility of the Activity.
+
+=head2 C<save_liker>
+
+Changes in the object and saves in the DB a new liker of the Activity.
+
+=head2 C<delete_liker>
+
+Changes in the object and deletes in the DB a liker of the Activity.
+
+=head2 C<save_comment>
+
+Changes in the object and saves in the DB a new comment of the Activity.
+
+=head2 C<delete_comment>
+
+Changes in the object and deletes in the DB a comment of the Activity.
+
+=head2 C<save_in_db>
+
+Save the return of C<to_db_struct> to the Activity Collection and upserts a link for each source from C<get_sources>.
+
+=head2 C<prepare_load_actor>
+
+Call C<prepare_load> on the actor, simplify the derivation.
+
+=head2 C<prepare_load_object>
+
+Call C<prepare_load> on the object, simplify the derivation.
+
+=head2 C<prepare_load_target>
+
+Call C<prepare_load> on the target, simplify the derivation.
+
+=head2 C<prepare_load_comments>
+
+Call C<prepare_load> on the comments, simplify the derivation.
+
+=head2 C<prepare_load_likers>
+
+Call C<prepare_load> on the likers, simplify the derivation.
+
+=head2 C<prepare_load>
+
+Prepare the load of each component of the Activity.
+
+=head2 C<load>
+
+C<prepare_load> the Activity and loads all the information.
+
+=head2 C<actor_loaded_successfully>
+
+Check that the actor has loaded successfully.
+
+=head2 C<object_loaded_successfully>
+
+Check that the object has loaded successfully.
+
+=head2 C<target_loaded_successfully>
+
+Check that the target, if defined, has loaded successfully.
+
+=head2 C<has_fully_loaded_successfully>
+
+Check that the Activity and all his components has loaded successfully.
+
+=head2 C<to_rest_response_struct>
+
+Creates the structure that will return be return on the REST calls.
+
+=head2 C<from_rest_request_struct>
+
+Creates the Activity from the data passed via REST.
+
+=head2 C<get_type>
+
+If target is defined "<ACTOR_TYPE>:<VERB>:<OBJECT_TYPE>:<TARGET_TYPE>", otherwise "<ACTOR_TYPE>:<VERB>:<OBJECT_TYPE>". 
+It is used on the Activity Factory
+
+=head2 C<get_attribute_base_class>
+
+Gets the type of the actor, object or target via introspection
+
+=head2 C<preload_filter_pass>
+
+Allow the Activity to hide itself from a query.
 
 =cut

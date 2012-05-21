@@ -121,7 +121,7 @@ $obj->load( $environment, { 'rid' => $RID } );
             my $activity_in_db_before_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                 { 'activity_id' => $ACTIVITY_ID } );
 
-            dies_ok { $obj->save_like( $environment, { user_id => $USER_1_ID } ) };
+            dies_ok { $obj->save_liker( $environment, { user_id => $USER_1_ID } ) };
 
             my $activity_in_db_after_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
                 { 'activity_id' => $ACTIVITY_ID } );
@@ -151,7 +151,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('like a likeable activity');
 
-            my $like = $obj->save_like( $environment, { user_id => $USER_1_ID } );
+            my $like = $obj->save_liker( $environment, { user_id => $USER_1_ID } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_1_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
@@ -182,7 +182,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('second like a likeable activity');
 
-            my $like = $obj->save_like( $environment, { user_id => $USER_2_ID } );
+            my $like = $obj->save_liker( $environment, { user_id => $USER_2_ID } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_2_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
@@ -213,7 +213,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('third like a likeable activity');
 
-            my $like = $obj->save_like( $environment, { user_id => $USER_3_ID } );
+            my $like = $obj->save_liker( $environment, { user_id => $USER_3_ID } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_3_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
