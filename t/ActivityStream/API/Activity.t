@@ -103,8 +103,17 @@ foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
 
     {
         note('to_rest_response_struct fail without prepare_load overwritten and loaded_successfully set');
+        $obj->set_loaded_successfully(0);
         $obj->load( $environment, { 'rid' => $RID } );
         throws_ok( sub { $obj->to_rest_response_struct }, qr/^Activity '$ACTIVITY_ID' didn't load correctly/ );
+    }
+
+    {
+        note('the load and internaly the prepare_load defaults the loaded_successfully to a true value');
+        $obj->set_loaded_successfully(undef);
+        $obj->load( $environment, { 'rid' => $RID } );
+        lives_ok( sub { $obj->to_rest_response_struct } );
+        ok( $obj->get_loaded_successfully );
     }
 
     {

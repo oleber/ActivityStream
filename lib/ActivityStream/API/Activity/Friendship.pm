@@ -19,15 +19,6 @@ sub get_sources {
     return ( $self->get_actor->get_object_id, $self->get_object->get_object_id );
 }
 
-sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
-
-    $self->SUPER::prepare_load( $environment, $args );
-    $self->set_loaded_successfully(1);
-
-    return;
-}
-
 __PACKAGE__->meta->make_immutable;
 no Moose;
 

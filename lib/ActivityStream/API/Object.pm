@@ -59,6 +59,11 @@ sub get_type {
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
+
+    if ( not defined $self->get_loaded_successfully ) {
+        $self->set_loaded_successfully(1);
+    }
+
     return;
 }
 

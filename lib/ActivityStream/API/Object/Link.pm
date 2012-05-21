@@ -59,6 +59,11 @@ sub to_rest_response_struct {
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
+
+    $self->set_loaded_successfully(0);
+
+    $self->SUPER::prepare_load( $environment, $args );
+
     my $async_user_agent = $environment->get_async_user_agent;
     $async_user_agent->add(
         $self->create_request($args),

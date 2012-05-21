@@ -15,15 +15,6 @@ sub is_likeable     { return 1 }
 sub is_commentable  { return 1 }
 sub is_recomendable { return 1 }
 
-sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
-
-    $self->SUPER::prepare_load( $environment, $args );
-    $self->set_loaded_successfully(1);
-
-    return;
-}
-
 __PACKAGE__->meta->make_immutable;
 no Moose;
 

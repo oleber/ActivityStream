@@ -236,6 +236,10 @@ sub get_attribute_base_class {
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
 
+    if ( not defined $self->get_loaded_successfully ) {
+        $self->set_loaded_successfully(1);
+    }
+
     $self->prepare_load_comments( $environment, $args );
     $self->prepare_load_likers( $environment, $args );
 
@@ -464,15 +468,6 @@ ActivityStream::API::Activity - Base class of all the Activities
   has '+actor'  => ( 'isa' => 'ActivityStream::API::Object::Person' );
   has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^child$/} ) );
   has '+object' => ( 'isa' => 'ActivityStream::API::Object::Child' );
-
-  sub prepare_load {
-      my ( $self, $environment, $args ) = @_;
-
-      $self->SUPER::prepare_load( $environment, $args );
-      $self->set_loaded_successfully(1);
-
-      return;
-  }
 
   __PACKAGE__->meta->make_immutable;
   no Moose;
