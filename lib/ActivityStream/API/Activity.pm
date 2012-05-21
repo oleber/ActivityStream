@@ -54,11 +54,6 @@ has 'visibility' => (
     'default' => 1
 );
 
-has 'loaded_successfully' => (
-    'is'  => 'rw',
-    'isa' => 'Bool',
-);
-
 has 'likers' => (
     'is'      => 'rw',
     'isa'     => 'ArrayRef[ActivityStream::API::ActivityLike]',
@@ -452,6 +447,81 @@ no Moose;
 1;
 
 =head1 NAME
+
 ActivityStream::API::Activity - Base class of all the Activities
 
 =head1 SYNOPSIS
+
+  package Activity::Child;
+  use Moose;
+  use Moose::Util::TypeConstraints;
+
+  use ActivityStream::API::Object::Person;
+  use ActivityStream::API::Object::Child;
+
+  extends 'ActivityStream::API::Activity';
+
+  has '+actor'  => ( 'isa' => 'ActivityStream::API::Object::Person' );
+  has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^child$/} ) );
+  has '+object' => ( 'isa' => 'ActivityStream::API::Object::Child' );
+
+  sub prepare_load {
+      my ( $self, $environment, $args ) = @_;
+
+      $self->SUPER::prepare_load( $environment, $args );
+      $self->set_loaded_successfully(1);
+
+      return;
+  }
+
+  __PACKAGE__->meta->make_immutable;
+  no Moose;
+
+=head1 DESCRIPTION
+
+Base class of all the Activities. The idea is to do most of the code on this class and simplify as most as possible the
+Child class. The above class is all you nead to create a new Activity.
+
+=head1 ATTRIBUTES
+
+=head2 C<activity_id>
+
+Identifier of the Activity, defaults to C<"activity:<20 LETTERS HOPEFULLY UNIQUE IDENTIFIERE<gt>">.
+
+=head2 C<creation_time>
+
+Time of the Activity Creation, defaults to C<time()>.
+
+=head2 C<actor>
+
+The entity making the activity, a child class of C<ActivityStream::API::Object>.
+
+=head2 C<verb>
+
+A single word String that identifies the type of activity.
+
+=head2 C<object>
+
+The entity over which the activity was maid, a child class of C<ActivityStream::API::Object>.
+
+=head2 C<target>
+
+The entity over which the activity was maid, a child class of C<ActivityStream::API::Object>.
+
+=head2 C<visibility>
+
+When set to a true value, the activity shall not be showed on queries.
+
+=head2 C<loaded_successfully>
+
+When set to a true value, the activity may be rendered otherwise it shall die.
+
+=head2 C<likers>
+
+A list of C<ActivityStream::API::ActivityLike> describing the likers of the activity.
+
+=head2 C<comments>
+
+A list of C<ActivityStream::API::ActivityComment> describing the comments of the activity.
+
+=cut

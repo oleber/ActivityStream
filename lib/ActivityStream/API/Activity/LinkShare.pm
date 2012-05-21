@@ -2,7 +2,6 @@ package ActivityStream::API::Activity::LinkShare;
 use Moose;
 use Moose::Util::TypeConstraints;
 
-use ActivityStream::API::Activity;
 use ActivityStream::API::Object::Person;
 use ActivityStream::API::Object::Link;
 
