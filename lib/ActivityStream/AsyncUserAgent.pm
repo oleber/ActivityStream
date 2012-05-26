@@ -51,29 +51,33 @@ sub _convert_response {
     return $mojo_message_reponse;
 }
 
-sub add {
+sub add_web_request {
     my ( $self, $request, $cb ) = @_;
 
-    if ( defined $request ) {
-        my $request_as_str = $request->as_string;
+    my $request_as_str = $request->as_string;
 
-        if ( defined( my $response = $self->get_response_to($request_as_str) ) ) {
-            $self->add( undef, sub { $cb->( $self, $self->_convert_response($response) ) } );
-        } else {
-            if ( not exists $self->get_request_tasks->{$request_as_str} ) {
-                $self->_get_async->add($request);
-            }
-            push( @{ $self->get_request_tasks->{$request_as_str} }, $cb );
-        }
+    if ( defined( my $response = $self->get_response_to($request_as_str) ) ) {
+        $self->add_action( sub { $cb->( $self, $self->_convert_response($response) ) } );
     } else {
-        push( @{ $self->get_no_request_tasks }, $cb );
+        if ( not exists $self->get_request_tasks->{$request_as_str} ) {
+            $self->_get_async->add($request);
+        }
+        push( @{ $self->get_request_tasks->{$request_as_str} }, $cb );
     }
 
     return;
-} ## end sub add
+}
+
+sub add_action {
+    my ( $self, $cb ) = @_;
+
+    push( @{ $self->get_no_request_tasks }, $cb );
+
+    return;
+}
 
 sub load_all {
-    my ($self) = @_;
+    my ( $self, $cb ) = @_;
 
     my $async = $self->_get_async;
 
@@ -89,6 +93,10 @@ sub load_all {
             my $cb = shift @{ $self->get_no_request_tasks };
             $cb->($self);
         }
+    }
+
+    if ($cb) {
+        $cb->();
     }
 
     return;

@@ -15,6 +15,10 @@ Readonly my @PACKAGE_FOR => (
     [ qr/person:share:link/        => 'ActivityStream::API::Activity::LinkShare' ],
 );
 
+sub package_for {
+    return @PACKAGE_FOR;
+}
+
 sub _structure_class {
     my ( $self, $data ) = @_;
 
@@ -40,7 +44,7 @@ sub _structure_class {
 
     my $type = join( ':', @peaces );
 
-    foreach my $mapping (@PACKAGE_FOR) {
+    foreach my $mapping ( $self->package_for ) {
         return $mapping->[1] if $type =~ $mapping->[0];
     }
 
@@ -62,7 +66,7 @@ sub instance_from_db {
     if ( defined $db_activity ) {
         my $pkg = $self->_structure_class($db_activity);
         confess Dumper $db_activity if not defined $pkg;
-        $pkg->from_db_struct($db_activity);
+        return $pkg->from_db_struct($db_activity);
     } else {
         die ActivityStream::X::ActivityNotFound->new;    #TODO: MAKE IT AN OBJECT
     }

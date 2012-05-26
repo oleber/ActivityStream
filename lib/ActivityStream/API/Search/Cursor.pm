@@ -166,8 +166,7 @@ sub load_next_days_activity_ids {
 
         # update DB asynchronously
 
-        $self->get_environment->get_async_user_agent->add(
-            undef,
+        $self->get_environment->get_async_user_agent->add_action(
             sub {
                 while ( my ( $day, $data ) = each %updates ) {
                     $collection_consumer->upsert_consumer(

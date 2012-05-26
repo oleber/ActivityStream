@@ -33,7 +33,11 @@ has 'config' => (
     'is'      => 'ro',
     'isa'     => 'HashRef',
     'lazy'    => 1,
-    'default' => sub { return Mojo::JSON->new->decode( scalar( read_file( shift->get_config_filepath ) ) ) },
+    'default' => sub {
+        return Mojo::JSON->new->decode(
+            scalar( read_file( $ENV{'ACTIVITY_STREAM_CONFIG_PATH'} // shift->get_config_filepath ) )
+        );
+    },
 );
 
 has 'db_connecton' => (

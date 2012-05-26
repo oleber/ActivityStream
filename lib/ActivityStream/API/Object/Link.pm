@@ -65,7 +65,7 @@ sub prepare_load {
     $self->SUPER::prepare_load( $environment, $args );
 
     my $async_user_agent = $environment->get_async_user_agent;
-    $async_user_agent->add(
+    $async_user_agent->add_web_request(
         $self->create_request($args),
         sub {
             my ( undef, $response ) = @_;
