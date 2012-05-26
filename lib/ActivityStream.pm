@@ -60,6 +60,19 @@ sub startup {
 
     $r->post('/rest/activitystream/user/:user_id/comment/activity/:activity_id')
           ->to( 'namespace' => 'ActivityStream::REST::Activity', 'action' => 'post_handler_user_activity_comment' );
+
+    $r->get('/')
+        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'get_handler' );
+
+    $r->get('/web/startpage')
+        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'get_handler' );
+
+    $r->post('/web/startpage/share_status')
+        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_status' );
+
+    $r->post('/web/startpage/share_link')
+        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_link' );
+
 } ## end sub startup
 
 1;

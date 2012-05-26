@@ -1,0 +1,32 @@
+% layout 'default';
+<div id="startpage">
+    <div id="comunication-box" class="round-corner-10">
+        <script>
+            $(function() {
+                $( "#comunication-box_tabs" ).tabs();
+            });
+        </script>
+        <div id="comunication-box_tabs">
+            <ul>
+                <li><a href="#comunication-box_tabs-message">Message</a></li>
+                <li><a href="#comunication-box_tabs-link">Link</a></li>
+            </ul>
+            <div id="comunication-box_tabs-message">
+                <form name="input" action="/web/startpage/share_status" method="post">
+                    <textarea style="width:100%" name="text"></textarea>
+                    <input type="submit" value="Share" style="float: right;"/>
+                    <div style="clear: both" ></div>
+                </form>
+            </div>
+            <div id="comunication-box_tabs-link">
+                <form name="input" action="/web/startpage/share_link" method="post">
+                    <input style="width:100%" name="link" autocomplete="off"/>
+                    <textarea style="width:100%" name="text"></textarea>
+                    <input type="submit" value="Share" style="float: right;" />
+                    <div style="clear: both" ></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+

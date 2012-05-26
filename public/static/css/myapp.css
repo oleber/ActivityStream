@@ -1,0 +1,23 @@
+.round-corner-5 {
+	-moz-border-radius:     5px;
+    -webkit-border-radius:  5px;
+    border-radius:          5px; 
+    -khtml-border-radius:   5px;
+    padding-left:           3px;
+    padding-right:          3px;
+}
+
+.round-corner-10 {
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    border-radius: 10px; 
+    -khtml-border-radius: 10px;
+    padding-left:6px;
+    padding-right:6px;
+}
+
+#comunication-box {
+	width:80%;
+	margin-left:auto;
+	margin-right:auto;
+}

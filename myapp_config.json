@@ -1,0 +1,5 @@
+{ 
+    "db":               { "connection" : {} },
+    "entry_id_prefix"  : "dl45dfxvdfmckdmkdsjkvn",
+    "activity_factory" : "MiniApp::API::ActivityFactory"
+}

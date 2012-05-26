@@ -1,5 +1,16 @@
 <!DOCTYPE html>
 <html>
-  <head><title><%= title %></title></head>
-  <body><%= content %></body>
+    <head>
+        <title>pippo</title>
+
+        <link type="text/css" href="/static/css/reset.css" rel="Stylesheet" />
+        <link type="text/css" href="/static/css/custom-theme/jquery-ui-1.8.20.custom.css" rel="Stylesheet" />
+        <link type="text/css" href="/static/css/myapp.css" rel="Stylesheet" />
+
+        <script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
+        <script type="text/javascript" src="/static/js/jquery-ui-1.8.20.custom.min.js"></script>
+    </head>
+    <body>
+        <%= content %>
+    </body>
 </html>
