@@ -121,9 +121,12 @@ sub get_handler_user_activitystream {
         last if @activities >= $filter->get_limit;
     }
 
-    $environment->get_async_user_agent->load_all;
+    $environment->get_async_user_agent->load_all(
+        sub {
+            $self->render_json( { 'activities' => [ map { $_->to_rest_response_struct } @activities ] } );
+        } );
 
-    return $self->render_json( { 'activities' => [ map { $_->to_rest_response_struct } @activities ] } );
+    return;
 } ## end sub get_handler_user_activitystream
 
 sub post_handler_user_activity_like {
@@ -172,7 +175,6 @@ sub delete_handler_activity_like {
           if not any { $rid eq $_ } ( 'internal', $activity_like->get_user_id );
 
     $activity->delete_liker( $environment, { 'like_id' => $like_id } );
-
     return $self->render_json( {} );
 } ## end sub delete_handler_activity_like
 
