@@ -77,7 +77,7 @@ foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
     my $user_request
           = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
     $async_user_agent->put_response_to(
-        $user_request->as_string,
+        $user_request,
         ActivityStream::API::Object::Person->create_test_response(
             { 'first_name' => "first name $person_id", 'rid' => $RID }
         ),

@@ -101,7 +101,7 @@ foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
     my $user_request
           = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
     $async_user_agent->put_response_to(
-        $user_request->as_string,
+        $user_request,
         ActivityStream::API::Object::Person->create_test_response(
             { 'first_name' => "first name $person_id", 'rid' => $RID }
         ),
@@ -352,8 +352,8 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     my $user_2_request
           = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )->create_request( { 'rid' => $RID } );
-    my $previous_response = $async_user_agent->get_response_to( $user_2_request->as_string );
-    $async_user_agent->put_response_to( $user_2_request->as_string, HTTP::Response->new(403) );
+    my $previous_response = $async_user_agent->get_response_to( $user_2_request );
+    $async_user_agent->put_response_to( $user_2_request, HTTP::Response->new(403) );
 
     my $activity_in_db
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
@@ -380,7 +380,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         'Check $obj to_rest_response_struct'
     );
 
-    $async_user_agent->put_response_to( $user_2_request->as_string, $previous_response );
+    $async_user_agent->put_response_to( $user_2_request, $previous_response );
 }
 
 {

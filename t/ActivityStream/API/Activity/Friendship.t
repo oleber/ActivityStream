@@ -91,9 +91,9 @@ my $object_request = ActivityStream::API::Object::Person->new( 'object_id' => $P
     my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
     my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
 
-    $async_user_agent->put_response_to( $actor_request->as_string,
+    $async_user_agent->put_response_to( $actor_request,
         ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person a', 'rid' => $RID } ) );
-    $async_user_agent->put_response_to( $object_request->as_string,
+    $async_user_agent->put_response_to( $object_request,
         ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person b', 'rid' => $RID } ) );
 
     $activity->prepare_load( $environment, { 'rid' => $RID } );
@@ -126,9 +126,9 @@ my $object_request = ActivityStream::API::Object::Person->new( 'object_id' => $P
     my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
     my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
 
-    $async_user_agent->put_response_to( $actor_request->as_string, HTTP::Response->new(400) );
+    $async_user_agent->put_response_to( $actor_request, HTTP::Response->new(400) );
 
-    $async_user_agent->put_response_to( $object_request->as_string,
+    $async_user_agent->put_response_to( $object_request,
         ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person b', 'rid' => $RID } ) );
 
     $activity->prepare_load( $environment, { 'rid' => $RID } );
@@ -149,10 +149,10 @@ my $object_request = ActivityStream::API::Object::Person->new( 'object_id' => $P
     my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
     my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
 
-    $async_user_agent->put_response_to( $actor_request->as_string,
+    $async_user_agent->put_response_to( $actor_request,
         ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person a', 'rid' => $RID } ) );
 
-    $async_user_agent->put_response_to( $object_request->as_string, HTTP::Response->new(400), );
+    $async_user_agent->put_response_to( $object_request, HTTP::Response->new(400), );
 
     $activity->prepare_load( $environment, { 'rid' => $RID } );
     $person_actor->prepare_load( $environment, { 'rid' => $RID } );

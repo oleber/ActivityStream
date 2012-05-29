@@ -25,7 +25,7 @@ no Moose::Util::TypeConstraints;
 
 sub create_request {
     my ( $self, $data ) = @_;
-    return GET( sprintf( 'http://link/%s/%s', $self->get_object_id, $data->{'rid'} ) );
+    return sprintf( 'http://link/%s/%s', $self->get_object_id, $data->{'rid'} );
 }
 
 sub create_test_response {
@@ -65,7 +65,7 @@ sub prepare_load {
     $self->SUPER::prepare_load( $environment, $args );
 
     my $async_user_agent = $environment->get_async_user_agent;
-    $async_user_agent->add_web_request(
+    $async_user_agent->add_get_web_request(
         $self->create_request($args),
         sub {
             my ( undef, $response ) = @_;

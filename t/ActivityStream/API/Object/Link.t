@@ -32,7 +32,7 @@ Readonly my %DATA_RESPONSE => (
 my $environment      = ActivityStream::Environment->new;
 my $async_user_agent = $environment->get_async_user_agent;
 
-my $request_as_string = $PKG->new( 'object_id' => $LINK_ID )->create_request( { 'rid' => $RID } )->as_string;
+my $request_as_string = $PKG->new( 'object_id' => $LINK_ID )->create_request( { 'rid' => $RID } );
 
 {
     note('Check object_id');

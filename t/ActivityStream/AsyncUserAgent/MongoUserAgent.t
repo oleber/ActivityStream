@@ -90,7 +90,7 @@ use_ok $PKG;
 
             my $ua = $PKG->new( 'controller' => $c );
 
-            $ua->add_web_request( '/call', sub { $return = shift->res->json } );
+            $ua->add_get_web_request( '/call', sub { $return = shift->res->json } );
             $ua->load_all( sub { $c->render_json($return) } );
         },
     );
@@ -115,8 +115,8 @@ use_ok $PKG;
 
             my $ua = $PKG->new( 'controller' => $c );
 
-            $ua->add_web_request( '/call', sub { $return->{'call_1'} = shift->res->json; } );
-            $ua->add_web_request( '/call', sub { $return->{'call_2'} = shift->res->json; } );
+            $ua->add_get_web_request( '/call', sub { $return->{'call_1'} = shift->res->json; } );
+            $ua->add_get_web_request( '/call', sub { $return->{'call_2'} = shift->res->json; } );
 
             $ua->load_all( sub { $c->render_json($return); } );
         },
@@ -144,10 +144,10 @@ use_ok $PKG;
 
             my $ua = $PKG->new( 'controller' => $c );
 
-            $ua->add_web_request( '/call_1', sub { $return->{'call_1_1'} = shift->res->json; } );
-            $ua->add_web_request( '/call_1', sub { $return->{'call_1_2'} = shift->res->json; } );
-            $ua->add_web_request( '/call_2', sub { $return->{'call_2_1'} = shift->res->json; } );
-            $ua->add_web_request( '/call_2', sub { $return->{'call_2_2'} = shift->res->json; } );
+            $ua->add_get_web_request( '/call_1', sub { $return->{'call_1_1'} = shift->res->json; } );
+            $ua->add_get_web_request( '/call_1', sub { $return->{'call_1_2'} = shift->res->json; } );
+            $ua->add_get_web_request( '/call_2', sub { $return->{'call_2_1'} = shift->res->json; } );
+            $ua->add_get_web_request( '/call_2', sub { $return->{'call_2_2'} = shift->res->json; } );
 
             $ua->load_all( sub { $c->render_json($return); } );
         },

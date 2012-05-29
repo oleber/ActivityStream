@@ -34,9 +34,7 @@ Readonly my %DATA_RESPONSE => (
 my $environment      = ActivityStream::Environment->new;
 my $async_user_agent = $environment->get_async_user_agent;
 
-my $request_as_string
-      = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_ID )->create_request( \%DATA_REQUEST )
-      ->as_string;
+my $request_as_string = $PKG->new( 'object_id' => $PERSON_ID )->create_request( \%DATA_REQUEST );
 
 {
     note('Check object_id');

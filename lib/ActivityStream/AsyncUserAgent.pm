@@ -51,10 +51,10 @@ sub _convert_response {
     return $mojo_message_reponse;
 }
 
-sub add_web_request {
-    my ( $self, $request, $cb ) = @_;
+sub add_get_web_request {
+    my ( $self, $request_as_str, $cb ) = @_;
 
-    my $request_as_str = $request->as_string;
+    my $request = GET( $request_as_str );
 
     if ( defined( my $response = $self->get_response_to($request_as_str) ) ) {
         $self->add_action( sub { $cb->( $self, $self->_convert_response($response) ) } );

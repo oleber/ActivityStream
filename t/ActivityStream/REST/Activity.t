@@ -32,7 +32,7 @@ foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id
     my $user_request
           = ActivityStream::API::Object::Person->new( 'object_id' => $user_id )->create_request( { 'rid' => $RID } );
     $async_user_agent->put_response_to(
-        $user_request->as_string,
+        $user_request,
         ActivityStream::API::Object::Person->create_test_response(
             { 'first_name' => 'person ' . $user_id, 'rid' => $RID }
         ),

@@ -76,7 +76,7 @@ has 'cache' => (
     },
 );
 
-sub add_web_request {
+sub add_get_web_request {
     my ( $self, $request, $cb ) = @_;
 
     my $key = "GET $request";
@@ -110,7 +110,7 @@ sub add_web_request {
     }
 
     return;
-} ## end sub add_web_request
+} ## end sub add_get_web_request
 
 sub add_action {
     my ( $self, $cb ) = @_;
