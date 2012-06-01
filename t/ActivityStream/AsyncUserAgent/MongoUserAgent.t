@@ -44,7 +44,7 @@ use_ok $PKG;
     $t->app->routes->get('/test_call')->to(
         'cb' => sub {
             my $c = shift;
-            my $ua = $PKG->new( 'controller' => $c );
+            my $ua = $PKG->new( 'ua' => $c->ua );
             $ua->load_all( sub { $c->render_json( ['test_value'] ) } );
         },
     );
@@ -61,7 +61,7 @@ use_ok $PKG;
         'cb' => sub {
             my $c = shift;
 
-            my $ua = $PKG->new( 'controller' => $c );
+            my $ua = $PKG->new( 'ua' => $c->ua );
 
             my $return;
             $ua->add_action( sub { $return = ['test_value']; } );
@@ -88,7 +88,7 @@ use_ok $PKG;
 
             my $return;
 
-            my $ua = $PKG->new( 'controller' => $c );
+            my $ua = $PKG->new( 'ua' => $c->ua );
 
             $ua->add_get_web_request( '/call', sub { $return = shift->res->json } );
             $ua->load_all( sub { $c->render_json($return) } );
@@ -113,7 +113,7 @@ use_ok $PKG;
 
             my $return;
 
-            my $ua = $PKG->new( 'controller' => $c );
+            my $ua = $PKG->new( 'ua' => $c->ua );
 
             $ua->add_get_web_request( '/call', sub { $return->{'call_1'} = shift->res->json; } );
             $ua->add_get_web_request( '/call', sub { $return->{'call_2'} = shift->res->json; } );
@@ -142,7 +142,7 @@ use_ok $PKG;
 
             my $return;
 
-            my $ua = $PKG->new( 'controller' => $c );
+            my $ua = $PKG->new( 'ua' => $c->ua );
 
             $ua->add_get_web_request( '/call_1', sub { $return->{'call_1_1'} = shift->res->json; } );
             $ua->add_get_web_request( '/call_1', sub { $return->{'call_1_2'} = shift->res->json; } );

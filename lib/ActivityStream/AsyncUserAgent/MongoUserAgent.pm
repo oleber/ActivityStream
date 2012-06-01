@@ -11,19 +11,9 @@ use Mojo::Message::Response;
 use Mojolicious::Controller;
 use Try::Tiny;
 
-has 'controller' => (
-    is       => 'rw',
-    isa      => 'Mojolicious::Controller',
-    required => 1,
-);
-
-has 'useragent' => (
+has 'ua' => (
     is      => 'rw',
     isa     => 'Mojo::UserAgent',
-    lazy    => 1,
-    default => sub {
-        return Mojo::UserAgent->new;
-    },
 );
 
 has 'delay' => (
@@ -87,7 +77,10 @@ sub add_get_web_request {
 
         if ( not @{ $self->get_request_tasks->{$key} } ) {
             $self->get_delay->begin;
-            $self->get_controller->ua->get(
+
+            confess "not defined ua" if not defined $self->get_ua;
+
+            $self->get_ua->get(
                 $request => sub {
                     my ( $ua, $tx ) = @_;
 
@@ -138,6 +131,8 @@ sub load_all {
     if ( defined $cb ) {
         $self->set_finalize($cb);
     }
+
+    Mojo::IOLoop->start if not Mojo::IOLoop->is_running;
 
     return;
 }

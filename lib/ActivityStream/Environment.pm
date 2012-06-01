@@ -14,6 +14,7 @@ use MongoDB::Connection;
 use Readonly;
 
 use ActivityStream::AsyncUserAgent;
+use ActivityStream::AsyncUserAgent::MongoUserAgent;
 use ActivityStream::Data::CollectionFactory;
 
 Readonly my $CONFIG_FILEPATH =>
@@ -35,8 +36,7 @@ has 'config' => (
     'lazy'    => 1,
     'default' => sub {
         return Mojo::JSON->new->decode(
-            scalar( read_file( $ENV{'ACTIVITY_STREAM_CONFIG_PATH'} // shift->get_config_filepath ) )
-        );
+            scalar( read_file( $ENV{'ACTIVITY_STREAM_CONFIG_PATH'} // shift->get_config_filepath ) ) );
     },
 );
 
@@ -57,11 +57,31 @@ has 'collection_factory' => (
     },
 );
 
+has 'controller' => (
+    'is'  => 'ro',
+    'isa' => 'Mojolicious::Controller',
+);
+
+has 'ua' => (
+    is      => 'rw',
+    isa     => 'Mojo::UserAgent',
+    'lazy'    => 1,
+    'default' => sub {
+        my ($self) = @_;
+        return $self->get_controller->ua if defined $self->get_controller;
+        return;
+    },
+);
+
 has 'async_user_agent' => (
     'is'      => 'ro',
-    'isa'     => 'ActivityStream::AsyncUserAgent',
+    'isa'     => 'ActivityStream::AsyncUserAgent::MongoUserAgent',
     'lazy'    => 1,
-    'default' => sub { return ActivityStream::AsyncUserAgent->new },
+    'default' => sub {
+        my ($self) = @_;
+        return ActivityStream::AsyncUserAgent::MongoUserAgent->new( ua => $self->get_ua ) if defined $self->get_ua;
+        return;
+    },
 );
 
 1;

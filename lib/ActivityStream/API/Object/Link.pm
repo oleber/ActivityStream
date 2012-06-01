@@ -25,25 +25,23 @@ no Moose::Util::TypeConstraints;
 
 sub create_request {
     my ( $self, $data ) = @_;
-    return sprintf( 'http://link/%s/%s', $self->get_object_id, $data->{'rid'} );
+    my $url = sprintf( '/test/link/%s/%s', $self->get_object_id, $data->{'rid'} );
+    $url =~ s/:/__/g;
+    return $url;
 }
 
 sub create_test_response {
     my ( undef, $data ) = @_;
 
-    my $res = HTTP::Response->new;
-    $res->code(200);
-    $res->content(
-        Mojo::JSON->new->encode( {
+    return sub {
+        shift->render_json( {
                 'title'       => $data->{'title'}       // 'Link Title',
                 'description' => $data->{'description'} // 'Link Description',
                 'url'         => $data->{'url'}         // 'http://link/link_response',
                 'image_url'   => $data->{'image_url'}   // 'http://link/link_response/large_image',
             },
-        ),
-    );
-
-    return $res;
+        );
+    };
 }
 
 sub to_rest_response_struct {
@@ -64,14 +62,13 @@ sub prepare_load {
 
     $self->SUPER::prepare_load( $environment, $args );
 
-    my $async_user_agent = $environment->get_async_user_agent;
-    $async_user_agent->add_get_web_request(
+    $environment->get_async_user_agent->add_get_web_request(
         $self->create_request($args),
         sub {
-            my ( undef, $response ) = @_;
+            my ( $tx ) = @_;
 
-            if ( $response->is_status_class(200) ) {
-                my $json = $response->json;
+            if ( $tx->res->is_status_class(200) ) {
+                my $json = $tx->res->json;
 
                 foreach my $field ( keys %FIELDS ) {
                     my $setter = "set_$field";

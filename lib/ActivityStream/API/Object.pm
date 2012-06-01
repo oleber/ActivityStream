@@ -4,6 +4,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use Carp;
+use Data::Dumper;
 
 has 'object_id' => (
     'is'       => 'rw',
@@ -70,8 +71,15 @@ sub prepare_load {
 sub load {
     my ( $self, $environment, $args ) = @_;
 
+    local $environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent::MongoUserAgent->new(
+        ua    => $environment->get_async_user_agent->get_ua,
+        cache => $environment->get_async_user_agent->get_cache
+    );
+
     $self->prepare_load( $environment, $args );
-    return $environment->get_async_user_agent->load_all;
+    $environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
+
+    return;
 }
 
 __PACKAGE__->meta->make_immutable;

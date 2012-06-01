@@ -56,13 +56,15 @@ sub add_get_web_request {
 
     my $request = GET( $request_as_str );
 
-    if ( defined( my $response = $self->get_response_to($request_as_str) ) ) {
+    my $key = "GET $request_as_str";
+
+    if ( defined( my $response = $self->get_response_to($key) ) ) {
         $self->add_action( sub { $cb->( $self, $self->_convert_response($response) ) } );
     } else {
-        if ( not exists $self->get_request_tasks->{$request_as_str} ) {
+        if ( not exists $self->get_request_tasks->{$key} ) {
             $self->_get_async->add($request);
         }
-        push( @{ $self->get_request_tasks->{$request_as_str} }, $cb );
+        push( @{ $self->get_request_tasks->{$key} }, $cb );
     }
 
     return;

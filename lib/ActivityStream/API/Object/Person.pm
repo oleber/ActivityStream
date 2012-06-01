@@ -28,17 +28,16 @@ no Moose::Util::TypeConstraints;
 
 sub create_request {
     my ( $self, $data ) = @_;
-
-    return sprintf( 'http://person/%s/%s', $self->get_object_id, $data->{'rid'} );
+    my $url = sprintf( '/test/person/%s/%s', $self->get_object_id, $data->{'rid'} );
+    $url =~ s/:/__/g;
+    return $url;
 }
 
 sub create_test_response {
     my ( undef, $data ) = @_;
 
-    my $res = HTTP::Response->new;
-    $res->code(200);
-    $res->content(
-        Mojo::JSON->new->encode( {
+    return sub {
+        shift->render_json( {
                 first_name  => $data->{'first_name'}  // 'Helena',
                 last_name   => $data->{'last_name'}   // 'Ferrua',
                 profile_url => $data->{'profile_url'} // 'http://profile/helena_ferrua',
@@ -46,14 +45,13 @@ sub create_test_response {
                 small_image => $data->{'small_image'} // 'http://profile/helena_ferrua/small_image',
                 company     => $data->{'company'}     // 'OLEBER AG',
             },
-        ),
-    );
-
-    return $res;
+        );
+    };
 }
 
 sub to_rest_response_struct {
     my ($self) = @_;
+
     my $data = $self->SUPER::to_rest_response_struct;
     foreach my $field ( keys %FIELDS ) {
         my $getter = "get_$field";
@@ -69,14 +67,13 @@ sub prepare_load {
 
     $self->SUPER::prepare_load( $environment, $args );
 
-    my $async_user_agent = $environment->get_async_user_agent;
-    $async_user_agent->add_get_web_request(
+    $environment->get_async_user_agent->add_get_web_request(
         $self->create_request($args),
         sub {
-            my ( undef, $response ) = @_;
+            my ( $tx ) = @_;
 
-            if ( $response->is_status_class(200) ) {
-                my $json = $response->json;
+            if ( $tx->res->is_status_class(200) ) {
+                my $json = $tx->res->json;
 
                 foreach my $field ( keys %FIELDS ) {
                     my $setter = "set_$field";

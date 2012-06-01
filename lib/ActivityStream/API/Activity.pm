@@ -292,8 +292,15 @@ sub prepare_load_likers {
 sub load {
     my ( $self, $environment, $args ) = @_;
 
+    local $environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent::MongoUserAgent->new(
+        ua    => $environment->get_async_user_agent->get_ua,
+        cache => $environment->get_async_user_agent->get_cache
+    );
+
     $self->prepare_load( $environment, $args );
-    return $environment->get_async_user_agent->load_all;
+    $environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
+
+    return;
 }
 
 sub has_fully_loaded_successfully {
