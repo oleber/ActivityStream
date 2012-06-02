@@ -267,9 +267,10 @@ sub prepare_load_comments {
     my $max_comments = $args->{'max_comments'};
 
     $max_comments ||= @{ $self->get_comments };    # default and 0 go to all
+    my @indexes = ( max( 0, @{ $self->get_comments } - $max_comments ) .. ( @{ $self->get_comments } - 1 ) );
 
-    foreach my $index ( max( 0, @{ $self->get_comments } - $max_comments ) .. ( @{ $self->get_comments } - 1 ) ) {
-        $self->get_comments->[$index]->prepare_load( $environment, $args );
+    foreach my $comment ( @{$self->get_comments}[@indexes] ) {
+        $comment->prepare_load( $environment, $args );
     }
 
     return;
@@ -281,9 +282,10 @@ sub prepare_load_likers {
     my $max_likers = $args->{'max_likers'};
 
     $max_likers ||= @{ $self->get_likers };    # default and 0 go to all
+    my @indexes = max( 0, @{ $self->get_likers } - $max_likers ) .. ( @{ $self->get_likers } - 1 );
 
-    foreach my $index ( max( 0, @{ $self->get_likers } - $max_likers ) .. ( @{ $self->get_likers } - 1 ) ) {
-        $self->get_likers->[$index]->prepare_load( $environment, $args );
+    foreach my $liker ( @{$self->get_likers}[@indexes] ) {
+        $liker->prepare_load( $environment, $args );
     }
 
     return;

@@ -21,7 +21,7 @@ sub post_handler_activity {
         'status' => HTTP_FORBIDDEN )
           if not defined $rid;
 
-    my $environment = ActivityStream::Environment->new;
+    my $environment = ActivityStream::Environment->new(controller => $self);
 
     my $activity = ActivityStream::API::ActivityFactory->instance_from_rest_request_struct( $self->tx->req->json );
 
@@ -50,7 +50,7 @@ sub delete_handler_activity {
         'status' => HTTP_FORBIDDEN )
           if not defined $rid;
 
-    my $environment = ActivityStream::Environment->new;
+    my $environment = ActivityStream::Environment->new(controller => $self);
 
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
@@ -74,14 +74,19 @@ sub get_handler_activity {
     my $activity_id = $self->param('activity_id');
     my $rid         = $self->param('rid');
 
-    my $environment = ActivityStream::Environment->new;
+    my $environment = ActivityStream::Environment->new(controller => $self);
 
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
 
     if ( defined($activity) and $activity->get_visibility ) {
-        $activity->load( $environment, { 'rid' => $rid } );
-        return $self->render_json( $activity->to_rest_response_struct );
+        $activity->prepare_load( $environment, { 'rid' => $rid } );
+
+        $environment->get_async_user_agent->load_all(
+            sub {
+                $self->render_json( $activity->to_rest_response_struct );
+                #TODO: fail on activity load error
+            } );
     } else {
         return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
     }
@@ -99,7 +104,7 @@ sub get_handler_user_activitystream {
     my $limit = $self->param('limit');
     my $rid   = $self->param('rid');
 
-    my $environment = ActivityStream::Environment->new;
+    my $environment = ActivityStream::Environment->new(controller => $self);
 
     my $filter = ActivityStream::API::Search::Filter->new( {
             'consumer_id'       => $user_id,
@@ -136,7 +141,7 @@ sub post_handler_user_activity_like {
     my $user_id     = $self->param('user_id');
     my $rid         = $self->param('rid');
 
-    my $environment = ActivityStream::Environment->new;
+    my $environment = ActivityStream::Environment->new(controller => $self);
 
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
@@ -160,7 +165,7 @@ sub delete_handler_activity_like {
         'status' => HTTP_FORBIDDEN )
           if not defined $rid;
 
-    my $environment = ActivityStream::Environment->new;
+    my $environment = ActivityStream::Environment->new(controller => $self);
 
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
@@ -185,7 +190,7 @@ sub post_handler_user_activity_comment {
     my $user_id     = $self->param('user_id');
     my $body        = $self->req->json->{'body'};
     my $rid         = $self->param('rid');
-    my $environment = ActivityStream::Environment->new;
+    my $environment = ActivityStream::Environment->new(controller => $self);
     my $activity
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $activity_id } );
 

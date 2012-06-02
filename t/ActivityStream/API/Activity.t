@@ -12,7 +12,8 @@ use ActivityStream::API::ActivityFactory;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
-Readonly my $environment => ActivityStream::Environment->new;
+my $t = Test::Mojo->new( Mojolicious->new );
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
 my $async_user_agent = $environment->get_async_user_agent;
 
 Readonly my $PKG => 'ActivityStream::API::Activity';
@@ -72,17 +73,6 @@ my %EXPECTED = (
 my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, );
 
 my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
-
-foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
-    my $user_request
-          = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
-    $async_user_agent->put_response_to(
-        $user_request,
-        ActivityStream::API::Object::Person->create_test_response(
-            { 'first_name' => "first name $person_id", 'rid' => $RID }
-        ),
-    );
-}
 
 {
     note('Simple activity');

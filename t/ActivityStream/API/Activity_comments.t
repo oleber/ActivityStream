@@ -12,7 +12,8 @@ use ActivityStream::API::ActivityFactory;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
-Readonly my $environment => ActivityStream::Environment->new;
+my $t = Test::Mojo->new( Mojolicious->new );
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
 my $async_user_agent = $environment->get_async_user_agent;
 
 Readonly my $PKG => 'ActivityStream::API::Activity';
@@ -102,21 +103,18 @@ sub test_db_status {
 } ## end sub test_db_status
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
-    my $user_request
-          = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
-    $async_user_agent->put_response_to(
-        $user_request,
-        ActivityStream::API::Object::Person->create_test_response(
-            { 'first_name' => "first name $person_id", 'rid' => $RID }
-        ),
-    );
+    my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
+    $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
+        'cb' => sub {
+            $person->create_test_response( { 'first_name' => "first name $person_id", 'rid' => $RID } )->(shift);
+        } );
 }
 
 $obj->save_in_db($environment);
 $obj->load( $environment, { 'rid' => $RID } );
 
 {
-    note('Save a comment');
+    note('Test a comment');
 
     {
         note('comment a not commentable activity');
@@ -354,8 +352,9 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     my $user_2_request
           = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )->create_request( { 'rid' => $RID } );
-    my $previous_response = $async_user_agent->get_response_to( $user_2_request );
-    $async_user_agent->put_response_to( $user_2_request, HTTP::Response->new(403) );
+    my $previous_response = $async_user_agent->get_response_to($user_2_request);
+    $async_user_agent->put_response_to( "GET $user_2_request",
+        Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 403 ) ) );
 
     my $activity_in_db
           = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
@@ -382,7 +381,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         'Check $obj to_rest_response_struct'
     );
 
-    $async_user_agent->put_response_to( $user_2_request, $previous_response );
+    $async_user_agent->put_response_to( "GET $user_2_request", $previous_response );
 }
 
 {

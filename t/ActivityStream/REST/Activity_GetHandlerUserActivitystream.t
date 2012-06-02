@@ -19,7 +19,9 @@ use_ok 'ActivityStream';
 
 Readonly my $RID => ActivityStream::Util::generate_id();
 
-my $environment         = ActivityStream::Environment->new;
+my $t = Test::Mojo->new('ActivityStream');
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
+
 my $collection_activity = $environment->get_collection_factory->collection_activity;
 my $async_user_agent    = $environment->get_async_user_agent;
 
@@ -34,20 +36,21 @@ Readonly my $USER_3_ID => "person:" . ActivityStream::Util::generate_id();
 #   prepare load of all persons
 my %person_object_for;
 foreach my $person_id ( @USERS, $USER_1_ID, $USER_2_ID, $USER_3_ID, $VIEWER_USER_ID ) {
-    my $user_request
-          = ActivityStream::API::Object::Person->new( 'object_id' => $person_id )->create_request( { 'rid' => $RID } );
-    $async_user_agent->put_response_to(
-        $user_request,
-        ActivityStream::API::Object::Person->create_test_response(
-            { 'first_name' => "first name $person_id", 'rid' => $RID }
-        ),
-    );
+
+    my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
+
+    $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
+        'cb' => sub {
+            $person->create_test_response( {
+                    'first_name' => "first name $person_id",
+                    'rid'        => $RID
+                } )->(shift);
+        } );
+
     my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $person_id } );
     $object_person->load( $environment, { 'rid' => $RID } );
     $person_object_for{$person_id} = $object_person;
 }
-
-my $t = Test::Mojo->new('ActivityStream');
 
 sub request_for {
     my ( $viewer_user_id, @args ) = @_;

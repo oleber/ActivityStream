@@ -101,7 +101,7 @@ sub test_db_status {
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
     my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
     $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )
-          ->to( 'cb' => sub { $person->create_test_response( { 'rid' => $RID } )->(shift) } );
+          ->to( 'cb' => sub { $person->create_test_response( { 'first_name' => "first name $person_id", 'rid' => $RID } )->(shift) } );
 }
 
 $obj->save_in_db($environment);

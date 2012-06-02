@@ -19,7 +19,9 @@ use_ok 'ActivityStream';
 
 Readonly my $RID => ActivityStream::Util::generate_id();
 
-my $environment         = ActivityStream::Environment->new;
+my $t = Test::Mojo->new('ActivityStream');
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
+
 my $collection_activity = $environment->get_collection_factory->collection_activity;
 my $async_user_agent    = $environment->get_async_user_agent;
 
@@ -29,14 +31,16 @@ my $user_creator_3_id = "person:" . ActivityStream::Util::generate_id();
 my $user_creator_4_id = "person:" . ActivityStream::Util::generate_id();
 
 foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id, $user_creator_4_id ) {
-    my $user_request
-          = ActivityStream::API::Object::Person->new( 'object_id' => $user_id )->create_request( { 'rid' => $RID } );
-    $async_user_agent->put_response_to(
-        $user_request,
-        ActivityStream::API::Object::Person->create_test_response(
-            { 'first_name' => 'person ' . $user_id, 'rid' => $RID }
-        ),
-    );
+    my $user = ActivityStream::API::Object::Person->new( 'object_id' => $user_id );
+
+    $t->app->routes->get( $user->create_request( { 'rid' => $RID } ) )
+          ->to(
+        'cb' => sub { 
+            $user->create_test_response( {
+                'first_name' => 'person ' . $user_id,
+                'rid' => $RID 
+            } )->(shift);
+        } );
 }
 
 Readonly my %FRIENDSHIP_ACTIVITY_TEMPLATE => (
@@ -48,7 +52,6 @@ Readonly my %FRIENDSHIP_ACTIVITY_TEMPLATE => (
 my %friendship_activity = %{ dclone \%FRIENDSHIP_ACTIVITY_TEMPLATE };
 
 my $json = Mojo::JSON->new;
-my $t    = Test::Mojo->new('ActivityStream');
 
 {
     {
@@ -220,6 +223,7 @@ my $t    = Test::Mojo->new('ActivityStream');
                 'user_id'       => $user_creator_3_id,
                 'creation_time' => $t->tx->res->json->{'creation_time'},
             ) );
+
         $expected_likes[-1]->load( $environment, { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );

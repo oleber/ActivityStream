@@ -46,13 +46,17 @@ Readonly my $RID => ActivityStream::Util::generate_id();
     cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );
 }
 
-my $environment      = ActivityStream::Environment->new;
+my $t = Test::Mojo->new( Mojolicious->new );
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
 my $async_user_agent = $environment->get_async_user_agent;
 
-my $actor_request = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_ACTOR_ID )
-      ->create_request( { 'rid' => $RID } );
-my $object_request = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_OBJECT_ID )
-      ->create_request( { 'rid' => $RID } );
+my $actor = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_ACTOR_ID );
+$t->app->routes->get( $actor->create_request( { 'rid' => $RID } ) )
+      ->to( 'cb' => sub { $actor->create_test_response( { 'rid' => $RID } )->(shift); } );
+
+my $object = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_OBJECT_ID );
+$t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
+      ->to( 'cb' => sub { $object->create_test_response( { 'rid' => $RID } )->(shift); } );
 
 {
     note('Test bad Creation');
@@ -86,21 +90,14 @@ my $object_request = ActivityStream::API::Object::Person->new( 'object_id' => $P
 {
     note("Normal Load");
 
-    my $activity = $PKG->from_rest_request_struct( \%DATA );
+    my $person_actor = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
+    $person_actor->load( $environment, { 'rid' => $RID } );
 
-    my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
     my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
+    $person_object->load( $environment, { 'rid' => $RID } );
 
-    $async_user_agent->put_response_to( $actor_request,
-        ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person a', 'rid' => $RID } ) );
-    $async_user_agent->put_response_to( $object_request,
-        ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person b', 'rid' => $RID } ) );
-
-    $activity->prepare_load( $environment, { 'rid' => $RID } );
-    $person_actor->prepare_load( $environment, { 'rid' => $RID } );
-    $person_object->prepare_load( $environment, { 'rid' => $RID } );
-
-    $async_user_agent->load_all;
+    my $activity = $PKG->from_rest_request_struct( \%DATA );
+    $activity->load( $environment, { 'rid' => $RID } );
 
     cmp_deeply(
         $activity->to_rest_response_struct,
@@ -121,21 +118,11 @@ my $object_request = ActivityStream::API::Object::Person->new( 'object_id' => $P
 {
     note("Can't Load Actor");
 
+    local $async_user_agent->{'cache'}{ "GET " . $actor->create_request( { 'rid' => $RID } ) }
+          = Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 400 ) );
+
     my $activity = $PKG->from_rest_request_struct( \%DATA );
-
-    my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
-    my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
-
-    $async_user_agent->put_response_to( $actor_request, HTTP::Response->new(400) );
-
-    $async_user_agent->put_response_to( $object_request,
-        ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person b', 'rid' => $RID } ) );
-
-    $activity->prepare_load( $environment, { 'rid' => $RID } );
-    $person_actor->prepare_load( $environment, { 'rid' => $RID } );
-    $person_object->prepare_load( $environment, { 'rid' => $RID } );
-
-    $async_user_agent->load_all;
+    $activity->load( $environment, { 'rid' => $RID } );
 
     dies_ok { $activity->to_rest_response_struct };
     ok( not $activity->has_fully_loaded_successfully );
@@ -144,21 +131,11 @@ my $object_request = ActivityStream::API::Object::Person->new( 'object_id' => $P
 {
     note("Can't Load Object");
 
+    local $async_user_agent->{'cache'}{ "GET " . $object->create_request( { 'rid' => $RID } ) }
+          = Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 400 ) );
+
     my $activity = $PKG->from_rest_request_struct( \%DATA );
-
-    my $person_actor  = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
-    my $person_object = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_OBJECT_ID } );
-
-    $async_user_agent->put_response_to( $actor_request,
-        ActivityStream::API::Object::Person->create_test_response( { 'first_name' => 'person a', 'rid' => $RID } ) );
-
-    $async_user_agent->put_response_to( $object_request, HTTP::Response->new(400), );
-
-    $activity->prepare_load( $environment, { 'rid' => $RID } );
-    $person_actor->prepare_load( $environment, { 'rid' => $RID } );
-    $person_object->prepare_load( $environment, { 'rid' => $RID } );
-
-    $async_user_agent->load_all;
+    $activity->load( $environment, { 'rid' => $RID } );
 
     dies_ok { $activity->to_rest_response_struct };
     ok( not $activity->has_fully_loaded_successfully );
