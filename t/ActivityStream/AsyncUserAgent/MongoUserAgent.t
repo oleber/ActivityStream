@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 use Mojo::Base -strict;
 
 use Test::Most;
@@ -33,6 +35,8 @@ use_ok $PKG;
                 };
             },
         );
+
+        return;
     }
 }
 

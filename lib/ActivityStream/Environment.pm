@@ -7,7 +7,7 @@ use MooseX::FollowPBP;
 
 use Cwd 'abs_path';
 use File::Basename 'dirname';
-use File::Slurp;
+use File::Slurp qw(read_file);
 use File::Spec;
 use Mojo::JSON;
 use MongoDB::Connection;

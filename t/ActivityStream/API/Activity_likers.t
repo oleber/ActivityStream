@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 use Mojo::Base -strict;
 
 use Test::Most;
@@ -37,6 +39,8 @@ use_ok($PKG);
         my ( $self, $environment, $args ) = @_;
         $self->SUPER::prepare_load( $environment, $args );
         $self->set_loaded_successfully(1);
+
+        return;
     }
 }
 
@@ -96,12 +100,13 @@ sub test_db_status {
         'Check $activity_in_db to_rest_response_struct'
     );
 
+    return;
 } ## end sub test_db_status
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
     my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
     $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )
-          ->to( 'cb' => sub { $person->create_test_response( { 'first_name' => "first name $person_id", 'rid' => $RID } )->(shift) } );
+          ->to( 'cb' => $person->create_test_response( { 'first_name' => "first name $person_id", 'rid' => $RID } ) );
 }
 
 $obj->save_in_db($environment);
@@ -274,8 +279,8 @@ $obj->load( $environment, { 'rid' => $RID } );
         delete $comment_1{'user'};
 
         local $expected_to_rest_response_struct{'likers'} = [
-            { %comment_0, 'load' => 'NOT_REQUESTED' },
-            { %comment_1, 'load' => 'NOT_REQUESTED' },
+            +{ %comment_0, 'load' => 'NOT_REQUESTED' },
+            +{ %comment_1, 'load' => 'NOT_REQUESTED' },
             $expected_to_rest_response_struct{'likers'}[2],
         ];
 
@@ -299,7 +304,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         delete $comment_0{'user'};
 
         local $expected_to_rest_response_struct{'likers'} = [
-            { %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'likers'}[1],
+            +{ %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'likers'}[1],
             $expected_to_rest_response_struct{'likers'}[2],
         ];
 
@@ -366,8 +371,8 @@ $obj->load( $environment, { 'rid' => $RID } );
     delete $liker_1{'user'};
 
     local $expected_to_rest_response_struct{'likers'} = [
-        { %liker_0, 'load' => 'NOT_REQUESTED' },
-        { %liker_1, 'load' => 'FAIL_LOAD' },
+        +{ %liker_0, 'load' => 'NOT_REQUESTED' },
+        +{ %liker_1, 'load' => 'FAIL_LOAD' },
         $expected_to_rest_response_struct{'likers'}[2],
     ];
 

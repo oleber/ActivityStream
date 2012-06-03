@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 use Mojo::Base -strict;
 
 use Test::Most;
@@ -54,7 +56,7 @@ my $request_as_string = $PKG->new( 'object_id' => $LINK_ID )->create_request( { 
 
     $t->app->routes->get($request_as_string)->to(
         'cb' => sub {
-            ActivityStream::API::Object::Link->create_test_response( { %DATA_RESPONSE, 'rid' => $RID } )->(shift);
+            ActivityStream::API::Object::Link->create_test_response( +{ %DATA_RESPONSE, 'rid' => $RID } )->(shift);
         },
     );
 
@@ -113,7 +115,7 @@ my $request_as_string = $PKG->new( 'object_id' => $LINK_ID )->create_request( { 
     my $t = Test::Mojo->new( Mojolicious->new );
 
     $t->app->routes->get($request_as_string)
-          ->to( 'cb' => sub { $PKG->create_test_response( { %DATA_RESPONSE, 'rid' => $RID } )->(shift); }, );
+          ->to( 'cb' => $PKG->create_test_response( +{ %DATA_RESPONSE, 'rid' => $RID } ) );
 
     my $environment = ActivityStream::Environment->new( ua => $t->ua );
 

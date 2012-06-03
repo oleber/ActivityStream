@@ -1,4 +1,7 @@
 package MiniApp::WEB::StartPage;
+use strict;
+use warnings;
+
 use Mojo::Base 'Mojolicious::Controller';
 
 use Carp;

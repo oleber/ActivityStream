@@ -1,14 +1,17 @@
 package ActivityStream::REST::Activity;
+use strict;
+use warnings;
+
 use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
 use HTTP::Status qw(:constants);
-use List::Util qw(min first);
+use List::Util qw(first);
 use List::MoreUtils qw(any);
-use Readonly;
 
 use ActivityStream::API::ActivityFactory;
 use ActivityStream::API::Search;
+use ActivityStream::API::Search::Filter;
 use ActivityStream::Environment;
 use ActivityStream::REST::Constants;
 
@@ -87,6 +90,7 @@ sub get_handler_activity {
                 $self->render_json( $activity->to_rest_response_struct );
                 #TODO: fail on activity load error
             } );
+        return;
     } else {
         return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
     }

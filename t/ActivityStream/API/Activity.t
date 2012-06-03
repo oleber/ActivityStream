@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 use Mojo::Base -strict;
 
 use Test::Most;
@@ -158,6 +160,7 @@ sub test_db_status {
         'Check $activity_in_db to_rest_response_struct'
     );
 
+    return;
 } ## end sub test_db_status
 
 done_testing;

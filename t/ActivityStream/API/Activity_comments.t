@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 use Mojo::Base -strict;
 
 use Test::Most;
@@ -41,6 +43,7 @@ use_ok($PKG);
         my ( $self, $environment, $args ) = @_;
         $self->SUPER::prepare_load( $environment, $args );
         $self->set_loaded_successfully(1);
+        return;
     }
 }
 
@@ -100,6 +103,7 @@ sub test_db_status {
         'Check $activity_in_db to_rest_response_struct'
     );
 
+    return;
 } ## end sub test_db_status
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
@@ -278,8 +282,8 @@ $obj->load( $environment, { 'rid' => $RID } );
         delete $comment_1{'user'};
 
         local $expected_to_rest_response_struct{'comments'} = [
-            { %comment_0, 'load' => 'NOT_REQUESTED' },
-            { %comment_1, 'load' => 'NOT_REQUESTED' },
+            +{ %comment_0, 'load' => 'NOT_REQUESTED' },
+            +{ %comment_1, 'load' => 'NOT_REQUESTED' },
             $expected_to_rest_response_struct{'comments'}[2],
         ];
 
@@ -303,7 +307,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         delete $comment_0{'user'};
 
         local $expected_to_rest_response_struct{'comments'} = [
-            { %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'comments'}[1],
+            +{ %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'comments'}[1],
             $expected_to_rest_response_struct{'comments'}[2],
         ];
 
@@ -370,8 +374,8 @@ $obj->load( $environment, { 'rid' => $RID } );
     delete $comment_1{'user'};
 
     local $expected_to_rest_response_struct{'comments'} = [
-        { %comment_0, 'load' => 'NOT_REQUESTED' },
-        { %comment_1, 'load' => 'FAIL_LOAD' },
+        +{ %comment_0, 'load' => 'NOT_REQUESTED' },
+        +{ %comment_1, 'load' => 'FAIL_LOAD' },
         $expected_to_rest_response_struct{'comments'}[2],
     ];
 

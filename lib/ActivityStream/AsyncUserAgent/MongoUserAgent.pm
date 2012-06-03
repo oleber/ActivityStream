@@ -6,7 +6,6 @@ use Carp;
 use Data::Dumper;
 use HTTP::Async;
 
-#use HTTP::Request::Common;
 use Mojo::Message::Response;
 use Mojolicious::Controller;
 use Try::Tiny;
@@ -119,9 +118,7 @@ sub add_action {
             die $exception if defined $exception;
         },
     );
-
-    return;
-}
+    }
 
 sub load_all {
     my ( $self, $cb ) = @_;

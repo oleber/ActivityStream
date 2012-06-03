@@ -5,7 +5,6 @@ use MooseX::FollowPBP;
 
 use Data::Dumper;
 use Carp;
-use HTTP::Request::Common;
 use Readonly;
 
 extends 'ActivityStream::API::Object';

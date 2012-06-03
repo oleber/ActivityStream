@@ -1,4 +1,6 @@
 package ActivityStream;
+use strict;
+use warnings;
 use Mojo::Base 'Mojolicious';
 
 use HTTP::Status qw(:constants);
@@ -73,6 +75,7 @@ sub startup {
     $r->post('/web/startpage/share_link')
         ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_link' );
 
+    return;
 } ## end sub startup
 
 1;

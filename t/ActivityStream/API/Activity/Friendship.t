@@ -1,3 +1,5 @@
+#!/usr/bin/perl
+
 use Mojo::Base -strict;
 
 use Test::Most;
@@ -52,17 +54,17 @@ my $async_user_agent = $environment->get_async_user_agent;
 
 my $actor = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_ACTOR_ID );
 $t->app->routes->get( $actor->create_request( { 'rid' => $RID } ) )
-      ->to( 'cb' => sub { $actor->create_test_response( { 'rid' => $RID } )->(shift); } );
+      ->to( 'cb' => $actor->create_test_response( { 'rid' => $RID } ) );
 
 my $object = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_OBJECT_ID );
 $t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
-      ->to( 'cb' => sub { $object->create_test_response( { 'rid' => $RID } )->(shift); } );
+      ->to( 'cb' => $object->create_test_response( { 'rid' => $RID } ) );
 
 {
     note('Test bad Creation');
-    dies_ok { $PKG->from_rest_request_struct( { %DATA, 'actor'  => { 'object_id' => 'link:1' } } ) };
-    dies_ok { $PKG->from_rest_request_struct( { %DATA, 'verb'   => 'share' } ) };
-    dies_ok { $PKG->from_rest_request_struct( { %DATA, 'object' => { 'object_id' => 'link:1' } } ) };
+    dies_ok { $PKG->from_rest_request_struct( +{ %DATA, 'actor'  => { 'object_id' => 'link:1' } } ) };
+    dies_ok { $PKG->from_rest_request_struct( +{ %DATA, 'verb'   => 'share' } ) };
+    dies_ok { $PKG->from_rest_request_struct( +{ %DATA, 'object' => { 'object_id' => 'link:1' } } ) };
 }
 
 {

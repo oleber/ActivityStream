@@ -4,7 +4,6 @@ use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use Carp;
-use HTTP::Request::Common;
 use Readonly;
 
 extends 'ActivityStream::API::Object';
