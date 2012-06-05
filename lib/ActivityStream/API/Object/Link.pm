@@ -23,7 +23,7 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 no Moose::Util::TypeConstraints;
 
 sub create_request {
-    my ( $self, $data ) = @_;
+    my ( $self, $environment, $data ) = @_;
     my $url = sprintf( '/test/link/%s/%s', $self->get_object_id, $data->{'rid'} );
     $url =~ s/:/__/g;
     return $url;
@@ -62,7 +62,7 @@ sub prepare_load {
     $self->SUPER::prepare_load( $environment, $args );
 
     $environment->get_async_user_agent->add_get_web_request(
-        $self->create_request($args),
+        $self->create_request($environment, $args),
         sub {
             my ( $tx ) = @_;
 

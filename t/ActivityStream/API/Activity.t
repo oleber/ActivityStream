@@ -81,8 +81,7 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
     $expected_to_rest_response_struct{'activity_id'} = $expected_db_struct{'activity_id'} = $ACTIVITY_ID;
 
     $obj->save_in_db($environment);
-    my $activity_in_db
-          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID }, );
+    my $activity_in_db = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
     cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
     cmp_deeply( $activity_in_db->to_db_struct, $obj->to_db_struct );
@@ -140,7 +139,7 @@ sub test_db_status {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
 
     my $activity_in_db
-          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
+          = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
     cmp_deeply( $obj->to_db_struct,            \%expected_db_struct, 'Check $obj to_db_struct' );
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );

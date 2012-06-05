@@ -32,7 +32,8 @@ Readonly my %DATA_RESPONSE => (
     'image_url'   => 'http://link/link_response/large_image',
 );
 
-my $request_as_string = $PKG->new( 'object_id' => $LINK_ID )->create_request( { 'rid' => $RID } );
+my $request_as_string
+      = $PKG->new( 'object_id' => $LINK_ID )->create_request( ActivityStream::Environment->new, { 'rid' => $RID } );
 
 {
     note('Check object_id');

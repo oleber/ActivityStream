@@ -53,8 +53,9 @@ sub next_activity {
         # load already searched activites
         while ( @{ $self->get_next_activity_ids } ) {
             my $activity_id = shift @{ $self->get_next_activity_ids };
-            my $activity    = ActivityStream::API::ActivityFactory->instance_from_db( $self->get_environment,
-                { 'activity_id' => $activity_id } );
+
+            my $activity
+                  = $self->get_environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity_id } );
             return $activity if defined $activity;
         }
 
@@ -63,7 +64,7 @@ sub next_activity {
     }
 
     return;
-}
+} ## end sub next_activity
 
 sub _next_interval {
     my ($self) = @_;

@@ -11,8 +11,8 @@ use Mojolicious::Controller;
 use Try::Tiny;
 
 has 'ua' => (
-    is      => 'rw',
-    isa     => 'Mojo::UserAgent',
+    is  => 'rw',
+    isa => 'Mojo::UserAgent',
 );
 
 has 'delay' => (
@@ -75,9 +75,9 @@ sub add_get_web_request {
         $self->get_request_tasks->{$key} //= [];
 
         if ( not @{ $self->get_request_tasks->{$key} } ) {
-            $self->get_delay->begin;
-
             confess "not defined ua" if not defined $self->get_ua;
+
+            $self->get_delay->begin;
 
             $self->get_ua->get(
                 $request => sub {
@@ -94,7 +94,7 @@ sub add_get_web_request {
                     $self->get_delay->end;
                 },
             );
-        }
+        } ## end if ( not @{ $self->get_request_tasks...})
 
         push( @{ $self->get_request_tasks->{$key} }, $cb );
     } else {
@@ -103,6 +103,27 @@ sub add_get_web_request {
 
     return;
 } ## end sub add_get_web_request
+
+sub add_post_web_request {
+    my ( $self, $request, @args ) = @_;
+
+    my $cb = pop @args;
+
+    confess "No callback defined: " . ref($cb) if ref($cb) ne 'CODE';
+    confess "not defined ua" if not defined $self->get_ua;
+
+    $self->get_delay->begin;
+
+    $self->get_ua->post(
+        $request => @args, sub {
+            my ( $ua, $tx ) = @_;
+            $cb->( $tx );
+            $self->get_delay->end;
+        },
+    );
+
+    return;
+}
 
 sub add_action {
     my ( $self, $cb ) = @_;
@@ -118,7 +139,7 @@ sub add_action {
             die $exception if defined $exception;
         },
     );
-    }
+}
 
 sub load_all {
     my ( $self, $cb ) = @_;

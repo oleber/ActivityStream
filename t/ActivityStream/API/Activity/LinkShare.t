@@ -53,11 +53,11 @@ Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
 my $async_user_agent = $environment->get_async_user_agent;
 
 my $actor = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_ACTOR_ID );
-$t->app->routes->get( $actor->create_request( { 'rid' => $RID } ) )
+$t->app->routes->get( $actor->create_request( $environment, { 'rid' => $RID } ) )
       ->to( 'cb' => $actor->create_test_response( { 'rid' => $RID } ) );
 
 my $object = ActivityStream::API::Object::Link->new( 'object_id' => $LINK_OBJECT_ID );
-$t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
+$t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } ) )
       ->to( 'cb' => $object->create_test_response( { 'rid' => $RID } ) );
 
 {
@@ -83,7 +83,7 @@ $t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
     my $activity = $PKG->from_rest_request_struct( \%DATA );
     $activity->save_in_db($environment);
     cmp_deeply(
-        ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+        $environment->get_activity_factory->instance_from_db(
             { 'activity_id' => $activity->get_activity_id } )->to_db_struct,
         $activity->to_db_struct
     );
@@ -121,7 +121,7 @@ $t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
 {
     note("Can't Load Actor");
 
-    local $async_user_agent->{'cache'}{ "GET " . $actor->create_request( { 'rid' => $RID } ) }
+    local $async_user_agent->{'cache'}{ "GET " . $actor->create_request( $environment, { 'rid' => $RID } ) }
           = Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 400 ) );
 
     my $activity = $PKG->from_rest_request_struct( \%DATA );
@@ -134,7 +134,7 @@ $t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
 {
     note("Can't Load Object");
 
-    local $async_user_agent->{'cache'}{ "GET " . $object->create_request( { 'rid' => $RID } ) }
+    local $async_user_agent->{'cache'}{ "GET " . $object->create_request( $environment, { 'rid' => $RID } ) }
           = Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 400 ) );
 
     my $activity = $PKG->from_rest_request_struct( \%DATA );

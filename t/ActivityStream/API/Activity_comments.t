@@ -83,7 +83,7 @@ sub test_db_status {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
 
     my $activity_in_db
-          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
+          = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
     cmp_deeply( $obj->to_db_struct,            \%expected_db_struct, 'Check $obj to_db_struct' );
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
@@ -108,7 +108,7 @@ sub test_db_status {
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
     my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
-    $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
+    $t->app->routes->get( $person->create_request( $environment, { 'rid' => $RID } ) )->to(
         'cb' => sub {
             $person->create_test_response( { 'first_name' => "first name $person_id", 'rid' => $RID } )->(shift);
         } );
@@ -124,12 +124,12 @@ $obj->load( $environment, { 'rid' => $RID } );
         note('comment a not commentable activity');
 
         {
-            my $activity_in_db_before_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            my $activity_in_db_before_like = $environment->get_activity_factory->instance_from_db(
                 { 'activity_id' => $ACTIVITY_ID } );
 
             dies_ok { $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } ) };
 
-            my $activity_in_db_after_like = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+            my $activity_in_db_after_like = $environment->get_activity_factory->instance_from_db( 
                 { 'activity_id' => $ACTIVITY_ID } );
 
             cmp_deeply( $activity_in_db_before_like, $activity_in_db_after_like );
@@ -253,7 +253,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_comments = 0 show all');
 
-        my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -269,7 +269,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_comments = 1');
 
-        my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -297,7 +297,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_comments = 2');
 
-        my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -321,7 +321,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_comments = 3');
 
-        my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -337,7 +337,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_comments = 4');
 
-        my $activity_in_db = ActivityStream::API::ActivityFactory->instance_from_db( $environment,
+        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -355,13 +355,13 @@ $obj->load( $environment, { 'rid' => $RID } );
     note("Fail user load");
 
     my $user_2_request
-          = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )->create_request( { 'rid' => $RID } );
+          = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )->create_request( $environment, { 'rid' => $RID } );
     my $previous_response = $async_user_agent->get_response_to($user_2_request);
     $async_user_agent->put_response_to( "GET $user_2_request",
         Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 403 ) ) );
 
     my $activity_in_db
-          = ActivityStream::API::ActivityFactory->instance_from_db( $environment, { 'activity_id' => $ACTIVITY_ID } );
+          = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 

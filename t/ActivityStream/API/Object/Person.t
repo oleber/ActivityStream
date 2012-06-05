@@ -34,7 +34,8 @@ Readonly my %DATA_RESPONSE => (
     'company'     => 'PT AG',
 );
 
-my $request_as_string = $PKG->new( 'object_id' => $PERSON_ID )->create_request( \%DATA_REQUEST );
+my $request_as_string
+      = $PKG->new( 'object_id' => $PERSON_ID )->create_request( ActivityStream::Environment->new, \%DATA_REQUEST );
 
 {
     note('Check object_id');

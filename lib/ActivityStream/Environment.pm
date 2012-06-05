@@ -84,4 +84,15 @@ has 'async_user_agent' => (
     },
 );
 
+has 'activity_factory' => (
+    'is'      => 'ro',
+    'isa'     => 'ActivityStream::API::ActivityFactory',
+    'lazy'    => 1,
+    'default' => sub {
+        my ($self) = @_;
+        return ActivityStream::API::ActivityFactory->new( environment => $self );
+        return;
+    },
+);
+
 1;

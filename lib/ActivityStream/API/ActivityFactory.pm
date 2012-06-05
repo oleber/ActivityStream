@@ -15,11 +15,18 @@ Readonly my @PACKAGE_FOR => (
     [ qr/person:share:link/        => 'ActivityStream::API::Activity::LinkShare' ],
 );
 
+has 'environment' => (
+    'is'       => 'ro',
+    'isa'      => 'ActivityStream::Environment',
+    'weak_ref' => 1,
+    'required' => 1,
+);
+
 sub package_for {
     return @PACKAGE_FOR;
 }
 
-sub _structure_class {
+sub _type {
     my ( $self, $data ) = @_;
 
     my @peaces;
@@ -42,30 +49,48 @@ sub _structure_class {
         push( @peaces, $1 );
     }
 
-    my $type = join( ':', @peaces );
+    return join( ':', @peaces );
+} ## end sub _type
+
+sub _structure_class {
+    my ( $self, $data ) = @_;
+
+    my $type = $self->_type($data);
 
     foreach my $mapping ( $self->package_for ) {
         return $mapping->[1] if $type =~ $mapping->[0];
     }
 
     return;
-} ## end sub _structure_class
+}
 
 sub instance_from_rest_request_struct {
     my ( $self, $data ) = @_;
+
+    my $pkg = $self->_structure_class($data);
+
+    confess sprintf(
+        "Class not found for %s on %s with mapping %s",
+        $self->_type($data), Dumper($data), Dumper( [ $self->package_for ] ),
+    ) if not defined $pkg;
 
     return $self->_structure_class($data)->from_rest_request_struct($data);
 }
 
 sub instance_from_db {
-    my ( $self, $environment, $criteria ) = @_;
+    my ( $self, $criteria ) = @_;
 
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
+    my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
     my $db_activity         = $collection_activity->find_one_activity($criteria);
 
     if ( defined $db_activity ) {
         my $pkg = $self->_structure_class($db_activity);
-        confess Dumper $db_activity if not defined $pkg;
+
+        confess sprintf(
+            "Class not found for %s on %s with mapping %s",
+            $self->_type($db_activity), Dumper($db_activity), Dumper( [ $self->package_for ] ),
+        ) if not defined $pkg;
+
         return $pkg->from_db_struct($db_activity);
     } else {
         die ActivityStream::X::ActivityNotFound->new;    #TODO: MAKE IT AN OBJECT

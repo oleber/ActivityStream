@@ -41,7 +41,7 @@ foreach my $person_id ( @USERS, $USER_1_ID, $USER_2_ID, $USER_3_ID, $VIEWER_USER
 
     my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
 
-    $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
+    $t->app->routes->get( $person->create_request( $environment, { 'rid' => $RID } ) )->to(
         'cb' => sub {
             $person->create_test_response( {
                     'first_name' => "first name $person_id",

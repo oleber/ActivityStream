@@ -3,9 +3,12 @@ use strict;
 use warnings;
 use Mojo::Base 'Mojolicious';
 
+use Carp;
+use Data::Dumper;
 use HTTP::Status qw(:constants);
 use Try::Tiny;
 
+use ActivityStream::Environment;
 use ActivityStream::REST::Constants;
 
 our $VERSION = 0.0;
@@ -38,6 +41,15 @@ sub startup {
         },
     );
 
+    my $environment = ActivityStream::Environment->new;
+
+    if ( defined $environment->get_config->{'packages'} ) {
+        foreach my $package ( values %{ $environment->get_config->{'packages'} } ) {
+            eval "use $package;";
+            confess($@) if $@;
+        }
+    }
+
     # Routes
     my $r = $self->routes;
 
@@ -63,17 +75,11 @@ sub startup {
     $r->post('/rest/activitystream/user/:user_id/comment/activity/:activity_id')
           ->to( 'namespace' => 'ActivityStream::REST::Activity', 'action' => 'post_handler_user_activity_comment' );
 
-    $r->get('/')
-        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'get_handler' );
 
-    $r->get('/web/startpage')
-        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'get_handler' );
-
-    $r->post('/web/startpage/share_status')
-        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_status' );
-
-    $r->post('/web/startpage/share_link')
-        ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_link' );
+    my $mojolicious_startup = $environment->get_config->{'packages'}->{'mojolicious_startup'};
+    if ( defined $mojolicious_startup ) {
+        $mojolicious_startup->startup($self);
+    }
 
     return;
 } ## end sub startup
