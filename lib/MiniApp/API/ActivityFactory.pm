@@ -8,14 +8,10 @@ use Carp;
 use Data::Dumper;
 use Readonly;
 
-use ActivityStream::API::Activity::Friendship;
-use ActivityStream::API::Activity::LinkShare;
+use MiniApp::API::Activity::Status;
 use ActivityStream::X::ActivityNotFound;
 
-Readonly my @PACKAGE_FOR => (
-    [ qr/person:friendship:person/ => 'ActivityStream::API::Activity::Friendship' ],
-    [ qr/person:share:link/        => 'ActivityStream::API::Activity::LinkShare' ],
-);
+Readonly my @PACKAGE_FOR => ( [ qr/ma_person:share:ma_status/ => 'MiniApp::API::Activity::Status' ], );
 
 sub package_for {
     return @PACKAGE_FOR;

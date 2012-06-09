@@ -1,0 +1,17 @@
+<select id="myapp_default_user_chooser">
+%   foreach my $user (@{$users}) {
+    <option value="<%= $user->{'id'} %>" <%= $user->{'selected'} ? 'selected="selected"' : '' %> >
+        <%= $user->{'name'}%>
+    </option>
+%   }
+</select>
+
+<script>
+
+    $('select#myapp_default_user_chooser').change(function() {
+        $.post(
+            "/web/miniapp/default/user_choosed",
+            { "rid": $("select#myapp_default_user_chooser").val() }
+        );
+    });
+</script>

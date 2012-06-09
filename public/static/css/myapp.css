@@ -17,7 +17,28 @@
 }
 
 #comunication-box {
-	width:80%;
 	margin-left:auto;
 	margin-right:auto;
+}
+
+.activitystream .activity {
+	margin-top: 5px;
+	margin-bottom: 5px;
+}
+
+.activitystream .activity .big-left-image {
+	float:         left;
+	width:         100px;
+	height:        100px;
+	margin-right: 5px;
+	text-align:    center;
+}
+
+.activitystream .activity .activity_title {
+	font-size:     120%;
+	margin-bottom: 10px;
+}
+
+.page-title {
+	font-size: 200%;
 }

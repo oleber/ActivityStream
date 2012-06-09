@@ -1,5 +1,34 @@
 { 
     "db":               { "connection" : {} },
     "entry_id_prefix"  : "dl45dfxvdfmckdmkdsjkvn",
-    "activity_factory" : "MiniApp::API::ActivityFactory"
+    "packages" : {
+        "mojolicious_startup" : "MiniApp::MiniApp",
+        "activity_factory"    : "MiniApp::API::ActivityFactory"
+    },
+    "users" : {
+        "ma_person:helena" : {
+            "first_name":   "Helena",
+            "last_name":    "Sofia",
+            "large_image":  "/miniapp/object/actor/helena_large.png",
+            "medium_image": "/miniapp/object/actor/helena_medium.png",
+            "small_image":  "/miniapp/object/actor/helena_small.png",
+            "company":      null
+        },
+        "ma_person:lucia" : {
+            "first_name":   "Lucia",
+            "last_name":    "Gomes",
+            "large_image":  "/miniapp/object/actor/lucia_large.png",
+            "medium_image": "/miniapp/object/actor/lucia_medium.png",
+            "small_image":  "/miniapp/object/actor/lucia_small.png",
+            "company":      null
+        },
+        "ma_person:joao" : {
+            "first_name":   "João",
+            "last_name":    "Vitor",
+            "large_image":  "/miniapp/object/actor/joao_large.png",
+            "medium_image": "/miniapp/object/actor/joao_medium.png",
+            "small_image":  "/miniapp/object/actor/joao_small.png",
+            "company":      null
+        }
+    }
 }

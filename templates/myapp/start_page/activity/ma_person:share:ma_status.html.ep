@@ -1,0 +1,8 @@
+% my $activity_title = begin
+    % my $activity = shift;
+    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a>
+% end
+
+% layout 'myapp/start_page/activity/default', 
+%       activity => $activity, environment => $environment, activity_title => $activity_title->($activity);
+

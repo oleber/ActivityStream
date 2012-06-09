@@ -87,8 +87,8 @@ sub instance_from_db {
         my $pkg = $self->_structure_class($db_activity);
 
         confess sprintf(
-            "Class not found for %s on %s with mapping %s",
-            $self->_type($db_activity), Dumper($db_activity), Dumper( [ $self->package_for ] ),
+            "Class not found for %s on %s with mapping %s on %s",
+            $self->_type($db_activity), Dumper($db_activity), Dumper( [ $self->package_for ] ), ref($self)
         ) if not defined $pkg;
 
         return $pkg->from_db_struct($db_activity);

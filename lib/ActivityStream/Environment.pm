@@ -90,8 +90,8 @@ has 'activity_factory' => (
     'lazy'    => 1,
     'default' => sub {
         my ($self) = @_;
-        return ActivityStream::API::ActivityFactory->new( environment => $self );
-        return;
+        my $factory = $self->get_config->{'packages'}->{'activity_factory'} // 'ActivityStream::API::ActivityFactory';
+        return $factory->new( environment => $self );
     },
 );
 

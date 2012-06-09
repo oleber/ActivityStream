@@ -1,0 +1,21 @@
+<div class="big-left-image" style="display: table-cell; vertical-align: middle">
+    <span></span>
+    <img src="<%= $activity->get_actor->get_medium_image %>" />
+</div>
+
+%   my $clean_activity_id = $activity->get_activity_id;
+%   $clean_activity_id =~ s/\W/_/g;
+
+<form id="delete_<%= $clean_activity_id %>" action="/web/miniapp/startpage/delete_activity/<%= $activity->{"activity_id"} %>" method="post">
+    <span
+        class="ui-icon ui-icon-closethick"
+        style="float:right"
+        onclick="$('#delete_<%= $clean_activity_id %>').submit()"
+    />
+</form>
+
+<ul>
+    <li class="activity_title"><%= $activity_title %></li>
+    <li><%= $activity->get_activity_id %></li>
+    <li><%= $activity->get_object->get_message %></li>
+<ul>

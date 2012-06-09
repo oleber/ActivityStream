@@ -9,8 +9,37 @@
 
         <script type="text/javascript" src="/static/js/jquery-1.7.2.min.js"></script>
         <script type="text/javascript" src="/static/js/jquery-ui-1.8.20.custom.min.js"></script>
+
+        <script>
+            "use strict";
+            $( function() {
+                $("#myapp_default_user_chooser").load( "/web/miniapp/default/user_chooser" );
+            });
+            var miniapp = {
+                "default" : {}
+            };
+        </script>
+
+        </style>
+        <!--[if lt IE 8]><style>
+        .wraptocenter span {
+            display: inline-block;
+            height: 100%;
+        }
+        </style><![endif]-->
+
     </head>
     <body>
-        <%= content %>
+        <div id="myapp_default_user_chooser" style="float:left;"></div>
+
+        <div id="full-panel" style="width:1000px; margin:auto;">
+            <div id="left-panel" style="width:100px; float:left;">&nbsp;
+            </div>
+            <div id="central-panel" style="width:800px; float:left;">
+                <%= content %>
+            </div>
+            <div id="right-panel" style="width:100px; float:left;">&nbsp;
+            </div>
+        </div>
     </body>
 </html>

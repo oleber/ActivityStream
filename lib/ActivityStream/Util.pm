@@ -28,4 +28,11 @@ sub get_day_of {
     return floor( $time / $SECONDS_IN_A_DAY );
 }
 
+sub split_id {
+    my ($str) = @_;
+    my %data;
+    @data{'type', 'id'} = split(/:/, $str);
+    return \%data;
+}
+
 1;

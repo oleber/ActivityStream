@@ -1,0 +1,7 @@
+<div class="activitystream" style="clear: both;">
+%   foreach my $activity ( @{$activities} ) {
+        <div class="activity" style="clear: both;">
+%=          include "/myapp/start_page/activity/" . $activity->get_type, activity => $activity;
+        </div>
+%   }
+</div>

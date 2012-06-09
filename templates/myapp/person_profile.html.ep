@@ -1,0 +1,6 @@
+% layout 'default';
+
+<center>
+    <div class="page-title"><%= $person->get_full_name %></div>
+    <img src="<%= $person->get_large_image %>">
+</center>

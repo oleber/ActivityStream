@@ -1,0 +1,15 @@
+% $actor  //= $activity->get_actor;
+% $object //= $activity->get_object;
+% $title  //= $activity->get_html_title;
+
+<img src="<%= $activity->get_actor->get_medium_image %>" style='float:left'/>
+<ul>
+    <li><%= $title %></li>
+    <li><%= $activity->get_activity_id %></li>
+    <li><%= $activity->get_object->get_message %></li>
+    <li>
+        <form action="/web/miniapp/startpage/delete_activity/<%= $activity->{"activity_id"} %>" method="post">
+            <input type="submit" value="delete" />
+        </form>
+    </li>
+<ul>
