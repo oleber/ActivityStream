@@ -125,6 +125,28 @@ sub add_post_web_request {
     return;
 }
 
+sub add_delete_web_request {
+    my ( $self, $request, @args ) = @_;
+
+    my $cb = pop @args;
+
+    confess "No callback defined: " . ref($cb) if ref($cb) ne 'CODE';
+    confess "not defined ua" if not defined $self->get_ua;
+
+    $self->get_delay->begin;
+
+    $self->get_ua->delete(
+        $request => @args, sub {
+            my ( $ua, $tx ) = @_;
+            $cb->( $tx );
+            $self->get_delay->end;
+        },
+    );
+
+    return;
+}
+
+
 sub add_action {
     my ( $self, $cb ) = @_;
 
