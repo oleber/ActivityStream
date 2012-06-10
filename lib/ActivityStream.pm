@@ -5,6 +5,7 @@ use Mojo::Base 'Mojolicious';
 
 use Carp;
 use Data::Dumper;
+use Digest::MD5 qw(md5_hex);
 use HTTP::Status qw(:constants);
 use Try::Tiny;
 
@@ -40,6 +41,8 @@ sub startup {
             },;
         },
     );
+
+    $self->app->helper( md5_hex => sub { md5_hex(shift) } );
 
     my $environment = ActivityStream::Environment->new;
 

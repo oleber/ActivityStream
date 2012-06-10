@@ -5,15 +5,18 @@ use MooseX::FollowPBP;
 use Carp;
 use Data::Dumper;
 use Readonly;
+use Storable qw(dclone);
 
 use ActivityStream::API::Activity::Friendship;
 use ActivityStream::API::Activity::LinkShare;
 use ActivityStream::X::ActivityNotFound;
 
-Readonly my @PACKAGE_FOR => (
+Readonly my @ACTIVITY_PACKAGE_FOR => (
     [ qr/person:friendship:person/ => 'ActivityStream::API::Activity::Friendship' ],
     [ qr/person:share:link/        => 'ActivityStream::API::Activity::LinkShare' ],
 );
+
+Readonly my @OBJECT_PACKAGE_FOR => ( [ qr/person/ => 'ActivityStream::API::Object::Person' ], );
 
 has 'environment' => (
     'is'       => 'ro',
@@ -22,79 +25,131 @@ has 'environment' => (
     'required' => 1,
 );
 
-sub package_for {
-    return @PACKAGE_FOR;
+sub activity_package_for {
+    return @ACTIVITY_PACKAGE_FOR;
 }
 
-sub _type {
+sub _activity_type {
     my ( $self, $data ) = @_;
 
-    my @peaces;
-
-    if ( $data->{'actor'} and $data->{'actor'}{'object_id'} and ( $data->{'actor'}{'object_id'} =~ /^(\w*):/ ) ) {
-        push( @peaces, $1 );
-    } else {
-        confess q(Can't parse actor);
-    }
-
-    push( @peaces, $data->{'verb'} );
-
-    if ( $data->{'object'} and $data->{'object'}{'object_id'} and ( $data->{'object'}{'object_id'} =~ /^(\w*):/ ) ) {
-        push( @peaces, $1 );
-    } else {
-        confess q(Can't parse object);
-    }
-
-    if ( $data->{'target'} and $data->{'target'}{'object_id'} and ( $data->{'target'}{'object_id'} =~ /^(\w*):/ ) ) {
-        push( @peaces, $1 );
-    }
+    my @peaces = (
+        $self->_object_type( $data->{'actor'} ),
+        $data->{'verb'},
+        $self->_object_type( $data->{'object'} ),
+        ( defined( $data->{'target'} ) ? $self->_object_type( $data->{'target'} ) : () ),
+    );
 
     return join( ':', @peaces );
-} ## end sub _type
+}
 
-sub _structure_class {
+sub _activity_structure_class {
     my ( $self, $data ) = @_;
 
-    my $type = $self->_type($data);
+    my $type = $self->_activity_type($data);
 
-    foreach my $mapping ( $self->package_for ) {
+    foreach my $mapping ( $self->activity_package_for ) {
         return $mapping->[1] if $type =~ $mapping->[0];
     }
 
     return;
 }
 
-sub instance_from_rest_request_struct {
+sub activity_instance_from_rest_request_struct {
     my ( $self, $data ) = @_;
 
-    my $pkg = $self->_structure_class($data);
+    $data = dclone $data;
+
+    my $pkg = $self->_activity_structure_class($data);
 
     confess sprintf(
         "Class not found for %s on %s with mapping %s",
-        $self->_type($data), Dumper($data), Dumper( [ $self->package_for ] ),
+        $self->_activity_type($data),
+        Dumper($data), Dumper( [ $self->activity_package_for ] ),
     ) if not defined $pkg;
 
-    return $self->_structure_class($data)->from_rest_request_struct($data);
+    foreach my $comment ( @{ $data->{'comments'} } ) {
+        $comment->{'creator'} = $self->object_instance_from_db($comment->{'creator'});
+    }
+
+    return $pkg->from_rest_request_struct($data);
 }
 
-sub instance_from_db {
+sub activity_instance_from_db {
     my ( $self, $criteria ) = @_;
 
     my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
     my $db_activity         = $collection_activity->find_one_activity($criteria);
 
     if ( defined $db_activity ) {
-        my $pkg = $self->_structure_class($db_activity);
+        my $pkg = $self->_activity_structure_class($db_activity);
 
         confess sprintf(
             "Class not found for %s on %s with mapping %s on %s",
-            $self->_type($db_activity), Dumper($db_activity), Dumper( [ $self->package_for ] ), ref($self)
-        ) if not defined $pkg;
+            $self->_activity_type($db_activity), Dumper($db_activity),
+            Dumper( [ $self->activity_package_for ] ), ref($self) ) if not defined $pkg;
+
+        foreach my $comment ( @{ $db_activity->{'comments'} } ) {
+            $comment->{'creator'} = $self->object_instance_from_db($comment->{'creator'});
+        }
 
         return $pkg->from_db_struct($db_activity);
     } else {
-        die ActivityStream::X::ActivityNotFound->new;    #TODO: MAKE IT AN OBJECT
+        die ActivityStream::X::ActivityNotFound->new;
     }
+} ## end sub activity_instance_from_db
+
+sub object_package_for {
+    return @OBJECT_PACKAGE_FOR;
+}
+
+sub _object_type {
+    my ( $self, $data ) = @_;
+
+    if ( $data->{'object_id'} =~ /^(\w*):/ ) {
+        return $1;
+    }
+
+    confess "Can't parse object: $data->{'object_id'}";
+}
+
+sub _object_structure_class {
+    my ( $self, $data ) = @_;
+
+    my $type = $self->_object_type($data);
+
+    foreach my $mapping ( $self->object_package_for ) {
+        return $mapping->[1] if $type =~ $mapping->[0];
+    }
+
+    return;
+}
+
+sub object_instance_from_rest_request_struct {
+    my ( $self, $data ) = @_;
+
+    my $pkg = $self->_object_structure_class($data);
+
+    confess sprintf(
+        "Class not found for %s on %s with mapping %s",
+        $self->_object_type($data),
+        Dumper($data), Dumper( [ $self->object_package_for ] ),
+    ) if not defined $pkg;
+
+    return $pkg->from_rest_request_struct($data);
+}
+
+sub object_instance_from_db {
+    my ( $self, $data ) = @_;
+
+    my $pkg = $self->_object_structure_class($data);
+
+    confess sprintf(
+        "Class not found for %s on %s with mapping %s",
+        $self->_object_type($data),
+        Dumper($data), Dumper( [ $self->object_package_for ] ),
+    ) if not defined $pkg;
+
+    return $pkg->from_rest_request_struct($data);
 }
 
 __PACKAGE__->meta->make_immutable;

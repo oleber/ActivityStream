@@ -91,9 +91,9 @@ around BUILDARGS => sub {
     return $args;
 };
 
-sub is_likeable     { return 0 }
-sub is_commentable  { return 0 }
-sub is_recomendable { return 0 }
+sub is_likeable      { return 0 }
+sub is_commentable   { return 0 }
+sub is_recommendable { return 0 }
 
 sub to_db_struct {
     my ($self) = @_;
@@ -269,7 +269,7 @@ sub prepare_load_comments {
     $max_comments ||= @{ $self->get_comments };    # default and 0 go to all
     my @indexes = ( max( 0, @{ $self->get_comments } - $max_comments ) .. ( @{ $self->get_comments } - 1 ) );
 
-    foreach my $comment ( @{$self->get_comments}[@indexes] ) {
+    foreach my $comment ( @{ $self->get_comments }[@indexes] ) {
         $comment->prepare_load( $environment, $args );
     }
 
@@ -284,7 +284,7 @@ sub prepare_load_likers {
     $max_likers ||= @{ $self->get_likers };    # default and 0 go to all
     my @indexes = max( 0, @{ $self->get_likers } - $max_likers ) .. ( @{ $self->get_likers } - 1 );
 
-    foreach my $liker ( @{$self->get_likers}[@indexes] ) {
+    foreach my $liker ( @{ $self->get_likers }[@indexes] ) {
         $liker->prepare_load( $environment, $args );
     }
 
@@ -404,7 +404,15 @@ sub save_comment {
 
     my $collection_activity = $environment->get_collection_factory->collection_activity;
 
-    my $activity_comment = blessed($param) ? $param : ActivityStream::API::ActivityComment->new($param);
+    my $activity_comment = blessed($param) ? $param : ActivityStream::API::ActivityComment->new( {
+            %$param,
+            'creator' => (
+                ( blessed $param->{'creator'} )
+                ? $param->{'creator'}
+                : $environment->get_activity_factory->object_instance_from_db( $param->{'creator'} ),
+            ),
+        },
+    );
 
     $self->add_comment($activity_comment);
 
@@ -541,7 +549,7 @@ Mark the Activity as likeable, if it returns a false value C<save_liker> will di
 
 Mark the Activity as commentable, if it returns a false value C<save_comment> will die.
 
-=head2 C<is_recomendable>
+=head2 C<is_recommendable>
 
 Mark the Activity as recomendable, doing nothing for now TODO.
 

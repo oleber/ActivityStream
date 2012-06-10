@@ -71,7 +71,7 @@ $t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } )
     note('Test Attributs');
     ok( $PKG->is_likeable );
     ok( $PKG->is_commentable );
-    ok( not $PKG->is_recomendable );
+    ok( not $PKG->is_recommendable );
 
     my $activity = $PKG->from_rest_request_struct( \%DATA );
     cmp_deeply( [ $activity->get_sources ], [ $PERSON_ACTOR_ID, $PERSON_OBJECT_ID ] );
@@ -83,7 +83,7 @@ $t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } )
     my $activity = $PKG->from_rest_request_struct( \%DATA );
     $activity->save_in_db($environment);
     cmp_deeply(
-        $environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity->get_activity_id } )
+        $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity->get_activity_id } )
               ->to_db_struct,
         $activity->to_db_struct
     );

@@ -55,7 +55,7 @@ sub next_activity {
             my $activity_id = shift @{ $self->get_next_activity_ids };
 
             my $activity
-                  = $self->get_environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity_id } );
+                  = $self->get_environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
             return $activity if defined $activity;
         }
 

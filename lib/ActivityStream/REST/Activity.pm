@@ -26,7 +26,8 @@ sub post_handler_activity {
 
     my $environment = ActivityStream::Environment->new( controller => $self );
 
-    my $activity = $environment->get_activity_factory->instance_from_rest_request_struct( $self->tx->req->json );
+    my $activity
+          = $environment->get_activity_factory->activity_instance_from_rest_request_struct( $self->tx->req->json );
 
     return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_BAD_RID },
         'status' => HTTP_FORBIDDEN )
@@ -54,7 +55,7 @@ sub delete_handler_activity {
           if not defined $rid;
 
     my $environment = ActivityStream::Environment->new( controller => $self );
-    my $activity = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity_id } );
+    my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
 
     if ( defined $activity ) {
         if ( not any { $rid eq $_ } ( 'internal', $activity->get_sources ) ) {
@@ -81,7 +82,7 @@ sub get_handler_activity {
 
     my $environment = ActivityStream::Environment->new( controller => $self );
 
-    my $activity = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity_id } );
+    my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
 
     if ( defined($activity) and $activity->get_visibility ) {
         $activity->prepare_load( $environment, { 'rid' => $rid } );
@@ -149,7 +150,7 @@ sub post_handler_user_activity_like {
 
     my $environment = ActivityStream::Environment->new( controller => $self );
 
-    my $activity = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity_id } );
+    my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
 
     if ( defined $activity ) {
         my $like = $activity->save_liker( $environment, { 'user_id' => $user_id } );
@@ -172,7 +173,7 @@ sub delete_handler_activity_like {
 
     my $environment = ActivityStream::Environment->new( controller => $self );
 
-    my $activity = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity_id } );
+    my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
 
     my $activity_like = first { $like_id eq $_->get_like_id } @{ $activity->get_likers };
     return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_LIKE_NOT_FOUND },
@@ -196,10 +197,11 @@ sub post_handler_user_activity_comment {
     my $rid         = $self->param('rid');
     my $environment = ActivityStream::Environment->new( controller => $self );
 
-    my $activity = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $activity_id } );
+    my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
 
     if ( defined $activity ) {
-        my $comment = $activity->save_comment( $environment, { 'user_id' => $user_id, 'body' => $body } );
+        my $comment
+              = $activity->save_comment( $environment, { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
         return $self->render_json( {
                 'comment_id'    => $comment->get_comment_id,
                 'creation_time' => $comment->get_creation_time,

@@ -46,7 +46,7 @@ use_ok($PKG);
 
 no warnings 'redefine', 'once';
 
-local *ActivityStream::API::ActivityFactory::_structure_class = sub {
+local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
     return 'ActivityStream::API::Activity_Likers::JustForTest';
 };
 local *ActivityStream::API::Object::prepare_load = sub {
@@ -80,7 +80,7 @@ sub test_db_status {
     local $Test::Builder::Level = $Test::Builder::Level + 1;
 
     my $activity_in_db
-          = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
+          = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
     cmp_deeply( $obj->to_db_struct,            \%expected_db_struct, 'Check $obj to_db_struct' );
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
@@ -119,12 +119,12 @@ $obj->load( $environment, { 'rid' => $RID } );
         note('like a not likeable activity');
 
         {
-            my $activity_in_db_before_like = $environment->get_activity_factory->instance_from_db( 
+            my $activity_in_db_before_like = $environment->get_activity_factory->activity_instance_from_db( 
                 { 'activity_id' => $ACTIVITY_ID } );
 
             dies_ok { $obj->save_liker( $environment, { user_id => $USER_1_ID } ) };
 
-            my $activity_in_db_after_like = $environment->get_activity_factory->instance_from_db( 
+            my $activity_in_db_after_like = $environment->get_activity_factory->activity_instance_from_db( 
                 { 'activity_id' => $ACTIVITY_ID } );
 
             cmp_deeply( $activity_in_db_before_like, $activity_in_db_after_like );
@@ -250,7 +250,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 0 show all');
 
-        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
+        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -266,7 +266,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 1');
 
-        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
+        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -294,7 +294,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 2');
 
-        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
+        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -318,7 +318,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 3');
 
-        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
+        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -334,7 +334,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 4');
 
-        my $activity_in_db = $environment->get_activity_factory->instance_from_db( 
+        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
             { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
@@ -358,7 +358,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 403 ) ) );
 
     my $activity_in_db
-          = $environment->get_activity_factory->instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
+          = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 

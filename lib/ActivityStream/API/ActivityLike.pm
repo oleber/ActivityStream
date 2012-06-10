@@ -68,7 +68,11 @@ sub to_rest_response_struct {
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
-    $self->set_user( ActivityStream::API::Object::Person->new( { 'object_id' => $self->get_user_id } ) );
+    $self->set_user(
+        $environment->get_activity_factory->object_instance_from_rest_request_struct(
+            { 'object_id' => $self->get_user_id }
+        ),
+    );
     $self->get_user->prepare_load( $environment, $args );
 
     return;

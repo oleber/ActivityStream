@@ -12,7 +12,7 @@ has '+object' => ( 'isa' => 'ActivityStream::API::Object::Person' );
 
 sub is_likeable     { return 1 }
 sub is_commentable  { return 1 }
-sub is_recomendable { return 0 }
+sub is_recommendable { return 0 }
 
 sub get_sources {
     my ($self) = @_;
