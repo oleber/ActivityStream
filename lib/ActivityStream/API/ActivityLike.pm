@@ -14,14 +14,9 @@ has 'like_id' => (
     'default' => sub {ActivityStream::Util::generate_id},
 );
 
-has 'user_id' => (
+has 'creator' => (
     'is'  => 'rw',
-    'isa' => subtype( 'Str' => where {/^person:\w+$/} ),
-);
-
-has 'user' => (
-    'is'  => 'rw',
-    'isa' => 'Maybe[ActivityStream::API::Object::Person]',
+    'isa' => 'ActivityStream::API::Object',
 );
 
 has 'creation_time' => (
@@ -30,13 +25,20 @@ has 'creation_time' => (
     'default' => sub { time() },
 );
 
+
+has '_load_requested' => (
+    'is'      => 'rw',
+    'isa'     => 'Bool',
+    'default' => sub {0},
+);
+
 no Moose::Util::TypeConstraints;
 
 sub to_db_struct {
     my ($self) = @_;
     return {
         'like_id'       => $self->get_like_id,
-        'user_id'       => $self->get_user_id,
+        'creator'       => $self->get_creator->to_db_struct,
         'creation_time' => $self->get_creation_time,
     };
 }
@@ -46,16 +48,15 @@ sub to_rest_response_struct {
 
     my %data = (
         'like_id'       => $self->get_like_id,
-        'user_id'       => $self->get_user_id,
         'creation_time' => $self->get_creation_time,
     );
 
-    my $user = $self->get_user;
+    my $creator = $self->get_creator;
 
-    if ( defined $user ) {
-        if ( $user->get_loaded_successfully ) {
-            $data{'user'} = $self->get_user->to_rest_response_struct;
-            $data{'load'} = 'SUCCESS';
+    if ( $self->_get_load_requested ) {
+        if ( $creator->get_loaded_successfully ) {
+            $data{'creator'} = $creator->to_rest_response_struct;
+            $data{'load'}    = 'SUCCESS';
         } else {
             $data{'load'} = 'FAIL_LOAD';
         }
@@ -68,12 +69,9 @@ sub to_rest_response_struct {
 
 sub prepare_load {
     my ( $self, $environment, $args ) = @_;
-    $self->set_user(
-        $environment->get_activity_factory->object_instance_from_rest_request_struct(
-            { 'object_id' => $self->get_user_id }
-        ),
-    );
-    $self->get_user->prepare_load( $environment, $args );
+
+    $self->_set_load_requested(1);
+    $self->get_creator->prepare_load( $environment, $args );
 
     return;
 }

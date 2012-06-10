@@ -78,7 +78,6 @@ sub prepare_load {
     my ( $self, $environment, $args ) = @_;
 
     $self->_set_load_requested(1);
-
     $self->get_creator->prepare_load( $environment, $args );
 
     return;

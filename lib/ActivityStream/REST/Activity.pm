@@ -153,7 +153,7 @@ sub post_handler_user_activity_like {
     my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
 
     if ( defined $activity ) {
-        my $like = $activity->save_liker( $environment, { 'user_id' => $user_id } );
+        my $like = $activity->save_liker( $environment, { 'creator' => { 'object_id' => $user_id } } );
         return $self->render_json( { 'like_id' => $like->get_like_id, 'creation_time' => $like->get_creation_time } );
     } else {
         return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
@@ -182,7 +182,7 @@ sub delete_handler_activity_like {
 
     return $self->render_json( { 'error' => $ActivityStream::REST::Constants::ERROR_MESSAGE_BAD_RID },
         'status' => HTTP_FORBIDDEN )
-          if not any { $rid eq $_ } ( 'internal', $activity_like->get_user_id );
+          if not any { $rid eq $_ } ( 'internal', $activity_like->get_creator->get_object_id );
 
     $activity->delete_liker( $environment, { 'like_id' => $like_id } );
     return $self->render_json( {} );

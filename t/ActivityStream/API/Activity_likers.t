@@ -122,7 +122,7 @@ $obj->load( $environment, { 'rid' => $RID } );
             my $activity_in_db_before_like = $environment->get_activity_factory->activity_instance_from_db( 
                 { 'activity_id' => $ACTIVITY_ID } );
 
-            dies_ok { $obj->save_liker( $environment, { user_id => $USER_1_ID } ) };
+            dies_ok { $obj->save_liker( $environment, {'creator' => { 'object_id' => $USER_1_ID } } ) };
 
             my $activity_in_db_after_like = $environment->get_activity_factory->activity_instance_from_db( 
                 { 'activity_id' => $ACTIVITY_ID } );
@@ -152,7 +152,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('like a likeable activity');
 
-            my $like = $obj->save_liker( $environment, { user_id => $USER_1_ID } );
+            my $like = $obj->save_liker( $environment, { 'creator' => { 'object_id' => $USER_1_ID } } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_1_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
@@ -161,7 +161,7 @@ $obj->load( $environment, { 'rid' => $RID } );
                 @{ $expected_db_struct{'likers'} },
                 {
                     'like_id'       => $like->get_like_id,
-                    'user_id'       => $USER_1_ID,
+                    'creator'       => $object_person->to_db_struct,
                     'creation_time' => $like->get_creation_time,
                 } );
 
@@ -169,8 +169,7 @@ $obj->load( $environment, { 'rid' => $RID } );
                 @{ $expected_to_rest_response_struct{'likers'} },
                 {
                     'like_id'       => $like->get_like_id,
-                    'user_id'       => $USER_1_ID,
-                    'user'          => $object_person->to_rest_response_struct,
+                    'creator'       => $object_person->to_rest_response_struct,
                     'load'          => 'SUCCESS',
                     'creation_time' => $like->get_creation_time,
                 } );
@@ -183,7 +182,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('second like a likeable activity');
 
-            my $like = $obj->save_liker( $environment, { user_id => $USER_2_ID } );
+            my $like = $obj->save_liker( $environment, { 'creator' => { 'object_id' => $USER_2_ID }, } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_2_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
@@ -192,7 +191,7 @@ $obj->load( $environment, { 'rid' => $RID } );
                 @{ $expected_db_struct{'likers'} },
                 {
                     'like_id'       => $like->get_like_id,
-                    'user_id'       => $USER_2_ID,
+                    'creator'       => $object_person->to_db_struct,
                     'creation_time' => $like->get_creation_time,
                 } );
 
@@ -200,8 +199,7 @@ $obj->load( $environment, { 'rid' => $RID } );
                 @{ $expected_to_rest_response_struct{'likers'} },
                 {
                     'like_id'       => $like->get_like_id,
-                    'user_id'       => $USER_2_ID,
-                    'user'          => $object_person->to_rest_response_struct,
+                    'creator'       => $object_person->to_rest_response_struct,
                     'load'          => 'SUCCESS',
                     'creation_time' => $like->get_creation_time,
                 } );
@@ -214,7 +212,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('third like a likeable activity');
 
-            my $like = $obj->save_liker( $environment, { user_id => $USER_3_ID } );
+            my $like = $obj->save_liker( $environment, {'creator' => { 'object_id' => $USER_3_ID }, } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_3_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
@@ -223,7 +221,7 @@ $obj->load( $environment, { 'rid' => $RID } );
                 @{ $expected_db_struct{'likers'} },
                 {
                     'like_id'       => $like->get_like_id,
-                    'user_id'       => $USER_3_ID,
+                    'creator'       => $object_person->to_db_struct,
                     'creation_time' => $like->get_creation_time,
                 } );
 
@@ -231,8 +229,7 @@ $obj->load( $environment, { 'rid' => $RID } );
                 @{ $expected_to_rest_response_struct{'likers'} },
                 {
                     'like_id'       => $like->get_like_id,
-                    'user_id'       => $USER_3_ID,
-                    'user'          => $object_person->to_rest_response_struct,
+                    'creator'       => $object_person->to_rest_response_struct,
                     'load'          => 'SUCCESS',
                     'creation_time' => $like->get_creation_time,
                 } );
@@ -275,8 +272,8 @@ $obj->load( $environment, { 'rid' => $RID } );
         my %comment_0 = %{ $expected_to_rest_response_struct{'likers'}[0] };
         my %comment_1 = %{ $expected_to_rest_response_struct{'likers'}[1] };
 
-        delete $comment_0{'user'};
-        delete $comment_1{'user'};
+        delete $comment_0{'creator'};
+        delete $comment_1{'creator'};
 
         local $expected_to_rest_response_struct{'likers'} = [
             +{ %comment_0, 'load' => 'NOT_REQUESTED' },
@@ -301,7 +298,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 2 } );
 
         my %comment_0 = %{ $expected_to_rest_response_struct{'likers'}[0] };
-        delete $comment_0{'user'};
+        delete $comment_0{'creator'};
 
         local $expected_to_rest_response_struct{'likers'} = [
             +{ %comment_0, 'load' => 'NOT_REQUESTED' }, $expected_to_rest_response_struct{'likers'}[1],
@@ -365,10 +362,10 @@ $obj->load( $environment, { 'rid' => $RID } );
     $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 2 } );
 
     my %liker_0 = %{ $expected_to_rest_response_struct{'likers'}[0] };
-    delete $liker_0{'user'};
+    delete $liker_0{'creator'};
 
     my %liker_1 = %{ $expected_to_rest_response_struct{'likers'}[1] };
-    delete $liker_1{'user'};
+    delete $liker_1{'creator'};
 
     local $expected_to_rest_response_struct{'likers'} = [
         +{ %liker_0, 'load' => 'NOT_REQUESTED' },

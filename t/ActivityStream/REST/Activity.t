@@ -222,7 +222,7 @@ my $json = Mojo::JSON->new;
             @expected_likes,
             ActivityStream::API::ActivityLike->new(
                 'like_id'       => $t->tx->res->json->{'like_id'},
-                'user_id'       => $user_creator_3_id,
+                'creator'       => ActivityStream::API::Object::Person->new( 'object_id' => $user_creator_3_id ),
                 'creation_time' => $t->tx->res->json->{'creation_time'},
             ) );
 
@@ -246,7 +246,7 @@ my $json = Mojo::JSON->new;
             @expected_likes,
             ActivityStream::API::ActivityLike->new(
                 'like_id'       => $t->tx->res->json->{'like_id'},
-                'user_id'       => $user_creator_4_id,
+                'creator'       => ActivityStream::API::Object::Person->new( 'object_id' => $user_creator_4_id ),
                 'creation_time' => $t->tx->res->json->{'creation_time'},
             ) );
         $expected_likes[-1]->load( $environment, { 'rid' => $RID } );

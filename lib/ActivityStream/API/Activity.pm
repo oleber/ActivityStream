@@ -359,7 +359,15 @@ sub save_liker {
 
     my $collection_activity = $environment->get_collection_factory->collection_activity;
 
-    my $activity_like = blessed($param) ? $param : ActivityStream::API::ActivityLike->new($param);
+    my $activity_like = blessed($param) ? $param : ActivityStream::API::ActivityLike->new( {
+            %$param,
+            'creator' => (
+                ( blessed $param->{'creator'} )
+                ? $param->{'creator'}
+                : $environment->get_activity_factory->object_instance_from_db( $param->{'creator'} ),
+            ),
+        },
+    );
 
     $self->add_like($activity_like);
 

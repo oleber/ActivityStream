@@ -67,8 +67,8 @@ sub activity_instance_from_rest_request_struct {
         Dumper($data), Dumper( [ $self->activity_package_for ] ),
     ) if not defined $pkg;
 
-    foreach my $comment ( @{ $data->{'comments'} } ) {
-        $comment->{'creator'} = $self->object_instance_from_db($comment->{'creator'});
+    foreach my $obj ( @{ $data->{'comments'} }, @{ $data->{'likers'} } ) {
+        $obj->{'creator'} = $self->object_instance_from_rest_request_struct($obj->{'creator'});
     }
 
     return $pkg->from_rest_request_struct($data);
@@ -88,8 +88,8 @@ sub activity_instance_from_db {
             $self->_activity_type($db_activity), Dumper($db_activity),
             Dumper( [ $self->activity_package_for ] ), ref($self) ) if not defined $pkg;
 
-        foreach my $comment ( @{ $db_activity->{'comments'} } ) {
-            $comment->{'creator'} = $self->object_instance_from_db($comment->{'creator'});
+        foreach my $obj ( @{ $db_activity->{'comments'} }, @{ $db_activity->{'likers'} } ) {
+            $obj->{'creator'} = $self->object_instance_from_db($obj->{'creator'});
         }
 
         return $pkg->from_db_struct($db_activity);
