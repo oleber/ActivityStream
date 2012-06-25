@@ -192,9 +192,9 @@ sub post_handler_user_activity_comment {
     my $self = shift;
 
     my $user_id = $self->param('user_id');
-    my $rid     = $self->param('rid');
 
-    return $self->render_json( {}, 'status' => HTTP_FORBIDDEN ) if not( $rid ~~ [ $user_id, 'intern' ] );
+    my $rid     = $self->req->json->{'rid'};
+    return $self->render_json( {}, 'status' => HTTP_FORBIDDEN ) if not( $rid ~~ [ $user_id, 'internal' ] );
 
     my $activity_id = $self->param('activity_id');
     my $body        = $self->req->json->{'body'};
@@ -205,8 +205,6 @@ sub post_handler_user_activity_comment {
     if ( defined $activity ) {
         my $comment
               = $activity->save_comment( $environment, { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
-
-warn sprintf( 'Comment Created: %s', $comment->get_comment_id );
 
         return $self->render_json( {
                 'comment_id'    => $comment->get_comment_id,
