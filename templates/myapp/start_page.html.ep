@@ -15,6 +15,7 @@
             <ul>
                 <li><a href="#comunication-box_tabs-message">Message</a></li>
                 <li><a href="#comunication-box_tabs-link">Link</a></li>
+                <li><a href="#comunication-box_tabs-share_file">Share File</a></li>
             </ul>
             <div id="comunication-box_tabs-message">
                 <form name="input" action="/web/miniapp/startpage/share_status" method="post">
@@ -27,6 +28,13 @@
                 <form name="input" action="/web/miniapp/startpage/share_link" method="post">
                     <input style="width:100%" name="link" autocomplete="off"/>
                     <textarea style="width:100%" name="text"></textarea>
+                    <input type="submit" value="Share" style="float: right;" />
+                    <div style="clear: both" ></div>
+                </form>
+            </div>
+            <div id="comunication-box_tabs-share_file">
+                <form name="input" action="/web/miniapp/startpage/share_file" method="post" enctype="multipart/form-data">
+                    <input type="file" name="upfile" />
                     <input type="submit" value="Share" style="float: right;" />
                     <div style="clear: both" ></div>
                 </form>

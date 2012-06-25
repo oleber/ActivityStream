@@ -5,3 +5,9 @@
         </div>
 %   }
 </div>
+
+<script>
+    $( function() {
+        miniapp.default.config_css_buttons();
+    } );
+</script>

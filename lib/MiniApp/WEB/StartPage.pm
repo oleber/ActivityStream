@@ -8,10 +8,15 @@ use Carp;
 use Cwd 'abs_path';
 use Data::Dumper;
 use File::Basename 'dirname';
+use File::Path qw(make_path);
 use File::Spec;
+use HTTP::Status qw( :constants );
 use List::Util qw(min first);
 use List::MoreUtils qw(any);
 use Readonly;
+use Try::Tiny;
+
+use MiniApp::Utils::FileToPNG;
 
 Readonly my $CONFIG_FILEPATH =>
       File::Spec->join( File::Spec->splitdir( dirname(__FILE__) ), ('..') x 3, 'myapp_config.json' );
@@ -39,7 +44,7 @@ sub get_handler_activitystream {
     my $async_user_agent = $environment->get_async_user_agent;
 
     my $url = Mojo::URL->new('/rest/activitystream/activity/user/$rid/activitystream');
-    $url->query->param( 'rid' => $rid );
+    $url->query->param( 'rid'           => $rid );
     $url->query->param( 'see_source_id' => [ %{ $environment->get_config->{'users'} } ] );
 
     $async_user_agent->add_get_web_request(
@@ -50,7 +55,7 @@ sub get_handler_activitystream {
             # TODO: deal with error
 
             my $activity_factory = $environment->get_activity_factory;
-            my @activities = map { $activity_factory->instance_from_rest_request_struct($_) }
+            my @activities = map { $activity_factory->activity_instance_from_rest_request_struct($_) }
                   @{ $tx->res->json->{'activities'} };
 
             $c->stash( 'environment' => $environment );
@@ -85,6 +90,35 @@ sub post_handler_delete_activity {
 
     return;
 } ## end sub post_handler_delete_activity
+
+sub post_handler_comment_activity {
+    my ($c) = @_;
+
+    my $rid = $c->session('rid');
+    confess "rid not defined" if not defined $rid;
+
+    my $activity_id = $c->param('activity_id');
+    confess "activity_id not defined" if not defined $activity_id;
+
+    my $body = $c->param('body');
+    confess "body not defined" if not defined $body;
+    confess "body length = 0"  if 0 == length $body;
+
+    my $environment = ActivityStream::Environment->new( controller => $c );
+
+    my $async_user_agent = $environment->get_async_user_agent;
+
+    my $url = Mojo::URL->new( sprintf( "/rest/activitystream/user/%s/comment/activity/%s", $rid, $activity_id ) );
+    $url->query->param( rid => $rid );
+
+    my $json = Mojo::JSON->new;
+
+    $async_user_agent->add_post_web_request( $url, $json->encode( { 'rid' => $rid, 'body' => $body } ), sub { } );
+
+    $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+
+    return;
+} ## end sub post_handler_comment_activity
 
 sub post_handler_share_status {
     my ($c) = @_;
@@ -126,5 +160,85 @@ sub post_handler_share_link {
 
     return $c->redirect_to('/web/miniapp/startpage');
 }
+
+sub post_handler_share_file {
+    my ($c) = @_;
+
+    my $rid = $c->session('rid');
+
+    return $c->render( 'text' => 'File is too big.', status => HTTP_REQUEST_ENTITY_TOO_LARGE )
+          if $c->req->is_limit_exceeded;
+
+    my $upfile = $c->param('upfile');
+
+    return $c->render( 'text' => 'File is too big.', status => HTTP_REQUEST_ENTITY_TOO_LARGE )
+          if $upfile->size > 2**20;    # 2 Mb
+
+    my $share_id = ActivityStream::Util::generate_id();
+    my $environment = ActivityStream::Environment->new( controller => $c );
+
+    my $storage_path = $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_path'};
+    my $directory_path = File::Spec->join( $storage_path, ( $share_id =~ /(.)(.)(.)(.)(.)(.)(.)(.)(.)(.)(.*)/ ) );
+
+    confess("Directory for the storage was already created: $directory_path") if -e $directory_path;
+    make_path( $directory_path, { 'mode' => oct('0700') } );
+    confess("Directory for the storage wasn't found: $directory_path") if not -d -r $directory_path;
+
+    my $upfile_filename = $upfile->filename;
+    $upfile_filename =~ s/[^\w.]/_/g;
+    my $original_filepath = File::Spec->join( $directory_path, $upfile_filename );
+
+    $upfile->move_to($original_filepath);
+
+    my $file_to_png = try { MiniApp::Utils::FileToPNG->new( 'filepath' => $original_filepath ) } catch { warn $_ };
+    if ( not defined $file_to_png ) {
+        return $c->render( 'text' => 'Unrecognized media type.', status => HTTP_UNSUPPORTED_MEDIA_TYPE );
+    }
+
+    return try {
+        $file_to_png->convert;
+
+        my $converted_dirpath = File::Spec->join( $directory_path, 'converted' );
+        make_path( $converted_dirpath, { 'mode' => oct('0700') } );
+        confess("Directory for the converted wasn't found: $converted_dirpath") if not -d -r $converted_dirpath;
+
+        my $thumbnail_filepath = File::Spec->join( $converted_dirpath, 'thumbnail.png' );
+        my $system_ret
+              = system( 'convert', '-resize', '200x200', $file_to_png->get_converted_filepath, $thumbnail_filepath );
+        if ( $system_ret != 0 or -f -r $thumbnail_filepath ) {
+            confess("Thumbernail creation failed: $converted_dirpath") if not -f -r $thumbnail_filepath;
+        }
+
+        my $url = Mojo::URL->new('/rest/activitystream/activity');
+        $url->query->param( rid => $rid );
+
+        my $async_user_agent = $environment->get_async_user_agent;
+        $async_user_agent->add_post_web_request(
+            $url,
+            Mojo::JSON->new->encode( {
+                    'actor'  => { 'object_id' => $rid },
+                    'verb'   => 'share',
+                    'object' => {
+                        'object_id'            => "ma_file:" . ActivityStream::Util::generate_id(),
+                        'filename'             => $upfile_filename,
+                        'original_filepath'    => File::Spec->abs2rel( $original_filepath, $storage_path ),
+                        'thumbernail_filepath' => File::Spec->abs2rel( $thumbnail_filepath, $storage_path ),
+                        'size'                 => $upfile->size,
+                    },
+                },
+            ),
+            sub { },
+        );
+
+        $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+
+    } ## end try
+    catch {
+        warn $_;
+        $c->render( 'text' => 'Fail file convertion.', 'status' => HTTP_INTERNAL_SERVER_ERROR );
+    }
+
+    # return $c->redirect_to('/web/miniapp/activitystream/share_file/show_uploaded_file');
+} ## end sub post_handler_share_file
 
 1;

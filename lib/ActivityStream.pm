@@ -42,7 +42,7 @@ sub startup {
         },
     );
 
-    $self->app->helper( md5_hex => sub { md5_hex(shift) } );
+    $self->app->helper( 'md5_hex' => sub { my (undef, $string) = @_; md5_hex($string) } );
 
     my $environment = ActivityStream::Environment->new;
 

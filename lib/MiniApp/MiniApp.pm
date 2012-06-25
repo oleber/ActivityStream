@@ -27,8 +27,14 @@ sub startup {
     $r->post('/web/miniapp/startpage/share_link')
           ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_link' );
 
+    $r->post('/web/miniapp/startpage/share_file')
+          ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_file' );
+
     $r->post('/web/miniapp/startpage/delete_activity/:activity_id')
           ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_delete_activity' );
+
+    $r->post('/web/miniapp/startpage/comment_activity/:activity_id')
+          ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_comment_activity' );
 
     #
     # /web/miniapp/default
@@ -40,10 +46,15 @@ sub startup {
           ->to( 'namespace' => 'MiniApp::WEB::Default', 'action' => 'post_handler_user_choosed' );
 
     #
-    #   /web/miniapp/person/profile/:person_id
+    #   /web/miniapp/person/profile
 
     $r->get('/web/miniapp/person/profile/:person_id')
           ->to( 'namespace' => 'MiniApp::WEB::PersonProfile', 'action' => 'get_handler' );
+
+    #
+    #   /web/miniapp/activitystream/share_file
+    $r->get('/web/miniapp/activitystream/share_file/show_uploaded_file/:file_id')
+          ->to( 'namespace' => 'MiniApp::WEB::ActivityStream::ShareFile::Controller', 'action' => 'get_handler_show_uploaded_file' );
 
     return;
 } ## end sub startup

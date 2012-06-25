@@ -30,5 +30,13 @@
             "small_image":  "/miniapp/object/actor/joao_small.png",
             "company":      null
         }
+    },
+    "myapp" : {
+        "stories" : {
+            "share_file" : {
+                "storage_path" : "/home/oleber/development/ActivityStream/public/miniapp/shared_files",
+                "storage_webpath" : "/miniapp/shared_files"
+            }
+        }
     }
 }

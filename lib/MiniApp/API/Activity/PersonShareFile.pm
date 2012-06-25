@@ -1,24 +1,19 @@
-package MiniApp::API::Activity::Status;
+package MiniApp::API::Activity::PersonShareFile;
 use Moose;
 use Moose::Util::TypeConstraints;
 
 use MiniApp::API::Object::Person;
-use MiniApp::API::Object::StatusMessage;
+use MiniApp::API::Object::File;
 
 extends 'ActivityStream::API::Activity';
 
 has '+actor'  => ( 'isa' => 'MiniApp::API::Object::Person' );
 has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^share$/} ) );
-has '+object' => ( 'isa' => 'MiniApp::API::Object::StatusMessage' );
+has '+object' => ( 'isa' => 'MiniApp::API::Object::File' );
 
 sub is_likeable      { return 1 }
 sub is_commentable   { return 1 }
 sub is_recommendable { return 1 }
-
-sub get_sources {
-    my ($self) = @_;
-    return ( $self->get_actor->get_object_id, $self->get_object->get_object_id );
-}
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

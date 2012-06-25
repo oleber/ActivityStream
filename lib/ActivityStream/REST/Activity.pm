@@ -191,10 +191,13 @@ sub delete_handler_activity_like {
 sub post_handler_user_activity_comment {
     my $self = shift;
 
+    my $user_id = $self->param('user_id');
+    my $rid     = $self->param('rid');
+
+    return $self->render_json( {}, 'status' => HTTP_FORBIDDEN ) if not( $rid ~~ [ $user_id, 'intern' ] );
+
     my $activity_id = $self->param('activity_id');
-    my $user_id     = $self->param('user_id');
     my $body        = $self->req->json->{'body'};
-    my $rid         = $self->param('rid');
     my $environment = ActivityStream::Environment->new( controller => $self );
 
     my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
@@ -202,6 +205,9 @@ sub post_handler_user_activity_comment {
     if ( defined $activity ) {
         my $comment
               = $activity->save_comment( $environment, { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
+
+warn sprintf( 'Comment Created: %s', $comment->get_comment_id );
+
         return $self->render_json( {
                 'comment_id'    => $comment->get_comment_id,
                 'creation_time' => $comment->get_creation_time,

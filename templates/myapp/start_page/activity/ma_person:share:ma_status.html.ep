@@ -3,6 +3,14 @@
     <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a>
 % end
 
-% layout 'myapp/start_page/activity/default', 
-%       activity => $activity, environment => $environment, activity_title => $activity_title->($activity);
+% my $activity_body = begin
+    % my $activity = shift;
+    <%= $activity->get_object->get_message %>
+% end
+
+% layout 'myapp/start_page/activity/default',
+%       'activity'          => $activity,
+%       'environment'       => $environment,
+%       'activity_title'    => $activity_title->($activity),
+%       'activity_body'     => $activity_body->($activity);
 

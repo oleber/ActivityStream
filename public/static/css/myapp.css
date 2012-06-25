@@ -16,6 +16,16 @@
     padding-right:6px;
 }
 
+.clearboth { clear:both }
+
+.padding-S { padding: 3px; }
+.padding-M { padding: 6px; }
+.padding-L { padding: 9px; }
+
+.margin-S { margin: 3px; }
+.margin-M { margin: 6px; }
+.margin-L { margin: 9px; }
+
 #comunication-box {
 	margin-left:auto;
 	margin-right:auto;
@@ -34,10 +44,20 @@
 	text-align:    center;
 }
 
-.activitystream .activity .activity_title {
+.activitystream .activity .activity-title {
 	font-size:     120%;
 	margin-bottom: 10px;
 }
+
+.activitystream .activity .comment .comment-image {
+    margin-right: 10px;
+}
+
+.activitystream .activity .comment .comment-title {
+    font-size:      120%;
+    margin-bottom:  5px;
+}
+
 
 .page-title {
 	font-size: 200%;
