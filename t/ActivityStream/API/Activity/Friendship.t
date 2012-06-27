@@ -41,6 +41,7 @@ Readonly my $RID => ActivityStream::Util::generate_id();
             'activity_id'   => ignore,
             'visibility'    => 1,
             'creation_time' => num( time, 2 ),
+            'timebox'       => ignore,
             'likers'        => [],
             'comments'      => [],
         },

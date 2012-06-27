@@ -106,6 +106,7 @@ sub to_db_struct {
         'likers'        => [ map { $_->to_db_struct } @{ $self->get_likers } ],
         'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
+        'timebox'       => [ map { "$_-" . int( $self->get_creation_time / 60 / 60 / 24 / 2**$_ ) } ( 0 .. 9 ) ],
     );
 
     if ( defined $self->get_target ) {

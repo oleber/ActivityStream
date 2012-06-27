@@ -62,3 +62,5 @@ my $directory = File::Spec->join( $path, 'FileToPNG' );
         throws_ok { $obj->convert } qr/Can't convert file: \Q$filepath\E/;
     }
 }
+
+done_testing;

@@ -73,7 +73,7 @@ my %EXPECTED = (
     'comments'      => [],
 );
 
-my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, );
+my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, 'timebox' => ignore, );
 my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
 
 sub test_db_status {

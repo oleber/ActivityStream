@@ -29,6 +29,7 @@ Readonly my $RID => ActivityStream::Util::generate_id();
 use_ok($PKG);
 
 {
+
     package ActivityStream::API::Activity::JustForTest;
     use Moose;
 
@@ -71,7 +72,11 @@ my %EXPECTED = (
     'comments'      => [],
 );
 
-my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, );
+my %expected_db_struct = (
+    %{ dclone( \%EXPECTED ) },
+    'visibility' => 1,
+    'timebox'    => [ map { "$_-" . int( time / 60 / 60 / 24 / 2**$_ ) } ( 0 .. 9 ) ],
+);
 
 my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
 
@@ -80,7 +85,8 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
     $expected_to_rest_response_struct{'activity_id'} = $expected_db_struct{'activity_id'} = $ACTIVITY_ID;
 
     $obj->save_in_db($environment);
-    my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
+    my $activity_in_db
+          = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
     cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
     cmp_deeply( $activity_in_db->to_db_struct, $obj->to_db_struct );
