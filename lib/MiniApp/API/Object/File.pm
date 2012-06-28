@@ -10,10 +10,10 @@ use Readonly;
 extends 'ActivityStream::API::Object';
 
 Readonly my %FIELDS => (
-    'filename'             => [ 'is' => 'rw', 'isa' => 'Str' ],
-    'original_filepath'    => [ 'is' => 'rw', 'isa' => 'Str' ],
-    'thumbernail_filepath' => [ 'is' => 'rw', 'isa' => 'Str' ],
-    'size'                 => [ 'is' => 'rw', 'isa' => 'Int' ],
+    'filename'              => [ 'is' => 'rw', 'isa' => 'Str' ],
+    'original_filepath'     => [ 'is' => 'rw', 'isa' => 'Str' ],
+    'thumbernail_filepaths' => [ 'is' => 'rw', 'isa' => 'ArrayRef[Str]' ],
+    'size'                  => [ 'is' => 'rw', 'isa' => 'Int' ],
 );
 
 has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^ma_file:\w+$/} ) );

@@ -40,10 +40,12 @@ my $directory = File::Spec->join( $path, 'FileToPNG' );
             is( $obj->get_filepath, $filepath );
 
             lives_ok { $obj->convert };
-            ok( -f -r $obj->get_converted_filepath );
-            isnt( $obj->get_converted_filepath, $filepath );
+            foreach my $converted_filepath ( @{$obj->get_converted_filepaths} ) {
+                ok( -f -r $converted_filepath );
+                isnt( $converted_filepath, $filepath );
+            }
 
-            like( $obj->get_converted_filepath, qr/\.png$/ );
+            like( $obj->get_converted_filepaths->[0], qr/\.png$/ );
         }
         catch {
             fail($_);

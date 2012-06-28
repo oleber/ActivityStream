@@ -1,21 +1,40 @@
 % my $activity_title = begin
     % my $activity = shift;
-    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a> shared file: <%= $activity->get_object->get_filename %>
+    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a> shared file: 
+    <a href='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_original_filepath %>'>
+        <%= $activity->get_object->get_filename %>
+    </a>
 % end
 
 % my $activity_body = begin
     % my $activity = shift;
     <div>
-        <a href='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_original_filepath %>'>
-%           if ( defined $activity->get_object->get_thumbernail_filepath ) {
-                <img 
-                    src='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_thumbernail_filepath %>'
-                    alt='<%= $activity->get_object->get_filename %>'
-                />
-%           } else {
-                <%= $activity->get_object->get_filename %>
-%           }
-        </a>
+%       if ( defined $activity->get_object->get_thumbernail_filepaths->[0] ) {
+            <table>
+                <tr>
+                    <td style="vertical-align: middle">&lt;&lt;&lt;<td>
+                    <td>
+                        <img 
+                            id="activity_image_<%= $activity->get_activity_id %>"
+                            style='border:2px solid; margin: 5px'
+                            src='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_thumbernail_filepaths->[0] %>'
+                        >
+                    </td>
+                    <td style="vertical-align: middle">&gt;&gt;&gt;</td>
+                </tr>
+            </table>
+%               foreach my $thumbernail_filepath ( @{ $activity->get_object->get_thumbernail_filepaths} ) {
+                    <center>
+                        <img
+                            src='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $thumbernail_filepath %>'
+                            alt='<%= $activity->get_object->get_filename %>'
+                            style='border:5px solid'
+                        />
+                    </center>
+%               }
+%       } else {
+            <%= $activity->get_object->get_filename %>
+%       }
     </div>
 % end
 

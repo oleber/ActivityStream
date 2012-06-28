@@ -51,87 +51,87 @@ Readonly my %CONVERT_FOR => (
     'application/vnd.oasis.opendocument.presentation' => {
         'name'         => 'Open Document Presentation',
         'extension'    => ['.odp'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.graphics' => {
         'name'         => 'Open Document Drawing',
         'extension'    => ['.odg'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.chart' => {
         'name'         => 'Open Document Chart',
         'extension'    => ['.odg'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.formula' => {
         'name'         => 'Open Document Formula',
         'extension'    => ['.odf'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.image' => {
         'name'         => 'Open Document Image',
         'extension'    => ['.od1'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.text-master' => {
         'name'         => 'Open Document Master Document',
         'extension'    => ['.odm'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.sun.xml.base' => {
         'name'         => 'Open Document Database',
         'extension'    => ['.odb'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.base' => {
         'name'         => 'Open Document Database',
         'extension'    => ['.odb'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.database' => {
         'name'         => 'Open Document Database',
         'extension'    => ['.odb'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.text-template' => {
         'name'         => 'Open Document Text Template',
         'extension'    => ['.ott'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.spreadsheet-template' => {
         'name'         => 'Open Document Spreadsheet Template',
         'extension'    => ['.ots'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.presentation-template' => {
         'name'         => 'Open Document Presentation Template',
         'extension'    => ['.otp'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.graphics-template' => {
         'name'         => 'Open Document Drawing Template',
         'extension'    => ['.otg'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.chart-template' => {
         'name'         => 'Open Document Chart template',
         'extension'    => ['.otc'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.formula-template' => {
         'name'         => 'Open Document Formula template',
         'extension'    => ['.otf'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.image-template' => {
         'name'         => 'Open Document Image template',
         'extension'    => ['.oti'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.oasis.opendocument.text-web' => {
         'name'         => 'Open Document Web page template',
         'extension'    => ['.oth'],
-        'convert_with' => 'unoconv',
+        'convert_with' => 'unoconv_via_pdf',
     },
     'application/vnd.ms-office' => {
         'name'         => 'Microsoft Office',
@@ -294,9 +294,9 @@ has 'filepath' => (
     },
 );
 
-has 'converted_filepath' => (
+has 'converted_filepaths' => (
     'is'  => 'rw',
-    'isa' => 'Str',
+    'isa' => 'ArrayRef[Str]',
 );
 
 has 'tempdir' => (
@@ -324,7 +324,7 @@ has 'filetype' => (
 
 sub _execute {
     my ( $self, @args ) = @_;
-
+#warn "@args";
     my ( $chld_out, $chld_in );
     my $pid = open2( $chld_out, undef, @args );
 
@@ -349,7 +349,7 @@ sub BUILD {
     confess "Filetype not found for file: " . $self->get_filepath if not defined $filetype;
 
     $self->set_filetype($filetype);
-warn $filetype;
+
     return;
 }
 
@@ -431,7 +431,7 @@ sub _convert_with_unoconv {
     my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, '*.png' ) );
     confess sprintf( "unoconv of %s content-type %s failed", $self->get_filepath, $self->get_filetype ) if 1 != @pngs;
 
-    $self->set_converted_filepath( $pngs[0] );
+    $self->set_converted_filepaths( \@pngs );
 
     return;
 } ## end sub _convert_with_unoconv
@@ -452,11 +452,12 @@ sub _convert_with_unoconv_via_pdf {
     my @pdfs = bsd_glob( File::Spec->join( $convert_dirpath, '*.pdf' ) );
     confess sprintf( "unoconv of %s content-type %s failed", $self->get_filepath, $self->get_filetype ) if 1 != @pdfs;
 
-    $self->_execute( 'unoconv', '-f', 'png', $pdfs[0] );
-    my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, '*.png' ) );
-    confess sprintf( "unoconv of %s content-type %s failed", $self->get_filepath, $self->get_filetype ) if 1 != @pngs;
+    $self->_execute( 'convert', $pdfs[0], File::Spec->join( $convert_dirpath, 'tumbernail.png' ) );
+    my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, 'tumbernail*.png' ) );
 
-    $self->set_converted_filepath( $pngs[0] );
+    confess sprintf( "convert of %s content-type %s failed", $self->get_filepath, $self->get_filetype ) if 0 == @pngs;
+
+    $self->set_converted_filepaths( \@pngs );
 
     return;
 } ## end sub _convert_with_unoconv_via_pdf
@@ -476,7 +477,7 @@ sub _convert_with_copy {
     confess sprintf( "convert of %s content-type %s failed", $self->get_filepath, $self->get_filetype )
           if not -r $to_convert_filepath;
 
-    $self->set_converted_filepath($to_convert_filepath);
+    $self->set_converted_filepaths([ $to_convert_filepath ]);
 
     return;
 }
@@ -496,7 +497,7 @@ sub _convert_with_convert {
     confess sprintf( "convert of %s content-type %s failed", $self->get_filepath, $self->get_filetype )
           if not -r $to_convert_filepath;
 
-    $self->set_converted_filepath($to_convert_filepath);
+    $self->set_converted_filepaths( [$to_convert_filepath ]);
 
     return;
 }

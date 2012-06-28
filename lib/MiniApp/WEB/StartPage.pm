@@ -202,11 +202,16 @@ sub post_handler_share_file {
         make_path( $converted_dirpath, { 'mode' => oct('0700') } );
         confess("Directory for the converted wasn't found: $converted_dirpath") if not -d -r $converted_dirpath;
 
-        my $thumbnail_filepath = File::Spec->join( $converted_dirpath, 'thumbnail.png' );
-        my $system_ret
-              = system( 'convert', '-resize', '200x200', $file_to_png->get_converted_filepath, $thumbnail_filepath );
-        if ( $system_ret != 0 or -f -r $thumbnail_filepath ) {
-            confess("Thumbernail creation failed: $converted_dirpath") if not -f -r $thumbnail_filepath;
+        my @thumbnail_filepaths;
+        foreach my $converted_filepath ( @{ $file_to_png->get_converted_filepaths } ) {
+            my ( undef, undef, $file ) = File::Spec->splitpath($converted_filepath);
+            my $thumbnail_filepath = File::Spec->join( $converted_dirpath, $file );
+            my $system_ret = system( 'convert', '-resize', '600x500', $converted_filepath, $thumbnail_filepath );
+            if ( $system_ret != 0 or -f -r $thumbnail_filepath ) {
+                confess("Thumbernail creation failed: $converted_dirpath") if not -f -r $thumbnail_filepath;
+            }
+
+            push( @thumbnail_filepaths, $thumbnail_filepath );
         }
 
         my $url = Mojo::URL->new('/rest/activitystream/activity');
@@ -219,15 +224,17 @@ sub post_handler_share_file {
                     'actor'  => { 'object_id' => $rid },
                     'verb'   => 'share',
                     'object' => {
-                        'object_id'            => "ma_file:" . ActivityStream::Util::generate_id(),
-                        'filename'             => $upfile_filename,
-                        'original_filepath'    => File::Spec->abs2rel( $original_filepath, $storage_path ),
-                        'thumbernail_filepath' => File::Spec->abs2rel( $thumbnail_filepath, $storage_path ),
-                        'size'                 => $upfile->size,
+                        'object_id'         => "ma_file:" . ActivityStream::Util::generate_id(),
+                        'filename'          => $upfile_filename,
+                        'size'              => $upfile->size,
+                        'original_filepath' => File::Spec->abs2rel( $original_filepath, $storage_path ),
+                        'thumbernail_filepaths' =>
+                              [ map { File::Spec->abs2rel( $_, $storage_path ) } @thumbnail_filepaths ],
+
                     },
                 },
             ),
-            sub { },
+            sub {},
         );
 
         $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
