@@ -1,4 +1,32 @@
+<script>
+    $( function() { miniapp.default.config_css_buttons() } );
+</script>
+<script>
+    miniapp.startpage.activity.presentfile = {
+        "render" : {},
+        "next"   : function (name) {
+            var image_element = $('#' + name);
+            var actual_index = parseInt( image_element.attr( 'thumbernail_index' ) );
+            var next_index = actual_index + 1;
+            var next_image = miniapp.startpage.activity.presentfile.render[name][next_index];
+
+            image_element.attr( 'thumbernail_index', next_index );
+            image_element.attr( 'src', miniapp.storage_path + next_image );
+        },
+        "previous"   : function (name) {
+            var image_element = $('#' + name);
+            var actual_index = parseInt( image_element.attr( 'thumbernail_index' ) );
+            var next_index = actual_index - 1;
+            var next_image = miniapp.startpage.activity.presentfile.render[name][next_index];
+
+            image_element.attr( 'thumbernail_index', next_index );
+            image_element.attr( 'src', miniapp.storage_path + next_image );
+        }
+    };
+</script>
+
 <div class="activitystream" style="clear: both;">
+
 %   foreach my $activity ( @{$activities} ) {
         <div class="activity" style="clear: both;">
 %=          include "/myapp/start_page/activity/" . $activity->get_type, activity => $activity;
@@ -6,8 +34,3 @@
 %   }
 </div>
 
-<script>
-    $( function() {
-        miniapp.default.config_css_buttons();
-    } );
-</script>

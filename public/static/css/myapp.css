@@ -49,6 +49,20 @@
 	margin-bottom: 10px;
 }
 
+.activitystream .activity .activity-body-title {
+    font-size:     110%;
+    margin-bottom: 10px;
+}
+
+.activitystream .activity .activity-body-body {
+    font-size:     90%;
+    color:         #aaa;
+}
+
+.activitystream .activity .activity-body-descrite {
+}
+
+
 .activitystream .activity .comment .comment-image {
     margin-right: 10px;
 }

@@ -14,7 +14,8 @@
             "use strict";
 
             var miniapp = {
-                "default" : {}
+                "default" : {},
+                "storage_path" : "<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/"
             };
 
             miniapp.default.config_css_buttons = function() {

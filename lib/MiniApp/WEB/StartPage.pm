@@ -31,8 +31,9 @@ sub get_handler {
     my ($c) = @_;
 
     my $rid = $c->session('rid');
+    my $environment = ActivityStream::Environment->new( controller => $c );
 
-    return $c->render('myapp/start_page');
+    return $c->render( 'myapp/start_page', environment => $environment );
 }
 
 sub get_handler_activitystream {
@@ -63,7 +64,7 @@ sub get_handler_activitystream {
         },
     );
 
-    $async_user_agent->load_all( sub { $c->render('myapp/start_page/activitystream') } );
+    $async_user_agent->load_all( sub { $c->render( 'myapp/start_page/activitystream', environment => $environment ) } );
 
     return;
 } ## end sub get_handler_activitystream
@@ -133,11 +134,11 @@ sub post_handler_share_status {
 
     my $async_user_agent = $environment->get_async_user_agent;
 
-    my $url = Mojo::URL->new('/rest/activitystream/activity');
-    $url->query->param( rid => $rid );
+    my $post_url = Mojo::URL->new('/rest/activitystream/activity');
+    $post_url->query->param( rid => $rid );
 
     $async_user_agent->add_post_web_request(
-        $url,
+        $post_url,
         Mojo::JSON->new->encode( {
                 'actor'  => { 'object_id' => $rid },
                 'verb'   => 'share',
@@ -155,11 +156,73 @@ sub post_handler_share_status {
     return;
 } ## end sub post_handler_share_status
 
+Readonly my @HTML_FIELD_MAPS => (
+    [ 'head meta[property="og:image"]'       => 'image',       sub { shift->attrs('content') } ],
+    [ 'head meta[property="og:title"]'       => 'title',       sub { shift->attrs('content') } ],
+    [ 'head title'                           => 'title',       sub { shift->all_text(0) } ],
+    [ 'head meta[name="description"]'        => 'description', sub { shift->attrs('content') } ],
+    [ 'head meta[property="og:description"]' => 'description', sub { shift->attrs('content') } ],
+    [ 'head meta[property="og:site_name"]'   => 'site_name',   sub { shift->attrs('content') } ],
+
+);
+
 sub post_handler_share_link {
     my ($c) = @_;
 
-    return $c->redirect_to('/web/miniapp/startpage');
-}
+    my $rid = $c->session('rid');
+    my $environment = ActivityStream::Environment->new( controller => $c );
+
+    my $url = $c->param('link');
+
+    if ( not defined $url ) {
+        $c->flash( 'ERROR' => { 'UNDEFINED' => 'url' } );
+        $c->redirect_to( '/web/miniapp/startpage', 'status' => 400 );
+    }
+
+    my $tx = Mojo::UserAgent->new->max_redirects(5)->get($url);
+
+    if ( $tx->success ) {
+        my $dom = $tx->res->dom;
+        my %link_data = ( 'url' => $url );
+
+        foreach my $html_field_map (@HTML_FIELD_MAPS) {
+            my ( $css3, $field, $cb ) = @{$html_field_map};
+
+            next if defined( $link_data{$field} );
+
+            my $value_elem = $dom->at($css3);
+            next if not defined $value_elem;
+
+            my $value = $cb->($value_elem);
+            $link_data{$field} = $value if defined $value;
+        }
+
+        my $post_url = Mojo::URL->new('/rest/activitystream/activity');
+        $post_url->query->param( rid => $rid );
+
+        my $async_user_agent = $environment->get_async_user_agent;
+        $async_user_agent->add_post_web_request(
+            $post_url,
+            Mojo::JSON->new->encode( {
+                    'actor'  => { 'object_id' => $rid },
+                    'verb'   => 'share',
+                    'object' => {
+                        'object_id' => "ma_link:" . ActivityStream::Util::generate_id(),
+                        %link_data
+                    },
+                },
+            ),
+            sub { },
+        );
+
+        $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+    } else {
+        $c->flash( 'ERROR' => { 'MESSAGE' => "Can't load URL: $url" } );
+        $c->redirect_to( '/web/miniapp/startpage', 'status' => 500 );
+    }
+
+    return $c->render_later;
+} ## end sub post_handler_share_link
 
 sub post_handler_share_file {
     my ($c) = @_;
@@ -214,12 +277,12 @@ sub post_handler_share_file {
             push( @thumbnail_filepaths, $thumbnail_filepath );
         }
 
-        my $url = Mojo::URL->new('/rest/activitystream/activity');
-        $url->query->param( rid => $rid );
+        my $post_url = Mojo::URL->new('/rest/activitystream/activity');
+        $post_url->query->param( rid => $rid );
 
         my $async_user_agent = $environment->get_async_user_agent;
         $async_user_agent->add_post_web_request(
-            $url,
+            $post_url,
             Mojo::JSON->new->encode( {
                     'actor'  => { 'object_id' => $rid },
                     'verb'   => 'share',
@@ -234,7 +297,8 @@ sub post_handler_share_file {
                     },
                 },
             ),
-            sub {},
+            sub {
+            },
         );
 
         $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );

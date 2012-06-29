@@ -17,22 +17,20 @@ sub get_handler {
 
     my $environment = ActivityStream::Environment->new( controller => $c );
     my $async_user_agent = $environment->get_async_user_agent;
-warn '>>> ';
+
     my $person = MiniApp::API::Object::Person->new( 'object_id' => $person_id );
     $person->prepare_load( $environment, { rid => $rid } );
-warn '>>> ';
+
     $async_user_agent->load_all( sub {
-warn '>>> ';
+
         if ( $person->get_loaded_successfully ) {
-warn '>>> ';
             $c->stash( 'person' => $person );
             $c->render('myapp/person_profile');
         } else {
-warn '>>> ';
             $c->render('text' => "user not found", status => 404);
         }
     } );
-warn '>>> ';
+
     return;
 } ## end sub get_handler_activitystream
 

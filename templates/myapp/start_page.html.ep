@@ -1,7 +1,9 @@
-% layout 'default';
+% layout 'default', environment => $environment;
 
 <script>
-    miniapp.starpage = {};
+    miniapp.startpage = {
+        activity:{}
+    };
 </script>
 
 <div id="startpage">

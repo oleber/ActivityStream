@@ -8,9 +8,12 @@
     <%= $activity->get_object->get_message %>
 % end
 
-% layout 'myapp/start_page/activity/default',
+% my %data = (
 %       'activity'          => $activity,
 %       'environment'       => $environment,
 %       'activity_title'    => $activity_title->($activity),
-%       'activity_body'     => $activity_body->($activity);
+%       'activity_body'     => $activity_body->($activity),
+%);
+%== include 'myapp/start_page/activity/default', %data;
+
 

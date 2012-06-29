@@ -26,6 +26,8 @@ sub post_handler_activity {
 
     my $environment = ActivityStream::Environment->new( controller => $self );
 
+    warn( 'Try to create activity: ' . Dumper($self->tx->req->json) );
+
     my $activity
           = $environment->get_activity_factory->activity_instance_from_rest_request_struct( $self->tx->req->json );
 

@@ -324,7 +324,7 @@ has 'filetype' => (
 
 sub _execute {
     my ( $self, @args ) = @_;
-#warn "@args";
+
     my ( $chld_out, $chld_in );
     my $pid = open2( $chld_out, undef, @args );
 
@@ -453,7 +453,15 @@ sub _convert_with_unoconv_via_pdf {
     confess sprintf( "unoconv of %s content-type %s failed", $self->get_filepath, $self->get_filetype ) if 1 != @pdfs;
 
     $self->_execute( 'convert', $pdfs[0], File::Spec->join( $convert_dirpath, 'tumbernail.png' ) );
-    my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, 'tumbernail*.png' ) );
+    my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, 'tumbernail-*.png' ) );
+
+    if ( @pngs > 1 ) {
+        my $index_for = sub { 
+            my ( $index ) = (shift =~ /.*tumbernail-(\d+).png/);
+            return $index 
+        };
+        @pngs = sort { $index_for->($a) <=> $index_for->($b) } @pngs;
+    }
 
     confess sprintf( "convert of %s content-type %s failed", $self->get_filepath, $self->get_filetype ) if 0 == @pngs;
 

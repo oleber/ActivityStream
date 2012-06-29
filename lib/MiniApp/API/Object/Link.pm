@@ -1,4 +1,4 @@
-package MiniApp::API::Object::File;
+package MiniApp::API::Object::Link;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
@@ -10,13 +10,14 @@ use Readonly;
 extends 'ActivityStream::API::Object';
 
 Readonly my %FIELDS => (
-    'filename'              => [ 'is' => 'rw', 'isa' => 'Str' ],
-    'original_filepath'     => [ 'is' => 'rw', 'isa' => 'Str' ],
-    'thumbernail_filepaths' => [ 'is' => 'rw', 'isa' => 'ArrayRef[Str]' ],
-    'size'                  => [ 'is' => 'rw', 'isa' => 'Int' ],
+    'url'           => [ 'is' => 'rw', 'isa' => 'Str', 'required' => 1 ],
+    'image'         => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
+    'title'         => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
+    'description'   => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
+    'site_name'     => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
 );
 
-has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^ma_file:\w+$/} ) );
+has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^ma_link:\w+$/} ) );
 while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }

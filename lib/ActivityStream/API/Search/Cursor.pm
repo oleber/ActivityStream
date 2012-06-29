@@ -6,6 +6,7 @@ use MooseX::FollowPBP;
 use Data::Dumper;
 use Carp;
 use Readonly;
+use Try::Tiny;
 
 Readonly my $SECONDS_IN_A_DAY  => 24 * 60 * 60;
 Readonly my $SECONDS_IN_A_YEAR => 365 * 24 * 60 * 60;
@@ -54,8 +55,15 @@ sub next_activity {
         while ( @{ $self->get_next_activity_ids } ) {
             my $activity_id = shift @{ $self->get_next_activity_ids };
 
-            my $activity
-                  = $self->get_environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
+            my $activity;
+            try {
+                $activity = $self->get_environment->get_activity_factory->activity_instance_from_db( 
+                    { 'activity_id' => $activity_id } 
+                );
+            } catch {
+                warn "Failing loading $activity_id: $_";
+            };
+
             return $activity if defined $activity;
         }
 
