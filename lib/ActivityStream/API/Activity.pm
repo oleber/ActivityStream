@@ -16,7 +16,7 @@ use ActivityStream::X::LikerNotFound;
 has 'activity_id' => (
     'is'      => 'rw',
     'isa'     => 'Str',
-    'default' => sub { 'activity:' . ActivityStream::Util::generate_id },
+    'default' => sub { ActivityStream::Util::generate_id . ':activity' },
 );
 
 has 'creation_time' => (

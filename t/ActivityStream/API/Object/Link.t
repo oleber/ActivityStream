@@ -19,7 +19,7 @@ Readonly my $PKG => 'ActivityStream::API::Object::Link';
 use_ok($PKG);
 isa_ok( $PKG, 'ActivityStream::API::Object' );
 
-Readonly my $LINK_ID => sprintf( 'link:%s', ActivityStream::Util::generate_id );
+Readonly my $LINK_ID => sprintf( '%s:link', ActivityStream::Util::generate_id );
 Readonly my $RID => ActivityStream::Util::generate_id;
 
 Readonly my %DATA => ( 'object_id' => $LINK_ID );

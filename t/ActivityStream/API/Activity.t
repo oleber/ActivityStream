@@ -20,10 +20,6 @@ my $async_user_agent = $environment->get_async_user_agent;
 
 Readonly my $PKG => 'ActivityStream::API::Activity';
 
-Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-
 Readonly my $RID => ActivityStream::Util::generate_id();
 
 use_ok($PKG);
@@ -63,7 +59,7 @@ Readonly my %DATA => (
 my $obj = ActivityStream::API::Activity::JustForTest->from_rest_request_struct( \%DATA );
 Readonly my $ACTIVITY_ID => $obj->get_activity_id;
 
-like( $obj->get_activity_id, qr/^activity:\w{20}$/ );
+like( $obj->get_activity_id, qr/^\w{20}:activity$/ );
 
 my %EXPECTED = (
     %DATA,

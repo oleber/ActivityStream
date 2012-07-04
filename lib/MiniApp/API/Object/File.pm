@@ -16,7 +16,7 @@ Readonly my %FIELDS => (
     'size'                  => [ 'is' => 'rw', 'isa' => 'Int' ],
 );
 
-has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^ma_file:\w+$/} ) );
+has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^\w+:ma_file$/} ) );
 while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }

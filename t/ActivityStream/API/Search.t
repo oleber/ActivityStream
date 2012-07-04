@@ -24,11 +24,11 @@ Readonly my $TODAY            => timelocal( 0, 0, 6, ( localtime( time - 0 * 24 
 Readonly my $YESTERDAY        => timelocal( 0, 0, 6, ( localtime( time - 1 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
 Readonly my $BEFORE_YESTERDAY => timelocal( 0, 0, 6, ( localtime( time - 2 * 24 * 60 * 60 ) )[ 3, 4, 5 ] );
 
-my @USERS = ( map { sprintf( "person:%s", ActivityStream::Util::generate_id ) } ( 0 .. 9 ) );
+my @USERS = ( map { sprintf( '%s:person', ActivityStream::Util::generate_id ) } ( 0 .. 9 ) );
 
-Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_1_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
+Readonly my $USER_2_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
+Readonly my $USER_3_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
 
 my $delay = 0;
 

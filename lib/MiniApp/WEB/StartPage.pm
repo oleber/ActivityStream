@@ -143,7 +143,7 @@ sub post_handler_share_status {
                 'actor'  => { 'object_id' => $rid },
                 'verb'   => 'share',
                 'object' => {
-                    'object_id' => "ma_status:" . ActivityStream::Util::generate_id(),
+                    'object_id' => ActivityStream::Util::generate_id().':ma_status',
                     'message'   => $text
                 },
             },
@@ -207,7 +207,7 @@ sub post_handler_share_link {
                     'actor'  => { 'object_id' => $rid },
                     'verb'   => 'share',
                     'object' => {
-                        'object_id' => "ma_link:" . ActivityStream::Util::generate_id(),
+                        'object_id' => ActivityStream::Util::generate_id() . ':ma_link',
                         %link_data
                     },
                 },
@@ -287,7 +287,7 @@ sub post_handler_share_file {
                     'actor'  => { 'object_id' => $rid },
                     'verb'   => 'share',
                     'object' => {
-                        'object_id'         => "ma_file:" . ActivityStream::Util::generate_id(),
+                        'object_id'         => ActivityStream::Util::generate_id().':ma_file',
                         'filename'          => $upfile_filename,
                         'size'              => $upfile->size,
                         'original_filepath' => File::Spec->abs2rel( $original_filepath, $storage_path ),

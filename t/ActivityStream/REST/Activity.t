@@ -27,10 +27,10 @@ Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
 my $collection_activity = $environment->get_collection_factory->collection_activity;
 my $async_user_agent    = $environment->get_async_user_agent;
 
-my $user_creator_1_id = "person:" . ActivityStream::Util::generate_id();
-my $user_creator_2_id = "person:" . ActivityStream::Util::generate_id();
-my $user_creator_3_id = "person:" . ActivityStream::Util::generate_id();
-my $user_creator_4_id = "person:" . ActivityStream::Util::generate_id();
+my $user_creator_1_id = sprintf( '%s:person', ActivityStream::Util::generate_id );
+my $user_creator_2_id = sprintf( '%s:person', ActivityStream::Util::generate_id );
+my $user_creator_3_id = sprintf( '%s:person', ActivityStream::Util::generate_id );
+my $user_creator_4_id = sprintf( '%s:person', ActivityStream::Util::generate_id );
 
 foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id, $user_creator_4_id ) {
     my $user = ActivityStream::API::Object::Person->new( 'object_id' => $user_id );

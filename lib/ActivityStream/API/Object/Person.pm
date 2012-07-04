@@ -18,7 +18,7 @@ Readonly my %FIELDS => (
     'company'     => [ 'is' => 'rw', 'isa' => 'Str' ],
 );
 
-has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^person:\w+$/} ) );
+has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^\w+:person$/} ) );
 while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }

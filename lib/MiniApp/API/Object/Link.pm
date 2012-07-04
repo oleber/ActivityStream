@@ -17,7 +17,7 @@ Readonly my %FIELDS => (
     'site_name'     => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
 );
 
-has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^ma_link:\w+$/} ) );
+has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^\w+:ma_link$/} ) );
 while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }

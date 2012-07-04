@@ -20,8 +20,8 @@ isa_ok( $PKG => 'ActivityStream::API::Activity' );
 is( $PKG->get_attribute_base_class('actor'),  'ActivityStream::API::Object::Person' );
 is( $PKG->get_attribute_base_class('object'), 'ActivityStream::API::Object::Person' );
 
-Readonly my $PERSON_ACTOR_ID  => 'person:1';
-Readonly my $PERSON_OBJECT_ID => 'person:2';
+Readonly my $PERSON_ACTOR_ID  => '1:person';
+Readonly my $PERSON_OBJECT_ID => '2:person';
 
 Readonly my %DATA => (
     'actor'  => { 'object_id' => $PERSON_ACTOR_ID },

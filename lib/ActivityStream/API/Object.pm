@@ -53,7 +53,7 @@ sub from_rest_request_struct {
 sub get_type {
     my ($self) = @_;
 
-    if ( $self->get_object_id =~ /^(\w*):/ ) {
+    if ( $self->get_object_id =~ /^.*?:(\w*)/ ) {
         return $1;
     }
 }

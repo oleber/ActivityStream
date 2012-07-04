@@ -14,7 +14,7 @@ use ActivityStream::Constants;
 {
     my $root = join( ',', Data::UUID->new->create_str(), $$, time, $ActivityStream::Constants::GENERATE_ID_SECRET );
     sub generate_id {
-        $root = encode_base64( reverse(pack('I',time)), '' ) . md5_base64( $root . $$ . time . $ActivityStream::Constants::GENERATE_ID_SECRET );
+        $root = md5_base64( $root . $$ . time . $ActivityStream::Constants::GENERATE_ID_SECRET ) . encode_base64( reverse(pack('I',time)), '' );
         $root =~ s/=//g;
         $root =~ tr/0123456789\/\+/abcdefghijkl/;
         return substr($root, 0, 20);
@@ -31,7 +31,7 @@ sub get_day_of {
 sub split_id {
     my ($str) = @_;
     my %data;
-    @data{'type', 'id'} = split(/:/, $str);
+    @data{'id', 'type'} = split(/:/, $str);
     return \%data;
 }
 

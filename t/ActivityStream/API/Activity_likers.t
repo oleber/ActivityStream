@@ -20,9 +20,9 @@ my $async_user_agent = $environment->get_async_user_agent;
 
 Readonly my $PKG => 'ActivityStream::API::Activity';
 
-Readonly my $USER_1_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_2_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
-Readonly my $USER_3_ID => sprintf( "person:%s", ActivityStream::Util::generate_id );
+Readonly my $USER_1_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
+Readonly my $USER_2_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
+Readonly my $USER_3_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
 
 Readonly my $RID => ActivityStream::Util::generate_id();
 
@@ -55,15 +55,15 @@ local *ActivityStream::API::Object::prepare_load = sub {
 };
 
 Readonly my %DATA => (
-    'actor'  => { 'object_id' => 'xxx:123' },
+    'actor'  => { 'object_id' => '123:xxx' },
     'verb'   => 'friendship',
-    'object' => { 'object_id' => 'xxx:321' },
+    'object' => { 'object_id' => '321:xxx' },
 );
 
 my $obj = ActivityStream::API::Activity_Likers::JustForTest->from_rest_request_struct( \%DATA );
 Readonly my $ACTIVITY_ID => $obj->get_activity_id;
 
-like( $obj->get_activity_id, qr/^activity:\w{20}$/ );
+like( $obj->get_activity_id, qr/^\w{20}:activity$/ );
 
 my %EXPECTED = (
     %DATA,

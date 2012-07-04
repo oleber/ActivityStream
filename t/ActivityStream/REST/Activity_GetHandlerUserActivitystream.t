@@ -27,13 +27,13 @@ Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
 my $collection_activity = $environment->get_collection_factory->collection_activity;
 my $async_user_agent    = $environment->get_async_user_agent;
 
-Readonly my $VIEWER_USER_ID => "person:" . ActivityStream::Util::generate_id();
+Readonly my $VIEWER_USER_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
 
-my @USERS = ( map { sprintf( "person:%s", ActivityStream::Util::generate_id ) } ( 0 .. 9 ) );
+my @USERS = ( map { sprintf( '%s:person', ActivityStream::Util::generate_id ) } ( 0 .. 9 ) );
 
-Readonly my $USER_1_ID => "person:" . ActivityStream::Util::generate_id();
-Readonly my $USER_2_ID => "person:" . ActivityStream::Util::generate_id();
-Readonly my $USER_3_ID => "person:" . ActivityStream::Util::generate_id();
+Readonly my $USER_1_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
+Readonly my $USER_2_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
+Readonly my $USER_3_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
 
 #   prepare load of all persons
 my %person_object_for;

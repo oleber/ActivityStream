@@ -15,7 +15,7 @@ Readonly my %FIELDS => (
     'image_url'   => [ 'is' => 'rw', 'isa' => 'Str' ],
 );
 
-has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^link:\w+$/} ) );
+has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^\w+:link$/} ) );
 while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }

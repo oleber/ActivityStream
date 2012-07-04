@@ -105,7 +105,7 @@ sub object_package_for {
 sub _object_type {
     my ( $self, $data ) = @_;
 
-    if ( $data->{'object_id'} =~ /^(\w*):/ ) {
+    if ( $data->{'object_id'} =~ /^.*:(\w*)/ ) {
         return $1;
     }
 

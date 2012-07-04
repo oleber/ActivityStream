@@ -13,7 +13,7 @@ Readonly my %FIELDS => (
     'message'  => [ 'is' => 'rw', 'isa' => 'Str' ],
 );
 
-has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^ma_status:\w+$/} ) );
+has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^\w+:ma_status$/} ) );
 while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }
