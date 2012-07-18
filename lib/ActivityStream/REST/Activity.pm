@@ -95,6 +95,9 @@ sub get_handler_activity {
 
                 #TODO: fail on activity load error
             } );
+            
+        $self->render_later;
+        
         return;
     } else {
         return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
@@ -139,6 +142,8 @@ sub get_handler_user_activitystream {
         sub {
             $self->render_json( { 'activities' => [ map { $_->to_rest_response_struct } @activities ] } );
         } );
+
+    $self->render_later;
 
     return;
 } ## end sub get_handler_user_activitystream

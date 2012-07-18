@@ -14,7 +14,6 @@ use MongoDB::Connection;
 use Readonly;
 
 use ActivityStream::AsyncUserAgent;
-use ActivityStream::AsyncUserAgent::MongoUserAgent;
 use ActivityStream::Data::CollectionFactory;
 
 Readonly my $CONFIG_FILEPATH =>
@@ -53,7 +52,7 @@ has 'collection_factory' => (
     'lazy'    => 1,
     'default' => sub {
         return ActivityStream::Data::CollectionFactory->new(
-            'database' => shift->get_db_connecton->get_database('hotlinks_db') );
+            'database' => shift->get_db_connecton->get_database('oleber_activity_stream') );
     },
 );
 
@@ -75,11 +74,11 @@ has 'ua' => (
 
 has 'async_user_agent' => (
     'is'      => 'ro',
-    'isa'     => 'ActivityStream::AsyncUserAgent::MongoUserAgent',
+    'isa'     => 'ActivityStream::AsyncUserAgent',
     'lazy'    => 1,
     'default' => sub {
         my ($self) = @_;
-        return ActivityStream::AsyncUserAgent::MongoUserAgent->new( ua => $self->get_ua ) if defined $self->get_ua;
+        return ActivityStream::AsyncUserAgent->new( ua => $self->get_ua ) if defined $self->get_ua;
         return;
     },
 );

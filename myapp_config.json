@@ -6,7 +6,7 @@
         "activity_factory"    : "MiniApp::API::ActivityFactory"
     },
     "users" : {
-        "ma_person:helena" : {
+        "helena:ma_person" : {
             "first_name":   "Helena",
             "last_name":    "Sofia",
             "large_image":  "/miniapp/object/actor/helena_large.png",
@@ -14,7 +14,7 @@
             "small_image":  "/miniapp/object/actor/helena_small.png",
             "company":      null
         },
-        "ma_person:lucia" : {
+        "lucia:ma_person" : {
             "first_name":   "Lucia",
             "last_name":    "Gomes",
             "large_image":  "/miniapp/object/actor/lucia_large.png",
@@ -22,7 +22,7 @@
             "small_image":  "/miniapp/object/actor/lucia_small.png",
             "company":      null
         },
-        "ma_person:joao" : {
+        "joao:ma_person" : {
             "first_name":   "João",
             "last_name":    "Vitor",
             "large_image":  "/miniapp/object/actor/joao_large.png",

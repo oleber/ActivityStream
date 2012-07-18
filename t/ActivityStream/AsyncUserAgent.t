@@ -10,13 +10,13 @@ use Mojolicious;
 use Readonly;
 use Time::Local;
 
-Readonly my $PKG => 'ActivityStream::AsyncUserAgent::MongoUserAgent';
+Readonly my $PKG => 'ActivityStream::AsyncUserAgent';
 
 use_ok $PKG;
 
 {
 
-    package ActivityStream::AsyncUserAgent::MongoUserAgent::TestApp;
+    package ActivityStream::AsyncUserAgent::TestApp;
     use Mojo::Base 'Mojolicious';
     use Try::Tiny;
 
@@ -43,7 +43,7 @@ use_ok $PKG;
 {
     note('nothing to do');
 
-    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::MongoUserAgent::TestApp->new() );
+    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::TestApp->new() );
 
     $t->app->routes->get('/test_call')->to(
         'cb' => sub {
@@ -59,7 +59,7 @@ use_ok $PKG;
 {
     note('do static action');
 
-    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::MongoUserAgent::TestApp->new() );
+    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::TestApp->new() );
 
     $t->app->routes->get('/test_call')->to(
         'cb' => sub {
@@ -80,7 +80,7 @@ use_ok $PKG;
 {
     note('do single web_request');
 
-    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::MongoUserAgent::TestApp->new() );
+    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::TestApp->new() );
 
     my $return;
 
@@ -105,7 +105,7 @@ use_ok $PKG;
 {
     note('do cached web_request');
 
-    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::MongoUserAgent::TestApp->new() );
+    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::TestApp->new() );
 
     my $callcount;
 
@@ -133,7 +133,7 @@ use_ok $PKG;
 {
     note('do double/cached web_request');
 
-    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::MongoUserAgent::TestApp->new() );
+    my $t = Test::Mojo->new( ActivityStream::AsyncUserAgent::TestApp->new() );
 
     my $callcount;
 

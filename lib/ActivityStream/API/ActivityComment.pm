@@ -86,7 +86,7 @@ sub prepare_load {
 sub load {
     my ( $self, $environment, $args ) = @_;
 
-    local $environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent::MongoUserAgent->new(
+    local $environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent->new(
         ua    => $environment->get_async_user_agent->get_ua,
         cache => $environment->get_async_user_agent->get_cache
     );

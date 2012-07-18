@@ -4,18 +4,46 @@ use MooseX::FollowPBP;
 
 use Carp;
 use Data::Dumper;
-use HTTP::Request::Common;
-use Mojo::JSON;
-use Mojo::Message::Response;
-
-use Moose;
 use HTTP::Async;
-use Storable qw(dclone);
 
-has 'no_request_tasks' => (
+use Mojo::Message::Response;
+use Mojolicious::Controller;
+use Try::Tiny;
+
+has 'ua' => (
+    is  => 'rw',
+    isa => 'Mojo::UserAgent',
+);
+
+has 'delay' => (
     is      => 'rw',
-    isa     => 'ArrayRef[CODE]',
-    default => sub { [] },
+    isa     => 'Mojo::IOLoop::Delay',
+    lazy    => 1,
+    default => sub {
+        my ($self) = @_;
+
+        my $delay = Mojo::IOLoop->delay(
+            sub {
+                my ( $delay, @results ) = @_;
+                if ( defined $self->get_finalize ) {
+                    $self->get_finalize->( $self, @results );
+                }
+            } );
+
+        # activate the delay
+        $delay->begin;
+        Mojo::IOLoop->timer(
+            0 => sub {
+                $delay->end;
+                return;
+            } );
+
+        return $delay;
+    } );
+
+has 'finalize' => (
+    is  => 'rw',
+    isa => 'CodeRef',
 );
 
 has 'request_tasks' => (
@@ -28,7 +56,7 @@ our $GLOBAL_CACHE_FOR_TEST;
 
 has 'cache' => (
     is      => 'rw',
-    isa     => 'HashRef[HTTP::Response]',
+    isa     => 'HashRef',
     default => sub { $GLOBAL_CACHE_FOR_TEST // {} },
     traits  => ['Hash'],
     handles => {
@@ -37,71 +65,116 @@ has 'cache' => (
     },
 );
 
-has '_async' => (
-    is      => 'rw',
-    isa     => 'HTTP::Async',
-    default => sub { HTTP::Async->new },
-);
-
-sub _convert_response {
-    my ( $self, $http_response ) = @_;
-    my $mojo_message_reponse = Mojo::Message::Response->new;
-    $mojo_message_reponse->code( $http_response->code );
-    $mojo_message_reponse->body( $http_response->decoded_content );
-    return $mojo_message_reponse;
-}
-
 sub add_get_web_request {
-    my ( $self, $request_as_str, $cb ) = @_;
+    my ( $self, $request, $cb ) = @_;
 
-    my $request = GET( $request_as_str );
+    my $key = "GET $request";
 
-    my $key = "GET $request_as_str";
+    if ( not defined $self->get_response_to($key) ) {
 
-    if ( defined( my $response = $self->get_response_to($key) ) ) {
-        $self->add_action( sub { $cb->( $self, $self->_convert_response($response) ) } );
-    } else {
-        if ( not exists $self->get_request_tasks->{$key} ) {
-            $self->_get_async->add($request);
-        }
+        $self->get_request_tasks->{$key} //= [];
+
+        if ( not @{ $self->get_request_tasks->{$key} } ) {
+            confess "not defined ua" if not defined $self->get_ua;
+
+            $self->get_delay->begin;
+
+            $self->get_ua->get(
+                $request => sub {
+                    my ( $ua, $tx ) = @_;
+
+                    $self->put_response_to( $key, $tx );
+
+                    foreach my $request_task ( @{ $self->get_request_tasks->{$key} } ) {
+                        $self->add_action( sub { $request_task->( $self->get_response_to($key) ) } );
+                    }
+
+                    $self->get_request_tasks->{$key} = [];    # important to remove circularity
+
+                    $self->get_delay->end;
+                },
+            );
+        } ## end if ( not @{ $self->get_request_tasks...})
+
         push( @{ $self->get_request_tasks->{$key} }, $cb );
+    } else {
+        $self->add_action( sub { $cb->( $self->get_response_to($key) ) } );
     }
 
     return;
+} ## end sub add_get_web_request
+
+sub add_post_web_request {
+    my ( $self, $request, @args ) = @_;
+
+    my $cb = pop @args;
+
+    confess "No callback defined: " . ref($cb) if ref($cb) ne 'CODE';
+    confess "not defined ua" if not defined $self->get_ua;
+
+    $self->get_delay->begin;
+
+    $self->get_ua->post(
+        $request => @args, sub {
+            my ( $ua, $tx ) = @_;
+            $cb->( $tx );
+            $self->get_delay->end;
+        },
+    );
+
+    return;
 }
+
+sub add_delete_web_request {
+    my ( $self, $request, @args ) = @_;
+
+    my $cb = pop @args;
+
+    confess "No callback defined: " . ref($cb) if ref($cb) ne 'CODE';
+    confess "not defined ua" if not defined $self->get_ua;
+
+    $self->get_delay->begin;
+
+    $self->get_ua->delete(
+        $request => @args, sub {
+            my ( $ua, $tx ) = @_;
+            $cb->( $tx );
+            $self->get_delay->end;
+        },
+    );
+
+    return;
+}
+
 
 sub add_action {
     my ( $self, $cb ) = @_;
 
-    push( @{ $self->get_no_request_tasks }, $cb );
+    $self->get_delay->begin;
+    return Mojo::IOLoop->timer(
+        0 => sub {
+            my $exception;
 
-    return;
+            try { $cb->() } catch { $exception = $_; warn $exception; };
+
+            $self->get_delay->end;
+            die $exception if defined $exception;
+        },
+    );
 }
 
 sub load_all {
     my ( $self, $cb ) = @_;
 
-    my $async = $self->_get_async;
+    $self->get_delay;
 
-    while ( $async->not_empty or @{ $self->get_no_request_tasks } ) {
-        if ( defined( my $response = $async->next_response ) ) {
-            my $request = $response->request;
-            foreach my $cb ( @{ $self->get_request_tasks->{ $request->as_string } } ) {
-                $cb->( $self, $self->_convert_response($response) );
-            }
-            delete $self->get_request_tasks->{ $request->as_string };
-            $self->put_response_to( $request->as_string => $response );
-        } elsif ( @{ $self->get_no_request_tasks } ) {
-            my $cb = shift @{ $self->get_no_request_tasks };
-            $cb->($self);
-        }
+    if ( defined $cb ) {
+        $self->set_finalize($cb);
     }
 
-    if ($cb) {
-        $cb->();
-    }
+    Mojo::IOLoop->start if not Mojo::IOLoop->is_running;
 
     return;
-} ## end sub load_all
+}
 
 1;
