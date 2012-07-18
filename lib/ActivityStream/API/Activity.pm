@@ -97,6 +97,17 @@ sub is_recommendable { return 0 }
 
 sub to_db_struct {
     my ($self) = @_;
+
+    my @intervals = map { $_ + 10 * int( $self->get_creation_time / ( 60 * 60 * 2**$_ ) ) } ( 0 .. 9 );
+    my @sources = $self->get_sources;
+    my @timebox;
+
+    foreach my $intervals (@intervals) {
+        foreach my $source (@sources) {
+            push( @timebox, "$intervals:$source" );
+        }
+    }
+
     my %data = (
         'activity_id'   => $self->get_activity_id,
         'actor'         => $self->get_actor->to_db_struct,
@@ -106,8 +117,8 @@ sub to_db_struct {
         'likers'        => [ map { $_->to_db_struct } @{ $self->get_likers } ],
         'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
         'creation_time' => $self->get_creation_time,
-        'sources'       => [ $self->get_sources ],
-        'timebox'       => [ map { "$_-" . int( $self->get_creation_time / ( 60 * 60 * 2**$_ ) ) } ( 0 .. 9 ) ],
+        'sources'       => \@sources,
+        'timebox'       => \@timebox,
     );
 
     if ( defined $self->get_target ) {

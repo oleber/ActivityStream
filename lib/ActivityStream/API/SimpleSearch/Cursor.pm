@@ -9,9 +9,6 @@ use Readonly;
 use Tie::IxHash;
 use Try::Tiny;
 
-Readonly my $SECONDS_IN_A_DAY  => 24 * 60 * 60;
-Readonly my $SECONDS_IN_A_YEAR => 365 * 24 * 60 * 60;
-
 use ActivityStream::Data::Collection::Source;
 use ActivityStream::API::Activity;
 use ActivityStream::API::ActivityFactory;
@@ -63,7 +60,7 @@ has 'intervals' => (
         my $index = 0;
 
         $time_now = int( $time_now / ( 60 * 60 ) );
-        push( @intervals, sprintf( '%s-%s', $index, $time_now ) );
+        push( @intervals, $index + 10 * $time_now );
         $time_now--;
 
         while ( @intervals < 20 ) {
@@ -72,7 +69,7 @@ has 'intervals' => (
                 $index++;
             }
 
-            push( @intervals, sprintf( '%s-%s', $index, $time_now ) );
+            push( @intervals, $index + 10 * $time_now );
             $time_now--;
         }
 
@@ -89,10 +86,7 @@ has 'next_activity_ids' => (
 sub BUILD {
     my ($self) = @_;
 
-#   TODO: Make it work
-#    $self->get_collection_activity->get_collection->ensure_index( Tie::IxHash->new( 'timebox' => 1, 'sources' => 1 ),
-#        { safe => 1 } );
-
+    $self->get_collection_activity->get_collection->ensure_index( Tie::IxHash->new( 'timebox' => 1 ), { safe => 1 } );
     $self->get_collection_activity->get_collection->ensure_index( Tie::IxHash->new( 'activity_id' => 1 ) );
 
     return;
@@ -122,11 +116,8 @@ sub next_activity {
     if ( @{ $self->get_intervals } ) {
         my $interval = shift @{ $self->get_intervals };
 
-        my $found_activities_cursor
-              = $self->get_collection_activity->find_activities( {
-                timebox => $interval,
-                sources => { '$in' => $self->get_filter->get_see_source_ids },
-            } );
+        my $found_activities_cursor = $self->get_collection_activity->find_activities(
+            { timebox => { '$in' => [ map { "$interval:$_" } @{ $self->get_filter->get_see_source_ids } ], } } );
 
         my @objects = $found_activities_cursor->all;
         @objects = sort { $b->{'creation_time'} <=> $a->{'creation_time'} } @objects;

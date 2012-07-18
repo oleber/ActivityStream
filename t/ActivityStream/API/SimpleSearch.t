@@ -92,28 +92,27 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
     );
 
     my @expected = (
-        '0-372654',    # now
-        '1-186326',    # previous 2 hours
-        '2-93162',     # previous 4 hours
-        '3-46580',     # previous 8 hours
-        '4-23289',     # previous 16 hours
-        '4-23288',     # previous 16 hours
-        '5-11643',     # repeate previous 32 hours
-        '5-11642',
-        '6-5820',
-        '7-2909',
-        '7-2908',
-        '8-1453',
-        '8-1452',
-        '9-725',
-        '9-724',
-        '9-723',
-        '9-722',
-        '9-721',
-        '9-720',
-        '9-719',
+        3726540,    # now
+        1863261,    # previous 2 hours
+        931622,     # previous 4 hours
+        465803,     # previous 8 hours
+        232894,     # previous 16 hours
+        232884,     # previous 16 hours
+        116435,     # repeate previous 32 hours
+        116425,
+        58206,
+        29097,
+        29087,
+        14538,
+        14528,
+        7259,
+        7249,
+        7239,
+        7229,
+        7219,
+        7209,
+        7199,
     );
-
     eq_or_diff( $cursor->get_intervals, \@expected );
     is( scalar( @{ $cursor->get_intervals } ), 20 );
 
@@ -158,12 +157,10 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
             },
         );
 
-        my @expected = ( (
-                map { [ 'find', ignore, { 'timebox' => $_, 'sources' => { '$in' => [$USER_1_ID] } } ] }
-                      @{ $cursor->get_intervals }
-            ),
+        my @expected = (
+            ( map { [ 'find' => ignore, { 'timebox' => { '$in' => ["$_:$USER_1_ID"] } } ] } @{ $cursor->get_intervals } ),
             (
-                map { [ 'find', ignore, { 'activity_id' => $_->get_activity_id } ] }
+                map { [ 'find' => ignore, { 'activity_id' => $_->get_activity_id } ] }
                       ( $activity_1_1, $activity_1_2, $activity_1_3, $activity_1_4, $activity_1_5 ),
             ),
         );

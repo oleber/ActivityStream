@@ -79,7 +79,7 @@ my %EXPECTED = (
 my %expected_db_struct = (
     %{ dclone( \%EXPECTED ) },
     'visibility' => 1,
-    'timebox'    => [ map { "$_-" . int( time / 60 / 60 / 2**$_ ) } ( 0 .. 9 ) ],
+    'timebox'    => ignore,
     'sources'    => ['123:xxx'],
 );
 my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
