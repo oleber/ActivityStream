@@ -44,6 +44,7 @@ Readonly my $RID => ActivityStream::Util::generate_id();
             'timebox'       => ignore,
             'likers'        => [],
             'comments'      => [],
+            'sources'       => [$PERSON_ACTOR_ID],
         },
     );
     cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );

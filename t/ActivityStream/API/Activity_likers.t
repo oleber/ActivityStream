@@ -73,7 +73,12 @@ my %EXPECTED = (
     'comments'      => [],
 );
 
-my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, 'timebox' => ignore, );
+my %expected_db_struct = (
+    %{ dclone( \%EXPECTED ) },
+    'visibility' => 1,
+    'timebox'    => [ map { "$_-" . int( time / 60 / 60 / 2**$_ ) } ( 0 .. 9 ) ],
+    'sources'    => ['123:xxx'],
+);
 my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
 
 sub test_db_status {
@@ -119,13 +124,13 @@ $obj->load( $environment, { 'rid' => $RID } );
         note('like a not likeable activity');
 
         {
-            my $activity_in_db_before_like = $environment->get_activity_factory->activity_instance_from_db( 
-                { 'activity_id' => $ACTIVITY_ID } );
+            my $activity_in_db_before_like
+                  = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
-            dies_ok { $obj->save_liker( $environment, {'creator' => { 'object_id' => $USER_1_ID } } ) };
+            dies_ok { $obj->save_liker( $environment, { 'creator' => { 'object_id' => $USER_1_ID } } ) };
 
-            my $activity_in_db_after_like = $environment->get_activity_factory->activity_instance_from_db( 
-                { 'activity_id' => $ACTIVITY_ID } );
+            my $activity_in_db_after_like
+                  = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
             cmp_deeply( $activity_in_db_before_like, $activity_in_db_after_like );
             is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
@@ -212,7 +217,7 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('third like a likeable activity');
 
-            my $like = $obj->save_liker( $environment, {'creator' => { 'object_id' => $USER_3_ID }, } );
+            my $like = $obj->save_liker( $environment, { 'creator' => { 'object_id' => $USER_3_ID }, } );
 
             my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_3_ID } );
             $object_person->load( $environment, { 'rid' => $RID } );
@@ -247,8 +252,8 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 0 show all');
 
-        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
-            { 'activity_id' => $ACTIVITY_ID } );
+        my $activity_in_db
+              = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 0 } );
@@ -263,8 +268,8 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 1');
 
-        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
-            { 'activity_id' => $ACTIVITY_ID } );
+        my $activity_in_db
+              = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 1 } );
@@ -291,8 +296,8 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 2');
 
-        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
-            { 'activity_id' => $ACTIVITY_ID } );
+        my $activity_in_db
+              = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 2 } );
@@ -315,8 +320,8 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 3');
 
-        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
-            { 'activity_id' => $ACTIVITY_ID } );
+        my $activity_in_db
+              = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 3 } );
@@ -331,8 +336,8 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('max_likers = 4');
 
-        my $activity_in_db = $environment->get_activity_factory->activity_instance_from_db( 
-            { 'activity_id' => $ACTIVITY_ID } );
+        my $activity_in_db
+              = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
         $activity_in_db->load( $environment, { 'rid' => $RID, 'max_likers' => 4 } );
@@ -348,8 +353,8 @@ $obj->load( $environment, { 'rid' => $RID } );
 {
     note("Fail user load");
 
-    my $user_2_request
-          = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )->create_request( $environment, { 'rid' => $RID } );
+    my $user_2_request = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )
+          ->create_request( $environment, { 'rid' => $RID } );
     my $previous_response = $async_user_agent->get_response_to($user_2_request);
     $async_user_agent->put_response_to( "GET $user_2_request",
         Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 403 ) ) );

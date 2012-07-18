@@ -58,9 +58,9 @@ local *ActivityStream::API::Object::prepare_load = sub {
 };
 
 Readonly my %DATA => (
-    'actor'  => { 'object_id' => 'xxx:123' },
+    'actor'  => { 'object_id' => '123:xxx' },
     'verb'   => 'friendship',
-    'object' => { 'object_id' => 'xxx:321' },
+    'object' => { 'object_id' => '321:xxx' },
 );
 
 my $obj = ActivityStream::API::Activity_Comments::JustForTest->from_rest_request_struct( \%DATA );
@@ -76,7 +76,12 @@ my %EXPECTED = (
     'comments'      => [],
 );
 
-my %expected_db_struct = ( %{ dclone( \%EXPECTED ) }, 'visibility' => 1, 'timebox'       => ignore, );
+my %expected_db_struct = (
+    %{ dclone( \%EXPECTED ) },
+    'visibility' => 1,
+    'timebox'    => [ map { "$_-" . int( time / 60 / 60 / 2**$_ ) } ( 0 .. 9 ) ],
+    'sources'    => ['123:xxx'],
+);
 my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
 
 sub test_db_status {

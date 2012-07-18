@@ -44,6 +44,7 @@ Readonly my $RID => ActivityStream::Util::generate_id();
             'timebox'       => ignore,
             'likers'        => [],
             'comments'      => [],
+            'sources'       => [$PERSON_ACTOR_ID, $PERSON_OBJECT_ID],
         },
     );
     cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );
@@ -84,8 +85,9 @@ $t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } )
     my $activity = $PKG->from_rest_request_struct( \%DATA );
     $activity->save_in_db($environment);
     cmp_deeply(
-        $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity->get_activity_id } )
-              ->to_db_struct,
+        $environment->get_activity_factory->activity_instance_from_db(
+            { 'activity_id' => $activity->get_activity_id }
+              )->to_db_struct,
         $activity->to_db_struct
     );
 }

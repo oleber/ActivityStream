@@ -60,6 +60,12 @@ sub find_one_activity {
     return $self->get_collection->find_one($criteria);
 }
 
+sub find_activities {
+    my ( $self, $criteria ) = @_;
+
+    return $self->get_collection->find($criteria);
+}
+
 __PACKAGE__->meta->make_immutable;
 no Moose;
 
