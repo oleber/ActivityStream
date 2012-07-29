@@ -11,8 +11,8 @@ has '+actor'  => ( 'isa' => 'MiniApp::API::Thing::Person' );
 has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^share$/} ) );
 has '+object' => ( 'isa' => 'MiniApp::API::Thing::StatusMessage' );
 
-sub is_likeable      { return 1 }
-sub is_commentable   { return 1 }
+sub is_commentable   {1}
+sub is_likeable      {1}
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

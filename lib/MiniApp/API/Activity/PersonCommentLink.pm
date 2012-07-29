@@ -1,4 +1,4 @@
-package MiniApp::API::Activity::PersonRecommendLink;
+package MiniApp::API::Activity::PersonCommentLink;
 use Moose;
 use Moose::Util::TypeConstraints;
 
@@ -8,7 +8,7 @@ use MiniApp::API::Thing::Link;
 extends 'ActivityStream::API::ActivityChild';
 
 has '+actor'  => ( 'isa' => 'MiniApp::API::Thing::Person' );
-has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^recommend$/} ) );
+has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^comment$/} ) );
 has '+object' => ( 'isa' => 'MiniApp::API::Thing::Link' );
 
 sub is_commentable   {1}

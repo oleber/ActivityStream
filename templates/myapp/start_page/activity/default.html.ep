@@ -1,29 +1,28 @@
-<div class="ui-widget-content ui-corner-all" style='padding:5px'>
+%   my $clean_activity_id = md5_hex( $activity->get_activity_id );
+<div class="ui-widget-content ui-corner-all" style='padding:5px' id='activity_<%= $clean_activity_id %>'>
 
     <div class="big-left-image" style="display: table-cell; vertical-align: middle">
         <span></span>
         <img src="<%= $activity->get_actor->get_medium_image %>" />
     </div>
 
-%   my $clean_activity_id = md5_hex( $activity->get_activity_id );
-
     <div style='float:right;'>
         <span class="ui-widget ui-state-default ui-corner-all" style="display:inline-block; float:right;">
             <span
                 class="ui-icon ui-icon-circle-triangle-s" 
-                onclick="$('#menu_<%= $clean_activity_id %>').toggle( 'blind', {}, 100 );"
+                onclick="$('#activity_<%= $clean_activity_id %> .js_menu').toggle( 'blind', {}, 100 );"
             >
             </span>
         </span>
         <div class='clearboth'></div>
-        <div id="menu_<%= $clean_activity_id %>" class="ui-widget-content ui-corner-all padding-M" style="display: none">
-            <div onclick="javascript: $('#delete_<%= $clean_activity_id %>').submit()">
+        <div class="js_menu ui-widget-content ui-corner-all padding-M" style="display: none">
+            <div onclick="javascript: $('#activity_<%= $clean_activity_id %> .js_delete').submit()">
                 <span class="ui-icon ui-icon-trash" style="display:inline-block"></span>
                 Delete
             </div>
             <form
-                id="delete_<%= $clean_activity_id %>" 
-                action="/web/miniapp/startpage/delete_activity/<%= $activity->{"activity_id"} %>" 
+                class="js_delete"
+                action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/delete"
                 method="post"
                 style="display: none"
             ></form>
@@ -33,15 +32,15 @@
     <ul>
         <li class="activity-title"><%= $activity_title %></li>
         <li class="activity-body">
-%           my $activity_body = stash('activity_body');
-%           if ( not defined $activity_body ) {
-%               $activity_body = include(
-%                   'myapp/start_page/activity/body/' . $activity->get_object->get_type, 
+%           my $activity_body = (
+%               stash('activity_body')
+%               or include(
+%                  'myapp/start_page/activity/body/' . $activity->get_object->get_type,
 %                   'activity'          => $activity,
 %                   'environment'       => $environment,
 %                   'thing'             => $activity->get_object
-%               );
-%           }
+%               )
+%           );
             <%= $activity_body %>
         </li>
     </ul>
@@ -49,31 +48,47 @@
     <div style='clear:both'></div>
 
     <div class='activity_footer'>
+
+
 %       if ( $activity->is_likeable ) {
             <span class="ui-widget ui-state-default ui-corner-all margin-M">
-                <span class="ui-icon ui-icon-heart" style="display:inline-table"></span> Like
+                <span
+                    class="ui-icon ui-icon-heart" style="display:inline-table"
+                    onclick="javascript: $('#activity_<%= $clean_activity_id %> .js_like').submit();"
+                ></span> Like
             </span>
+
+            <form
+                class="js_like"
+                style="display: none"
+                action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/liker"
+                method="post"
+            ></form>
 %       }
+
+
 %       if ( $activity->is_recommendable ) {
 
             <span
                 class="ui-widget ui-state-default ui-corner-all margin-M"
-                onclick="javascript: $('#recommend_<%= $clean_activity_id %>').submit();"
+                onclick="javascript: $('#activity_<%= $clean_activity_id %> .js_recommend %>').submit();"
             >
                 <span class="ui-icon ui-icon-signal-diag" style="display:inline-table"></span> Recommend
             </span>
 
             <form
-                id="recommend_<%= $clean_activity_id %>"
+                class="js_recommend"
                 style="display: none"
                 action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/recommend"
                 method="post"
             ></form>
 %       }
+
+
 %       if ( $activity->is_commentable ) {
             <span
                 class="ui-widget ui-state-default ui-corner-all margin-M"
-                onclick="$('#comment_<%= $clean_activity_id %>').toggle( 'blind', {}, 100 );"
+                onclick="$('#activity_<%= $clean_activity_id %> .js_comment').toggle( 'blind', {}, 100 );"
             >
                 <span class="ui-icon ui-icon-comment" style="display:inline-table"></span> Comment
             </span>
@@ -81,13 +96,13 @@
     </div>
 
 %   if ( $activity->is_commentable ) {
-        <div id="comment_<%= $clean_activity_id %>" class="ui-widget-content ui-corner-all padding-M margin-M" style="display: none">
-            <form action="/web/miniapp/startpage/comment_activity/<%= $activity->{"activity_id"} %>" method="post" >
+        <div class="js_comment ui-widget-content ui-corner-all padding-M margin-M" style="display: none">
+            <form action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/comment" method="post" >
                 <textarea name="body" style="width:100%; display:inline-block; margin-bottom:5px;" ></textarea>
                 <div style="text-align:right" >
                     <span
                         class="ui-widget ui-state-default ui-corner-all margin-M"
-                        onclick="$('#comment_<%= $clean_activity_id %> form').submit();"
+                        onclick="$('#activity_<%= $clean_activity_id %> .js_comment form').submit();"
                     >
                         <span class="ui-icon ui-icon-comment" style="display:inline-table"></span>
                         Comment
@@ -98,17 +113,19 @@
         </div>
 %   }
 
-%   foreach my $comment ( @{$activity->get_comments} ) {
+%   foreach my $comment ( reverse @{$activity->get_comments} ) {
         <div class='comment ui-widget-content ui-corner-all padding-M margin-M'>
             <div class="comment-image margin-M" style="float:left">
                 <img src="<%= $comment->get_creator->get_small_image %>" />
             </div>
             <ul>
                 <li class="comment-title">
-                    <a href="<%= $comment->get_creator->get_profile_url %>"><%= $comment->get_creator->get_full_name %></a>
+                    <a href="<%= $comment->get_creator->get_profile_url %>"><%= $comment->get_creator->get_full_name %></a> comment:
                 </li>
                 <li class="comment-text"><%= $comment->get_body %></li>
+                <li class="comment-date"><%= localtime( $comment->get_creation_time ) %></li>
             </ul>
+
             <div style='clear:both'></div>
         </div>
 %   }

@@ -30,6 +30,8 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 
 no Moose::Util::TypeConstraints;
 
+sub is_commentable   {1}
+sub is_likeable      {1}
 sub is_recommendable {1}
 
 sub to_rest_response_struct {

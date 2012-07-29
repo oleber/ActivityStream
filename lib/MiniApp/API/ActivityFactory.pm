@@ -10,8 +10,14 @@ use Readonly;
 
 use MiniApp::API::Activity::Status;
 use MiniApp::API::Activity::PersonShareFile;
-use MiniApp::API::Activity::PersonRecommendFile;
 use MiniApp::API::Activity::PersonShareLink;
+
+use MiniApp::API::Activity::PersonRecommendFile;
+use MiniApp::API::Activity::PersonCommentFile;
+use MiniApp::API::Activity::PersonLikeFile;
+
+use MiniApp::API::Activity::PersonCommentLink;
+use MiniApp::API::Activity::PersonLikeLink;
 use MiniApp::API::Activity::PersonRecommendLink;
 
 use MiniApp::API::Thing::Person;
@@ -23,6 +29,10 @@ sub activity_package_for {
         [ qr/^ma_person:share:ma_status$/   => 'MiniApp::API::Activity::Status' ],
         [ qr/^ma_person:share:ma_file$/     => 'MiniApp::API::Activity::PersonShareFile' ],
         [ qr/^ma_person:share:ma_link$/     => 'MiniApp::API::Activity::PersonShareLink' ],
+        [ qr/^ma_person:comment:ma_link$/   => 'MiniApp::API::Activity::PersonCommentLink' ],
+        [ qr/^ma_person:comment:ma_file$/   => 'MiniApp::API::Activity::PersonCommentFile' ],
+        [ qr/^ma_person:like:ma_link$/      => 'MiniApp::API::Activity::PersonLikeLink' ],
+        [ qr/^ma_person:like:ma_file$/      => 'MiniApp::API::Activity::PersonLikeFile' ],
         [ qr/^ma_person:recommend:ma_link$/ => 'MiniApp::API::Activity::PersonRecommendLink' ],
         [ qr/^ma_person:recommend:ma_file$/ => 'MiniApp::API::Activity::PersonRecommendFile' ],
     );

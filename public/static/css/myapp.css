@@ -74,6 +74,18 @@
     margin-bottom:  5px;
 }
 
+.activitystream .activity .comment .comment-text {
+    font-size:      100%;
+    margin-bottom:  5px;
+}
+
+.activitystream .activity .comment .comment-date {
+    font-size:      70%;
+    color:          #aaa;
+    margin-bottom:  5px;
+}
+
+
 
 .page-title {
 	font-size: 200%;

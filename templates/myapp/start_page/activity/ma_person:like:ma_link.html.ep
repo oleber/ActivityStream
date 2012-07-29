@@ -1,0 +1,11 @@
+% my $activity_title = begin
+    % my $activity = shift;
+    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a> liked Link:
+% end
+
+% my %data = (
+%       'activity'          => $activity,
+%       'environment'       => $environment,
+%       'activity_title'    => $activity_title->($activity),
+%);
+%== include 'myapp/start_page/activity/default', %data;

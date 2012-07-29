@@ -156,6 +156,32 @@ sub post_handler_comment_activity {
     return;
 } ## end sub post_handler_comment_activity
 
+sub post_handler_liker_activity {
+    my ($c) = @_;
+
+    my $rid = $c->session('rid');
+    confess "rid not defined" if not defined $rid;
+
+    my $activity_id = $c->param('activity_id');
+    confess "activity_id not defined" if not defined $activity_id;
+
+    my $environment = ActivityStream::Environment->new( controller => $c );
+    my $async_user_agent = $environment->get_async_user_agent;
+
+    my $url = Mojo::URL->new( sprintf( "/rest/activitystream/user/%s/like/activity/%s", $rid, $activity_id ) );
+    $url->query->param( rid => $rid );
+
+    my $json = Mojo::JSON->new;
+
+    $async_user_agent->add_post_web_request( $url, $json->encode( { 'rid' => $rid } ), sub { } );
+
+    $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+
+    $c->render_later;
+
+    return;
+} ## end sub post_handler_liker_activity
+
 sub post_handler_share_status {
     my ($c) = @_;
 

@@ -30,10 +30,13 @@ sub startup {
     $r->post('/web/miniapp/startpage/share_file')
           ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_share_file' );
 
-    $r->post('/web/miniapp/startpage/delete_activity/:activity_id')
+    $r->post('/web/miniapp/startpage/:activity_id/delete')
           ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_delete_activity' );
 
-    $r->post('/web/miniapp/startpage/comment_activity/:activity_id')
+    $r->post('/web/miniapp/startpage/:activity_id/liker')
+          ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_liker_activity' );
+
+    $r->post('/web/miniapp/startpage/:activity_id/comment')
           ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_comment_activity' );
 
     $r->post('/web/miniapp/startpage/:activity_id/recommend')
