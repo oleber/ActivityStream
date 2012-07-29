@@ -59,9 +59,10 @@ sub get_handler_activitystream {
             my @activities = map { $activity_factory->activity_instance_from_rest_response_struct($_) }
                   @{ $tx->res->json->{'activities'} };
 
+            warn( Dumper( [ map { $_->to_db_struct } @activities ] ) );
+
             $c->stash( 'environment' => $environment );
             $c->stash( 'activities'  => \@activities );
-            warn Dumper \@activities;
         },
     );
 
@@ -81,7 +82,6 @@ sub post_handler_delete_activity {
     confess "activity_id not defined" if not defined $activity_id;
 
     my $environment = ActivityStream::Environment->new( controller => $c );
-
     my $async_user_agent = $environment->get_async_user_agent;
 
     my $url = Mojo::URL->new( '/rest/activitystream/activity/' . $activity_id );
@@ -110,7 +110,6 @@ sub post_handler_recommend_activity {
     confess "body length = 0"  if 0 == length $body;
 
     my $environment = ActivityStream::Environment->new( controller => $c );
-
     my $async_user_agent = $environment->get_async_user_agent;
 
     my $url = Mojo::URL->new( sprintf( "/rest/activitystream/user/%s/recommend/activity/%s", $rid, $activity_id ) );
@@ -141,7 +140,6 @@ sub post_handler_comment_activity {
     confess "body length = 0"  if 0 == length $body;
 
     my $environment = ActivityStream::Environment->new( controller => $c );
-
     my $async_user_agent = $environment->get_async_user_agent;
 
     my $url = Mojo::URL->new( sprintf( "/rest/activitystream/user/%s/comment/activity/%s", $rid, $activity_id ) );
@@ -168,7 +166,6 @@ sub post_handler_share_status {
     my $text = $c->param('text');
 
     my $environment = ActivityStream::Environment->new( controller => $c );
-
     my $async_user_agent = $environment->get_async_user_agent;
 
     my $post_url = Mojo::URL->new('/rest/activitystream/activity');

@@ -42,7 +42,10 @@ Readonly my %DATA => (
     'object' => { 'object_id' => '321:xxx' },
 );
 
-my $activity = ActivityStream::API::Activity_Recommendation::TestActivity->from_rest_request_struct( \%DATA );
+my $activity
+      = ActivityStream::API::Activity_Recommendation::TestActivity->from_rest_request_struct( $environment, \%DATA );
+$activity->save_in_db;
+
 Readonly my $ACTIVITY_ID => $activity->get_activity_id;
 Readonly my $BODY        => ActivityStream::Util::generate_id;
 Readonly my $PERSON_ID   => sprintf( '%s:person', ActivityStream::Util::generate_id );
@@ -68,15 +71,16 @@ subtest 'Test is Recommendable', sub {
             ok $activity->is_recommendable;
 
             lives_ok {
-                $activity->save_recommendation( $environment,
-                    { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
+                $activity->save_recommendation( { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
             };
 
             cmp_deeply(
                 \@callbacks,
                 [ [
                         'save_recommendation' => $activity->get_object,
-                        $environment, { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } ] ] );
+                        $activity, { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } ]
+                ],
+            );
         };
 
         subtest '', sub {
@@ -87,8 +91,7 @@ subtest 'Test is Recommendable', sub {
 
             throws_ok(
                 sub {
-                    $activity->save_recommendation( $environment,
-                        { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
+                    $activity->save_recommendation( { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
                 },
                 qr/\Q@{[ sprintf( q(Activity %s isn't recommendable), $activity->get_activity_id ) ]}\E/
             );
@@ -108,8 +111,7 @@ subtest 'Test is Recommendable', sub {
 
             throws_ok(
                 sub {
-                    $activity->save_recommendation( $environment,
-                        { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
+                    $activity->save_recommendation( { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
                 },
                 qr/\Q@{[ sprintf( q(Activity %s isn't recommendable), $activity->get_activity_id ) ]}\E/
             );
@@ -124,8 +126,7 @@ subtest 'Test is Recommendable', sub {
 
             throws_ok(
                 sub {
-                    $activity->save_recommendation( $environment,
-                        { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
+                    $activity->save_recommendation( { 'creator' => { 'object_id' => $PERSON_ID }, 'body' => $BODY } );
                 },
                 qr/\Q@{[ sprintf( q(Activity %s isn't recommendable), $activity->get_activity_id ) ]}\E/
             );

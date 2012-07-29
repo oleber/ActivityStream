@@ -32,9 +32,9 @@ my $user_creator_3_id = sprintf( '%s:person', ActivityStream::Util::generate_id 
 my $user_creator_4_id = sprintf( '%s:person', ActivityStream::Util::generate_id );
 
 foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id, $user_creator_4_id ) {
-    my $user = ActivityStream::API::Object::Person->new( 'object_id' => $user_id );
+    my $user = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $user_id } );
 
-    $t->app->routes->get( $user->create_request( $environment, { 'rid' => $RID } ) )->to(
+    $t->app->routes->get( $user->create_request( { 'rid' => $RID } ) )->to(
         'cb' => sub {
             $user->create_test_response( {
                     'first_name' => 'person ' . $user_id,
@@ -79,8 +79,8 @@ my $json = Mojo::JSON->new;
         cmp_deeply(
             $collection_activity->find_one_activity( { 'activity_id' => $friendship_activity{'activity_id'} } ),
             superhashof(
-                ActivityStream::API::Activity::Friendship->from_rest_request_struct( \%friendship_activity )
-                      ->to_db_struct
+                ActivityStream::API::Activity::Friendship->from_rest_request_struct( $environment,
+                    \%friendship_activity )->to_db_struct
             ),
         );
     }
@@ -98,8 +98,8 @@ my $json = Mojo::JSON->new;
         cmp_deeply(
             $collection_activity->find_one_activity( { 'activity_id' => $second_friendship_activity{'activity_id'} } ),
             superhashof(
-                ActivityStream::API::Activity::Friendship->from_rest_request_struct( \%second_friendship_activity )
-                      ->to_db_struct
+                ActivityStream::API::Activity::Friendship->from_rest_request_struct( $environment,
+                    \%second_friendship_activity )->to_db_struct
             ),
         );
     }
@@ -110,7 +110,7 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         cmp_deeply( $t->tx->res->json, $activity->to_rest_response_struct );
     }
@@ -125,7 +125,7 @@ my $json = Mojo::JSON->new;
         note("GET single activity: existing");
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         $t->get_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
               ->status_is(HTTP_OK)->json_content_is( $activity->to_rest_response_struct );
@@ -149,7 +149,7 @@ my $json = Mojo::JSON->new;
             $activity
         );
 
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
         $t->get_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
               ->status_is(HTTP_OK)->json_content_is( $activity->to_rest_response_struct );
     }
@@ -172,7 +172,7 @@ my $json = Mojo::JSON->new;
             $activity
         );
 
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         $t->get_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
               ->status_is(HTTP_OK)->json_content_is( $activity->to_rest_response_struct );
@@ -215,17 +215,21 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         push(
             @expected_likes,
             ActivityStream::API::ActivityLike->new(
-                'like_id'       => $t->tx->res->json->{'like_id'},
-                'creator'       => ActivityStream::API::Object::Person->new( 'object_id' => $user_creator_3_id ),
+                'environment' => $environment,
+                'like_id'     => $t->tx->res->json->{'like_id'},
+                'creator'     => ActivityStream::API::Object::Person->new(
+                    'environment' => $environment,
+                    'object_id'   => $user_creator_3_id
+                ),
                 'creation_time' => $t->tx->res->json->{'creation_time'},
             ) );
 
-        $expected_likes[-1]->load( $environment, { 'rid' => $RID } );
+        $expected_likes[-1]->load( { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
     }
@@ -239,16 +243,20 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         push(
             @expected_likes,
             ActivityStream::API::ActivityLike->new(
-                'like_id'       => $t->tx->res->json->{'like_id'},
-                'creator'       => ActivityStream::API::Object::Person->new( 'object_id' => $user_creator_4_id ),
+                'environment' => $environment,
+                'like_id'     => $t->tx->res->json->{'like_id'},
+                'creator'     => ActivityStream::API::Object::Person->new(
+                    'environment' => $environment,
+                    'object_id'   => $user_creator_4_id
+                ),
                 'creation_time' => $t->tx->res->json->{'creation_time'},
             ) );
-        $expected_likes[-1]->load( $environment, { 'rid' => $RID } );
+        $expected_likes[-1]->load( { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
     }
@@ -273,7 +281,7 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         pop @expected_likes;
 
@@ -293,7 +301,7 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
     }
@@ -310,7 +318,7 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
     }
@@ -328,7 +336,7 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
     }
@@ -346,7 +354,7 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_likers, \@expected_likes );
     }
@@ -386,15 +394,19 @@ my $json = Mojo::JSON->new;
 
         my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
 
         my $activity_comment = ActivityStream::API::ActivityComment->new(
-            'comment_id'    => $t->tx->res->json->{'comment_id'},
-            'creator'       => ActivityStream::API::Object::Person->new( 'object_id' => $user_creator_3_id ),
+            'environment' => $environment,
+            'comment_id'  => $t->tx->res->json->{'comment_id'},
+            'creator'     => ActivityStream::API::Object::Person->new(
+                'environment' => $environment,
+                'object_id'   => $user_creator_3_id
+            ),
             'body'          => $BODY,
             'creation_time' => $t->tx->res->json->{'creation_time'},
         );
-        $activity_comment->load( $environment, { 'rid' => $RID } );
+        $activity_comment->load( { 'rid' => $RID } );
 
         cmp_deeply( $activity->get_comments, [$activity_comment], );
     }
@@ -429,8 +441,8 @@ my $json = Mojo::JSON->new;
         cmp_deeply(
             \@callback,
             [ [
-                    'save_recommendation' => $activity,
-                    ignore, { 'creator' => { 'object_id' => $user_creator_3_id }, 'body' => $BODY } ] ] );
+                    'save_recommendation' => ignore,
+                    { 'creator' => { 'object_id' => $user_creator_3_id }, 'body' => $BODY } ] ] );
     }
 
     {
@@ -453,8 +465,11 @@ my $json = Mojo::JSON->new;
                 'creation_time' => $new_activity->get_creation_time,
             } );
 
-        cmp_deeply( \@callback,
-            [ [ 'save_recommendation', $activity, ignore, { 'creator' => { 'object_id' => $user_creator_3_id }, 'body' => $BODY } ] ] );
+        cmp_deeply(
+            \@callback,
+            [ [
+                    'save_recommendation' => ignore,
+                    { 'creator' => { 'object_id' => $user_creator_3_id }, 'body' => $BODY } ] ] );
     }
 
     {

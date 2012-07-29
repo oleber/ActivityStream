@@ -80,7 +80,7 @@ sub activity_instance_from_rest_request_struct {
         $obj->{'creator'} = $self->object_instance_from_rest_request_struct( $obj->{'creator'} );
     }
 
-    return $pkg->from_rest_request_struct($data);
+    return $pkg->from_rest_request_struct($self->get_environment, $data);
 } ## end sub activity_instance_from_rest_request_struct
 
 sub activity_instance_from_db {
@@ -107,7 +107,7 @@ sub activity_instance_from_db {
             $obj->{'creator'} = $self->object_instance_from_db( $obj->{'creator'} );
         }
 
-        return $pkg->from_db_struct($data);
+        return $pkg->from_db_struct($self->get_environment, $data);
     } else {
         die ActivityStream::X::ActivityNotFound->new;
     }
@@ -175,7 +175,7 @@ sub object_instance_from_rest_request_struct {
         Dumper($data), Dumper( [ $self->object_package_for ] ),
     ) if not defined $pkg;
 
-    return $pkg->from_rest_request_struct($data);
+    return $pkg->from_rest_request_struct($self->get_environment, $data);
 }
 
 sub object_instance_from_db {
@@ -189,7 +189,7 @@ sub object_instance_from_db {
         Dumper($data), Dumper( [ $self->object_package_for ] ),
     ) if not defined $pkg;
 
-    return $pkg->from_db_struct($data);
+    return $pkg->from_db_struct($self->get_environment, $data);
 }
 
 sub object_instance_from_rest_response_struct {
@@ -203,7 +203,7 @@ sub object_instance_from_rest_response_struct {
         Dumper($data), Dumper( [ $self->object_package_for ] ),
     ) if not defined $pkg;
 
-    return $pkg->from_rest_response_struct($data);
+    return $pkg->from_rest_response_struct($self->get_environment, $data);
 }
 
 

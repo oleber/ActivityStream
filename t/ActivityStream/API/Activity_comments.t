@@ -40,8 +40,8 @@ use_ok($PKG);
     extends 'ActivityStream::API::Activity';
 
     sub prepare_load {
-        my ( $self, $environment, $args ) = @_;
-        $self->SUPER::prepare_load( $environment, $args );
+        my ( $self, $args ) = @_;
+        $self->SUPER::prepare_load($args);
         $self->set_loaded_successfully(1);
         return;
     }
@@ -53,7 +53,7 @@ local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
     return 'ActivityStream::API::Activity_Comments::JustForTest';
 };
 local *ActivityStream::API::Object::prepare_load = sub {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
     $self->set_loaded_successfully(1);
 };
 
@@ -63,7 +63,7 @@ Readonly my %DATA => (
     'object' => { 'object_id' => '321:xxx' },
 );
 
-my $obj = ActivityStream::API::Activity_Comments::JustForTest->from_rest_request_struct( \%DATA );
+my $obj = ActivityStream::API::Activity_Comments::JustForTest->from_rest_request_struct( $environment, \%DATA );
 Readonly my $ACTIVITY_ID => $obj->get_activity_id;
 
 like( $obj->get_activity_id, qr/^\w{20}:activity$/ );
@@ -93,8 +93,8 @@ sub test_db_status {
     cmp_deeply( $obj->to_db_struct,            \%expected_db_struct, 'Check $obj to_db_struct' );
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-    $obj->load( $environment, { 'rid' => $RID } );
-    $activity_in_db->load( $environment, { 'rid' => $RID } );
+    $obj->load( { 'rid' => $RID } );
+    $activity_in_db->load( { 'rid' => $RID } );
 
     cmp_deeply(
         $obj->to_rest_response_struct,
@@ -112,15 +112,15 @@ sub test_db_status {
 } ## end sub test_db_status
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
-    my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
-    $t->app->routes->get( $person->create_request( $environment, { 'rid' => $RID } ) )->to(
+    my $person = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $person_id );
+    $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
         'cb' => sub {
             $person->create_test_response( { 'first_name' => "first name $person_id", 'rid' => $RID } )->(shift);
         } );
 }
 
-$obj->save_in_db($environment);
-$obj->load( $environment, { 'rid' => $RID } );
+$obj->save_in_db;
+$obj->load( { 'rid' => $RID } );
 
 {
     note('Test a comment');
@@ -132,7 +132,7 @@ $obj->load( $environment, { 'rid' => $RID } );
             my $activity_in_db_before_like
                   = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
-            dies_ok { $obj->save_comment( $environment, { user_id => $USER_1_ID, 'body' => $BODY_1 } ) };
+            dies_ok { $obj->save_comment( { 'creator' => { 'object_id' => $USER_1_ID }, 'body' => $BODY_1 } ) };
 
             my $activity_in_db_after_like
                   = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
@@ -141,13 +141,13 @@ $obj->load( $environment, { 'rid' => $RID } );
             is( $obj->get_loaded_successfully, undef, 'Save like cleans loaded_successfully' );
         }
 
-        $obj->load( $environment, { 'rid' => $RID } );
+        $obj->load( { 'rid' => $RID } );
         is( $obj->get_loaded_successfully, 1 );
 
         cmp_deeply( $obj->to_db_struct,            \%expected_db_struct );
         cmp_deeply( $obj->to_rest_response_struct, \%expected_to_rest_response_struct );
 
-        $obj->save_in_db($environment);
+        $obj->save_in_db;
 
         test_db_status;
 
@@ -163,11 +163,11 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('comment a commentable activity');
 
-            my $comment = $obj->save_comment( $environment,
-                { 'creator' => { 'object_id' => $USER_1_ID }, 'body' => $BODY_1 } );
+            my $comment = $obj->save_comment( { 'creator' => { 'object_id' => $USER_1_ID }, 'body' => $BODY_1 } );
 
-            my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_1_ID } );
-            $object_person->load( $environment, { 'rid' => $RID } );
+            my $object_person = ActivityStream::API::Object::Person->new(
+                { 'environment' => $environment, 'object_id' => $USER_1_ID } );
+            $object_person->load( { 'rid' => $RID } );
 
             push(
                 @{ $expected_db_struct{'comments'} },
@@ -194,11 +194,11 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('second comment a commentable activity');
 
-            my $comment = $obj->save_comment( $environment,
-                { 'creator' => { 'object_id' => $USER_2_ID }, 'body' => $BODY_2 } );
+            my $comment = $obj->save_comment( { 'creator' => { 'object_id' => $USER_2_ID }, 'body' => $BODY_2 } );
 
-            my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_2_ID } );
-            $object_person->load( $environment, { 'rid' => $RID } );
+            my $object_person = ActivityStream::API::Object::Person->new(
+                { 'environment' => $environment, 'object_id' => $USER_2_ID } );
+            $object_person->load( { 'rid' => $RID } );
 
             push(
                 @{ $expected_db_struct{'comments'} },
@@ -224,11 +224,11 @@ $obj->load( $environment, { 'rid' => $RID } );
         {
             note('third comment a commentable activity');
 
-            my $comment = $obj->save_comment( $environment,
-                { 'creator' => { 'object_id' => $USER_3_ID }, 'body' => $BODY_3 } );
+            my $comment = $obj->save_comment( { 'creator' => { 'object_id' => $USER_3_ID }, 'body' => $BODY_3 } );
 
-            my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $USER_3_ID } );
-            $object_person->load( $environment, { 'rid' => $RID } );
+            my $object_person = ActivityStream::API::Object::Person->new(
+                { 'environment' => $environment, 'object_id' => $USER_3_ID } );
+            $object_person->load( { 'rid' => $RID } );
 
             push(
                 @{ $expected_db_struct{'comments'} },
@@ -263,7 +263,7 @@ $obj->load( $environment, { 'rid' => $RID } );
               = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 0 } );
+        $activity_in_db->load( { 'rid' => $RID, 'max_comments' => 0 } );
 
         cmp_deeply(
             $activity_in_db->to_rest_response_struct,
@@ -279,7 +279,7 @@ $obj->load( $environment, { 'rid' => $RID } );
               = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 1 } );
+        $activity_in_db->load( { 'rid' => $RID, 'max_comments' => 1 } );
 
         my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
         my %comment_1 = %{ $expected_to_rest_response_struct{'comments'}[1] };
@@ -307,7 +307,7 @@ $obj->load( $environment, { 'rid' => $RID } );
               = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 2 } );
+        $activity_in_db->load( { 'rid' => $RID, 'max_comments' => 2 } );
 
         my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
         delete $comment_0{'creator'};
@@ -331,7 +331,7 @@ $obj->load( $environment, { 'rid' => $RID } );
               = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 3 } );
+        $activity_in_db->load( { 'rid' => $RID, 'max_comments' => 3 } );
 
         cmp_deeply(
             $activity_in_db->to_rest_response_struct,
@@ -347,7 +347,7 @@ $obj->load( $environment, { 'rid' => $RID } );
               = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
         cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-        $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 4 } );
+        $activity_in_db->load( { 'rid' => $RID, 'max_comments' => 4 } );
 
         cmp_deeply(
             $activity_in_db->to_rest_response_struct,
@@ -360,8 +360,9 @@ $obj->load( $environment, { 'rid' => $RID } );
 {
     note("Fail user load");
 
-    my $user_2_request = ActivityStream::API::Object::Person->new( 'object_id' => $USER_2_ID )
-          ->create_request( $environment, { 'rid' => $RID } );
+    my $user_2_request
+          = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $USER_2_ID )
+          ->create_request( { 'rid' => $RID } );
     my $previous_response = $async_user_agent->get_response_to($user_2_request);
     $async_user_agent->put_response_to( "GET $user_2_request",
         Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 403 ) ) );
@@ -371,7 +372,7 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-    $activity_in_db->load( $environment, { 'rid' => $RID, 'max_comments' => 2 } );
+    $activity_in_db->load( { 'rid' => $RID, 'max_comments' => 2 } );
 
     my %comment_0 = %{ $expected_to_rest_response_struct{'comments'}[0] };
     delete $comment_0{'creator'};
@@ -400,7 +401,7 @@ $obj->load( $environment, { 'rid' => $RID } );
     {
         note('delete not existing comment');
         throws_ok(
-            sub { $obj->delete_comment( $environment, { 'comment_id' => 'not existing' } ) },
+            sub { $obj->delete_comment( { 'comment_id' => 'not existing' } ) },
             'ActivityStream::X::CommentNotFound',
         );
         test_db_status;
@@ -408,9 +409,7 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     {
         note('delete first existing comment');
-        $obj->delete_comment( $environment,
-            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[1]{'comment_id'} },
-        );
+        $obj->delete_comment( { 'comment_id' => $expected_to_rest_response_struct{'comments'}[1]{'comment_id'} }, );
 
         $expected_db_struct{'comments'} = [ $expected_db_struct{'comments'}[0], $expected_db_struct{'comments'}[2] ];
         $expected_to_rest_response_struct{'comments'}
@@ -420,20 +419,16 @@ $obj->load( $environment, { 'rid' => $RID } );
 
     {
         note('delete second existing comment');
-        $obj->delete_comment( $environment,
-            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} },
-        );
+        $obj->delete_comment( { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} }, );
 
-        $expected_db_struct{'comments'}               = [ $expected_db_struct{'comments'}[1] ];
+        $expected_db_struct{'comments'} = [ $expected_db_struct{'comments'}[1] ];
         $expected_to_rest_response_struct{'comments'} = [ $expected_to_rest_response_struct{'comments'}[1] ];
         test_db_status;
     }
 
     {
         note('delete first existing comment');
-        $obj->delete_comment( $environment,
-            { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} },
-        );
+        $obj->delete_comment( { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} }, );
 
         $expected_db_struct{'comments'}               = [];
         $expected_to_rest_response_struct{'comments'} = [];

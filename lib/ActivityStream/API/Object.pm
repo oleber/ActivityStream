@@ -6,6 +6,8 @@ use MooseX::FollowPBP;
 use Carp;
 use Data::Dumper;
 
+use ActivityStream::Environment;
+
 has 'object_id' => (
     'is'       => 'rw',
     'isa'      => subtype( 'Str' => where sub {/^\w+:\w+$/} ),
@@ -15,6 +17,13 @@ has 'object_id' => (
 has 'loaded_successfully' => (
     'is'  => 'rw',
     'isa' => 'Maybe[Bool]',
+);
+
+has 'environment' => (
+    'is'       => 'ro',
+    'isa'      => 'ActivityStream::Environment',
+    'weak_ref' => 1,
+    'required' => 1,
 );
 
 sub to_struct {
@@ -41,23 +50,23 @@ sub to_rest_response_struct {
 }
 
 sub from_struct {
-    my ( $pkg, $data ) = @_;
-    return $pkg->new($data);
+    my ( $pkg, $environment, $data ) = @_;
+    return $pkg->new({'environment' => $environment, %$data});
 }
 
 sub from_rest_request_struct {
-    my ( $pkg, $data ) = @_;
-    return $pkg->from_struct($data);
+    my ( $pkg, $environment, $data ) = @_;
+    return $pkg->from_struct($environment, $data);
 }
 
 sub from_db_struct {
-    my ( $pkg, $data ) = @_;
-    return $pkg->from_struct($data);
+    my ( $pkg, $environment, $data ) = @_;
+    return $pkg->from_struct($environment, $data);
 }
 
 sub from_rest_response_struct {
-    my ( $pkg, $data ) = @_;
-    return $pkg->from_struct($data);
+    my ( $pkg, $environment, $data ) = @_;
+    return $pkg->from_struct($environment, $data);
 }
 
 sub get_type {
@@ -69,7 +78,7 @@ sub get_type {
 }
 
 sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
     if ( not defined $self->get_loaded_successfully ) {
         $self->set_loaded_successfully(1);
@@ -79,15 +88,15 @@ sub prepare_load {
 }
 
 sub load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
-    local $environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent->new(
-        ua    => $environment->get_async_user_agent->get_ua,
-        cache => $environment->get_async_user_agent->get_cache
+    local $self->get_environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent->new(
+        ua    => $self->get_environment->get_async_user_agent->get_ua,
+        cache => $self->get_environment->get_async_user_agent->get_cache
     );
 
-    $self->prepare_load( $environment, $args );
-    $environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
+    $self->prepare_load( $args );
+    $self->get_environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
 
     return;
 }
@@ -95,20 +104,25 @@ sub load {
 sub is_recommendable {0}
 
 sub save_recommendation {
-    my ( $self, $environment, $param ) = @_;
+    my ( $self, $parent_activity, $param ) = @_;
 
     confess( sprintf( q(Object %s isn't recommendable), $self->get_object_id ) ) if not $self->is_recommendable;
 
-    my $activity = $environment->get_activity_factory->activity_instance_from_rest_request_struct( {
-            actor  => $param->{'creator'},
-            verb   => 'recommend',
-            object => $self->to_db_struct,
-    } );
+    my %data = (
+        'actor'              => $param->{'creator'},
+        'verb'               => 'recommend',
+        'object'             => $self->to_simulate_rest_struct,
+        'parent_activity_id' => $parent_activity->get_activity_id,
+    );
 
-    $activity->save_in_db($environment);
+    $data{'super_parent_activity_id'}
+          = $parent_activity->can('get_super_parent_activity_id')
+          ? $parent_activity->get_super_parent_activity_id
+          : $parent_activity->get_activity_id;
 
-    return $activity;
-}
+    return $self->get_environment->get_activity_factory->activity_instance_from_rest_request_struct( \%data )
+          ->save_in_db;
+} ## end sub save_recommendation
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

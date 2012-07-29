@@ -20,10 +20,9 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 
 no Moose::Util::TypeConstraints;
 
-sub to_rest_response_struct {
-    my ($self) = @_;
+sub _to_helper {
+    my ($self, $data) = @_;
 
-    my $data = $self->SUPER::to_rest_response_struct;
     foreach my $field ( keys %FIELDS ) {
         my $getter = "get_$field";
         $data->{$field} = $self->$getter();
@@ -32,13 +31,19 @@ sub to_rest_response_struct {
     return $data;
 }
 
+sub to_simulate_rest_struct {
+    my ($self) = @_;
+    return $self->_to_helper($self->SUPER::to_simulate_rest_struct);
+}
+
 sub to_db_struct {
     my ($self) = @_;
+    return $self->_to_helper($self->SUPER::to_db_struct);
+}
 
-    my $data = $self->SUPER::to_db_struct;
-    $data->{'message'} = $self->get_message;
-
-    return $data;
+sub to_rest_response_struct {
+    my ($self) = @_;
+    return $self->_to_helper($self->SUPER::to_rest_response_struct);
 }
 
 __PACKAGE__->meta->make_immutable;

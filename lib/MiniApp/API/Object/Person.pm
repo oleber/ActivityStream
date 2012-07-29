@@ -10,9 +10,13 @@ use Readonly;
 extends 'ActivityStream::API::Object';
 
 Readonly my %FIELDS => (
-    'first_name'   => [ 'is' => 'rw', 'isa' => 'Str' ],
-    'last_name'    => [ 'is' => 'rw', 'isa' => 'Str' ],
-    'profile_url'  => [ 'is' => 'rw', 'isa' => 'Str', default => sub { my $self = shift; return "/web/miniapp/person/profile/" . $self->get_object_id } ],
+    'first_name'  => [ 'is' => 'rw', 'isa' => 'Str' ],
+    'last_name'   => [ 'is' => 'rw', 'isa' => 'Str' ],
+    'profile_url' => [
+        'is'    => 'rw',
+        'isa'   => 'Str',
+        default => sub { my $self = shift; return "/web/miniapp/person/profile/" . $self->get_object_id }
+    ],
     'large_image'  => [ 'is' => 'rw', 'isa' => 'Str' ],
     'medium_image' => [ 'is' => 'rw', 'isa' => 'Str' ],
     'small_image'  => [ 'is' => 'rw', 'isa' => 'Str' ],
@@ -26,7 +30,7 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 
 no Moose::Util::TypeConstraints;
 
-sub is_recommendable { 1 }
+sub is_recommendable {1}
 
 sub to_rest_response_struct {
     my ($self) = @_;
@@ -36,17 +40,18 @@ sub to_rest_response_struct {
         my $getter = "get_$field";
         $data->{$field} = $self->$getter();
     }
+
     return $data;
 }
 
 sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
     $self->set_loaded_successfully(0);
 
-    $self->SUPER::prepare_load( $environment, $args );
+    $self->SUPER::prepare_load($args);
 
-    my $data = $environment->get_config->{'users'}->{ $self->get_object_id };
+    my $data = $self->get_environment->get_config->{'users'}->{ $self->get_object_id };
 
     warn "data not found with object_id = " . $self->get_object_id if not defined $data;
 

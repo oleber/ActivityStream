@@ -5,7 +5,7 @@ use Moose::Util::TypeConstraints;
 use MiniApp::API::Object::Person;
 use MiniApp::API::Object::File;
 
-extends 'ActivityStream::API::Activity';
+extends 'ActivityStream::API::ActivityChild';
 
 has '+actor'  => ( 'isa' => 'MiniApp::API::Object::Person' );
 has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^recommend$/} ) );

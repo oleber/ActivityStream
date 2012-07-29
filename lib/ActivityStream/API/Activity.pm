@@ -3,6 +3,7 @@ use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
+use Carp;
 use Data::Dumper;
 use List::Util qw(max);
 use List::MoreUtils qw(any);
@@ -77,17 +78,24 @@ has 'loaded_successfully' => (
     'isa' => 'Maybe[Bool]',
 );
 
+has 'environment' => (
+    'is'       => 'ro',
+    'isa'      => 'ActivityStream::Environment',
+    'weak_ref' => 1,
+    'required' => 1,
+);
+
 around BUILDARGS => sub {
     my ( $orig, $class, @args ) = @_;
 
     my $args = $class->$orig(@args);
 
-    foreach my $value ( @{ $args->{'likers'} // [] } ) {
-        $value = ActivityStream::API::ActivityLike->new($value);    # change inline
+    foreach my $value ( @{ $args->{'likers'} // [] } ) {# change inline
+        $value = ActivityStream::API::ActivityLike->new( { 'environment' => $args->{'environment'}, %$value } );
     }
 
-    foreach my $value ( @{ $args->{'comments'} // [] } ) {
-        $value = ActivityStream::API::ActivityComment->new($value);    # change inline
+    foreach my $value ( @{ $args->{'comments'} // [] } ) { # change inline
+        $value = ActivityStream::API::ActivityComment->new( { 'environment' => $args->{'environment'}, %$value } );
     }
 
     return $args;
@@ -164,10 +172,10 @@ sub _to_db_struct_comments {
 }
 
 sub save_in_db {
-    my ( $self, $environment ) = @_;
+    my ($self) = @_;
 
-    my $collection_source   = $environment->get_collection_factory->collection_source;
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
+    my $collection_source   = $self->get_environment->get_collection_factory->collection_source;
+    my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
 
     $collection_activity->upsert_activity( { 'activity_id' => $self->get_activity_id }, $self->to_db_struct );
 
@@ -225,8 +233,7 @@ sub get_sources { return ( shift->get_actor->get_object_id ) }
 
 sub get_type {
     my ($self) = @_;
-    return join(
-        ':',
+    return join( ':',
         $self->get_actor->get_type,
         $self->get_verb,
         $self->get_object->get_type,
@@ -235,33 +242,37 @@ sub get_type {
 }
 
 sub from_rest_request_struct {
-    my ( $pkg, $data ) = @_;
+    my ( $pkg, $environment, $data ) = @_;
+
+    confess '$data undefined' if not defined $data;
 
     my %data = %$data;
 
-    $data{'actor'}  = $pkg->get_attribute_base_class('actor')->from_rest_request_struct( $data{'actor'} );
-    $data{'object'} = $pkg->get_attribute_base_class('object')->from_rest_request_struct( $data{'object'} );
+    $data{'actor'} = $pkg->get_attribute_base_class('actor')->from_rest_request_struct( $environment, $data{'actor'} );
+    $data{'object'}
+          = $pkg->get_attribute_base_class('object')->from_rest_request_struct( $environment, $data{'object'} );
 
     if ( defined $data{'target'} ) {
-        $data{'target'} = $pkg->get_attribute_base_class('target')->from_rest_request_struct( $data{'target'} );
+        $data{'target'}
+              = $pkg->get_attribute_base_class('target')->from_rest_request_struct( $environment, $data{'target'} );
     }
 
-    return $pkg->new(%data);
+    return $pkg->new( { 'environment' => $environment, %data } );
 }
 
 sub from_db_struct {
-    my ( $pkg, $data ) = @_;
+    my ( $pkg, $environment, $data ) = @_;
 
     my %data = %$data;
 
-    $data{'actor'}  = $pkg->get_attribute_base_class('actor')->from_db_struct( $data{'actor'} );
-    $data{'object'} = $pkg->get_attribute_base_class('object')->from_db_struct( $data{'object'} );
+    $data{'actor'} = $pkg->get_attribute_base_class('actor')->from_db_struct( $environment, $data{'actor'} );
+    $data{'object'} = $pkg->get_attribute_base_class('object')->from_db_struct( $environment, $data{'object'} );
 
     if ( defined $data{'target'} ) {
-        $data{'target'} = $pkg->get_attribute_base_class('target')->from_db_struct( $data{'target'} );
+        $data{'target'} = $pkg->get_attribute_base_class('target')->from_db_struct( $environment, $data{'target'} );
     }
 
-    return $pkg->new(%data);
+    return $pkg->new( { 'environment' => $environment, %data } );
 }
 
 sub from_rest_response_struct {
@@ -273,15 +284,17 @@ sub from_rest_response_struct {
 
     my %data = %$data;
 
-    $data{'actor'}  = $pkg->get_attribute_base_class('actor')->from_rest_response_struct( $data{'actor'} );
-    $data{'object'} = $pkg->get_attribute_base_class('object')->from_rest_response_struct( $data{'object'} );
+    $data{'actor'} = $pkg->get_attribute_base_class('actor')->from_rest_response_struct( $environment, $data{'actor'} );
+    $data{'object'}
+          = $pkg->get_attribute_base_class('object')->from_rest_response_struct( $environment, $data{'object'} );
 
     if ( defined $data{'target'} ) {
-        $data{'target'} = $pkg->get_attribute_base_class('target')->from_rest_response_struct( $data{'target'} );
+        $data{'target'}
+              = $pkg->get_attribute_base_class('target')->from_rest_response_struct( $environment, $data{'target'} );
     }
 
-    return $pkg->new(%data);
-}
+    return $pkg->new( { 'environment' => $environment, %data } );
+} ## end sub from_rest_response_struct
 
 sub get_attribute_base_class {
     my ( $pkg, $name ) = @_;
@@ -296,48 +309,48 @@ sub get_attribute_base_class {
 }
 
 sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
     if ( not defined $self->get_loaded_successfully ) {
         $self->set_loaded_successfully(1);
     }
 
-    $self->prepare_load_comments( $environment, $args );
-    $self->prepare_load_likers( $environment, $args );
+    $self->prepare_load_comments($args);
+    $self->prepare_load_likers($args);
 
-    $self->prepare_load_actor( $environment, $args );
-    $self->prepare_load_object( $environment, $args );
-    $self->prepare_load_target( $environment, $args );
+    $self->prepare_load_actor($args);
+    $self->prepare_load_object($args);
+    $self->prepare_load_target($args);
 
     return;
 }
 
 sub prepare_load_actor {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
-    $self->get_actor->prepare_load( $environment, $args );
+    $self->get_actor->prepare_load($args);
 
     return;
 }
 
 sub prepare_load_object {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
-    $self->get_object->prepare_load( $environment, $args );
+    $self->get_object->prepare_load($args);
 
     return;
 }
 
 sub prepare_load_target {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
-    $self->get_target->prepare_load( $environment, $args ) if defined $self->get_target;
+    $self->get_target->prepare_load($args) if defined $self->get_target;
 
     return;
 }
 
 sub prepare_load_comments {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
     my $max_comments = $args->{'max_comments'};
 
@@ -345,14 +358,14 @@ sub prepare_load_comments {
     my @indexes = ( max( 0, @{ $self->get_comments } - $max_comments ) .. ( @{ $self->get_comments } - 1 ) );
 
     foreach my $comment ( @{ $self->get_comments }[@indexes] ) {
-        $comment->prepare_load( $environment, $args );
+        $comment->prepare_load($args);
     }
 
     return;
 }
 
 sub prepare_load_likers {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
     my $max_likers = $args->{'max_likers'};
 
@@ -360,22 +373,22 @@ sub prepare_load_likers {
     my @indexes = max( 0, @{ $self->get_likers } - $max_likers ) .. ( @{ $self->get_likers } - 1 );
 
     foreach my $liker ( @{ $self->get_likers }[@indexes] ) {
-        $liker->prepare_load( $environment, $args );
+        $liker->prepare_load($args);
     }
 
     return;
 }
 
 sub load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
-    local $environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent->new(
-        ua    => $environment->get_async_user_agent->get_ua,
-        cache => $environment->get_async_user_agent->get_cache
+    local $self->get_environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent->new(
+        ua    => $self->get_environment->get_async_user_agent->get_ua,
+        cache => $self->get_environment->get_async_user_agent->get_cache
     );
 
-    $self->prepare_load( $environment, $args );
-    $environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
+    $self->prepare_load($args);
+    $self->get_environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
 
     return $self;
 }
@@ -411,9 +424,9 @@ sub target_loaded_successfully {
 }
 
 sub save_visibility {
-    my ( $self, $environment, $visibility ) = @_;
+    my ( $self, $visibility ) = @_;
 
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
+    my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
 
     $collection_activity->upsert_activity(
         { 'activity_id' => $self->get_activity_id },
@@ -426,20 +439,21 @@ sub save_visibility {
 }
 
 sub save_liker {
-    my ( $self, $environment, $param ) = @_;
+    my ( $self, $param ) = @_;
 
     $self->set_loaded_successfully(undef);
 
     confess( "Can't like: " . ref($self) ) if not $self->is_likeable;
 
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
+    my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
 
     my $activity_like = blessed($param) ? $param : ActivityStream::API::ActivityLike->new( {
+            'environment' => $self->get_environment,
             %$param,
             'creator' => (
                 ( blessed $param->{'creator'} )
                 ? $param->{'creator'}
-                : $environment->get_activity_factory->object_instance_from_db( $param->{'creator'} ),
+                : $self->get_environment->get_activity_factory->object_instance_from_db( $param->{'creator'} ),
             ),
         },
     );
@@ -455,7 +469,7 @@ sub save_liker {
 } ## end sub save_liker
 
 sub delete_liker {
-    my ( $self, $environment, $param ) = @_;
+    my ( $self, $param ) = @_;
 
     $self->set_loaded_successfully(undef);
 
@@ -466,7 +480,7 @@ sub delete_liker {
 
     die ActivityStream::X::LikerNotFound->new if scalar(@new_likers) == scalar( @{ $self->get_likers } );
 
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
+    my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
 
     $self->set_likers( \@new_likers );
 
@@ -479,23 +493,24 @@ sub delete_liker {
 } ## end sub delete_liker
 
 sub save_comment {
-    my ( $self, $environment, $param ) = @_;
+    my ( $self, $param ) = @_;
 
     $self->set_loaded_successfully(undef);
 
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
 
     my $activity_comment = blessed($param) ? $param : ActivityStream::API::ActivityComment->new( {
+            'environment' => $self->get_environment,
             %$param,
             'creator' => (
                 ( blessed $param->{'creator'} )
                 ? $param->{'creator'}
-                : $environment->get_activity_factory->object_instance_from_db( $param->{'creator'} ),
+                : $self->get_environment->get_activity_factory->object_instance_from_db( $param->{'creator'} ),
             ),
         },
     );
 
-    $environment->get_collection_factory->collection_activity->update_activity(
+    $self->get_environment->get_collection_factory->collection_activity->update_activity(
         { 'activity_id' => $self->get_activity_id },
         { '$push'       => { 'comments' => $activity_comment->to_db_struct } },
     );
@@ -506,7 +521,7 @@ sub save_comment {
 } ## end sub save_comment
 
 sub delete_comment {
-    my ( $self, $environment, $param ) = @_;
+    my ( $self, $param ) = @_;
 
     $self->set_loaded_successfully(undef);
 
@@ -517,7 +532,7 @@ sub delete_comment {
 
     die ActivityStream::X::CommentNotFound->new if scalar(@new_comments) == scalar( @{ $self->get_comments } );
 
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
+    my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
 
     $self->set_comments( \@new_comments );
 
@@ -530,11 +545,11 @@ sub delete_comment {
 } ## end sub delete_comment
 
 sub save_recommendation {
-    my ( $self, $environment, $param ) = @_;
+    my ( $self, $param ) = @_;
 
     confess( sprintf( q(Activity %s isn't recommendable), $self->get_activity_id ) ) if not $self->is_recommendable;
 
-    return $self->get_object->save_recommendation( $environment, $param );
+    return $self->get_object->save_recommendation( $self, $param );
 }
 
 sub preload_filter_pass {

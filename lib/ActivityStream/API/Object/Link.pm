@@ -23,7 +23,7 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 no Moose::Util::TypeConstraints;
 
 sub create_request {
-    my ( $self, $environment, $data ) = @_;
+    my ( $self, $data ) = @_;
     my $url = sprintf( '/test/link/%s/%s', $self->get_object_id, $data->{'rid'} );
     $url =~ s/:/__/g;
     return $url;
@@ -55,14 +55,14 @@ sub to_rest_response_struct {
 }
 
 sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
     $self->set_loaded_successfully(0);
 
-    $self->SUPER::prepare_load( $environment, $args );
+    $self->SUPER::prepare_load( $args );
 
-    $environment->get_async_user_agent->add_get_web_request(
-        $self->create_request($environment, $args),
+    $self->get_environment->get_async_user_agent->add_get_web_request(
+        $self->create_request($args),
         sub {
             my ( $tx ) = @_;
 

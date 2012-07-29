@@ -33,7 +33,7 @@ sub post_handler_activity {
         'status' => HTTP_FORBIDDEN )
           if not any { $rid eq $_ } ( 'internal', $activity->get_sources );
 
-    $activity->save_in_db($environment);
+    $activity->save_in_db;
 
     $self->render_json( {
             'activity_id'   => $activity->get_activity_id,
@@ -66,7 +66,7 @@ sub delete_handler_activity {
                 'status' => HTTP_FORBIDDEN );
         }
 
-        $activity->save_visibility( $environment, 0 );
+        $activity->save_visibility( 0 );
 
         return $self->render_json( {} );
     } else {
@@ -85,7 +85,7 @@ sub get_handler_activity {
     my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
 
     if ( defined($activity) and $activity->get_visibility ) {
-        $activity->prepare_load( $environment, { 'rid' => $rid } );
+        $activity->prepare_load(  { 'rid' => $rid } );
 
         $environment->get_async_user_agent->load_all(
             sub {
@@ -130,7 +130,7 @@ sub get_handler_user_activitystream {
     while ( my $activity = $search->next_activity ) {
         next if not $activity->preload_filter_pass($filter);
 
-        $activity->prepare_load( $environment, { 'rid' => $rid } );
+        $activity->prepare_load(  { 'rid' => $rid } );
 
         push( @activities, $activity );
         last if @activities >= $filter->get_limit;
@@ -158,7 +158,7 @@ sub post_handler_user_activity_like {
     my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
     return $self->render_json( {}, 'status' => HTTP_NOT_FOUND ) if not defined $activity;
 
-    my $like = $activity->save_liker( $environment, { 'creator' => { 'object_id' => $user_id } } );
+    my $like = $activity->save_liker(  { 'creator' => { 'object_id' => $user_id } } );
     return $self->render_json( { 'like_id' => $like->get_like_id, 'creation_time' => $like->get_creation_time } );
 }
 
@@ -186,7 +186,7 @@ sub delete_handler_activity_like {
         'status' => HTTP_FORBIDDEN )
           if not any { $rid eq $_ } ( 'internal', $activity_like->get_creator->get_object_id );
 
-    $activity->delete_liker( $environment, { 'like_id' => $like_id } );
+    $activity->delete_liker({ 'like_id' => $like_id } );
     return $self->render_json( {} );
 } ## end sub delete_handler_activity_like
 
@@ -207,7 +207,7 @@ sub post_handler_user_activity_comment {
     return $self->render_json( {}, 'status' => HTTP_NOT_FOUND ) if not defined $activity;
 
     my $comment
-          = $activity->save_comment( $environment, { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
+          = $activity->save_comment(  { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
 
     return $self->render_json( {
             'comment_id'    => $comment->get_comment_id,
@@ -231,7 +231,7 @@ sub post_handler_user_activity_recommendation {
     my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
     return $self->render_json( {}, 'status' => HTTP_NOT_FOUND ) if not defined $activity;
 
-    my $new_activity = $activity->save_recommendation( $environment,
+    my $new_activity = $activity->save_recommendation(
         { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
 
     if ( defined $new_activity ) {

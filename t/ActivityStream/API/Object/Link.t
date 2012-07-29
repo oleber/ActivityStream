@@ -19,6 +19,10 @@ Readonly my $PKG => 'ActivityStream::API::Object::Link';
 use_ok($PKG);
 isa_ok( $PKG, 'ActivityStream::API::Object' );
 
+my $t = Test::Mojo->new( Mojolicious->new );
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
+my $async_user_agent = $environment->get_async_user_agent;
+
 Readonly my $LINK_ID => sprintf( '%s:link', ActivityStream::Util::generate_id );
 Readonly my $RID => ActivityStream::Util::generate_id;
 
@@ -33,21 +37,21 @@ Readonly my %DATA_RESPONSE => (
 );
 
 my $request_as_string
-      = $PKG->new( 'object_id' => $LINK_ID )->create_request( ActivityStream::Environment->new, { 'rid' => $RID } );
+      = $PKG->new( 'environment' => $environment, 'object_id' => $LINK_ID )->create_request( { 'rid' => $RID } );
 
 {
     note('Check object_id');
-    throws_ok { $PKG->new( %DATA, 'object_id' => 'xpto:125' ) } qr/object_id/;
+    throws_ok { $PKG->new( 'environment' => $environment, %DATA, 'object_id' => 'xpto:125' ) } qr/object_id/;
 }
 
 {
     note('Test DB');
 
-    my $obj = $PKG->new(%DATA);
+    my $obj = $PKG->new('environment' => $environment, %DATA);
     is( $obj->get_type, 'link' );
 
     cmp_deeply( $obj->to_db_struct,                         \%DATA );
-    cmp_deeply( $PKG->from_db_struct( $obj->to_db_struct ), $obj );
+    cmp_deeply( $PKG->from_db_struct( $environment, $obj->to_db_struct ), $obj );
 }
 
 {
@@ -67,8 +71,8 @@ my $request_as_string
 
             my $environment = ActivityStream::Environment->new( controller => $c );
 
-            my $link = $PKG->new(%DATA);
-            $link->prepare_load( $environment, { 'rid' => $RID } );
+            my $link = $PKG->new('environment' => $environment, %DATA);
+            $link->prepare_load(  { 'rid' => $RID } );
 
             $environment->get_async_user_agent->load_all(
                 sub {
@@ -95,8 +99,8 @@ my $request_as_string
 
             my $environment = ActivityStream::Environment->new( controller => $c );
 
-            my $link = $PKG->new(%DATA);
-            $link->prepare_load( $environment, { 'rid' => $RID } );
+            my $link = $PKG->new('environment' => $environment, %DATA);
+            $link->prepare_load(  { 'rid' => $RID } );
 
             $environment->get_async_user_agent->load_all(
                 sub {
@@ -111,8 +115,6 @@ my $request_as_string
 }
 
 {
-    my $link = $PKG->new(%DATA);
-
     my $t = Test::Mojo->new( Mojolicious->new );
 
     $t->app->routes->get($request_as_string)
@@ -120,7 +122,8 @@ my $request_as_string
 
     my $environment = ActivityStream::Environment->new( ua => $t->ua );
 
-    $link->load( $environment, { 'rid' => $RID } );
+    my $link = $PKG->new('environment' => $environment, %DATA);
+    $link->load( { 'rid' => $RID } );
 
     cmp_deeply( $link->to_rest_response_struct, \%DATA_RESPONSE );
 }

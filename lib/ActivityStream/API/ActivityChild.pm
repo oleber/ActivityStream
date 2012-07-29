@@ -28,15 +28,15 @@ has 'super_parent_activity' => (
 );
 
 sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
-    $self->SUPER::prepare_load( $environment, $args );
+    $self->SUPER::prepare_load( $args );
 
     # Load super_parent_activity
-    my $super_parent_activity = $environment->get_activity_factory->activity_instance_from_db(
+    my $super_parent_activity = $self->get_environment->get_activity_factory->activity_instance_from_db(
         { 'activity_id' => $self->get_super_parent_activity_id } );
     $self->set_super_parent_activity($super_parent_activity);
-    $self->get_super_parent_activity->prepare_load( $environment, $args );
+    $self->get_super_parent_activity->prepare_load( $args );
 
     return;
 }
@@ -77,7 +77,7 @@ sub to_rest_response_struct {
 sub from_rest_response_struct {
     my ( $pkg, $environment, $data ) = @_;
 
-    $data = dclone($data);
+    $data = {%$data};
 
     if ( defined( $data->{'super_parent_activity'} ) and not( blessed $data->{'super_parent_activity'} ) ) {
         $data->{'super_parent_activity'}

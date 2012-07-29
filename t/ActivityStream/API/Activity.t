@@ -38,7 +38,7 @@ local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
     return 'ActivityStream::API::Activity::JustForTest';
 };
 local *ActivityStream::API::Object::prepare_load = sub {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
     $self->set_loaded_successfully(1);
 };
 
@@ -49,14 +49,14 @@ Readonly my %DATA => (
 );
 
 {
-    my $obj = $PKG->from_rest_request_struct( \%DATA );
+    my $obj = $PKG->from_rest_request_struct( $environment, \%DATA );
 
     ok( not $obj->is_likeable );
     ok( not $obj->is_commentable );
     ok( not $obj->is_recommendable );
 }
 
-my $obj = ActivityStream::API::Activity::JustForTest->from_rest_request_struct( \%DATA );
+my $obj = ActivityStream::API::Activity::JustForTest->from_rest_request_struct($environment, \%DATA );
 Readonly my $ACTIVITY_ID => $obj->get_activity_id;
 
 like( $obj->get_activity_id, qr/^\w{20}:activity$/ );
@@ -81,7 +81,7 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
     note('Simple activity');
     $expected_to_rest_response_struct{'activity_id'} = $expected_db_struct{'activity_id'} = $ACTIVITY_ID;
 
-    $obj->save_in_db($environment);
+    $obj->save_in_db;
     my $activity_in_db
           = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $ACTIVITY_ID } );
 
@@ -97,14 +97,14 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
     {
         note('to_rest_response_struct fail without prepare_load overwritten and loaded_successfully set');
         $obj->set_loaded_successfully(0);
-        $obj->load( $environment, { 'rid' => $RID } );
+        $obj->load( { 'rid' => $RID } );
         throws_ok( sub { $obj->to_rest_response_struct }, qr/^Activity '$ACTIVITY_ID' didn't load correctly/ );
     }
 
     {
         note('the load and internaly the prepare_load defaults the loaded_successfully to a true value');
         $obj->set_loaded_successfully(undef);
-        $obj->load( $environment, { 'rid' => $RID } );
+        $obj->load( { 'rid' => $RID } );
         lives_ok( sub { $obj->to_rest_response_struct } );
         ok( $obj->get_loaded_successfully );
     }
@@ -116,11 +116,11 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
         local *ActivityStream::API::Activity::JustForTest::prepare_load = sub {
             my ( $self, $environment, $args ) = @_;
             $self->set_loaded_successfully(1);
-            $self->SUPER::prepare_load( $environment, $args );
+            $self->SUPER::prepare_load( $args );
         };
 
-        $obj->load( $environment, { 'rid' => $RID } );
-        $activity_in_db->load( $environment, { 'rid' => $RID } );
+        $obj->load( { 'rid' => $RID } );
+        $activity_in_db->load( { 'rid' => $RID } );
 
         main::cmp_deeply( $obj->to_rest_response_struct,            \%expected_to_rest_response_struct );
         main::cmp_deeply( $activity_in_db->to_rest_response_struct, $obj->to_rest_response_struct );
@@ -132,7 +132,7 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
     package ActivityStream::API::Activity::JustForTest;
     *prepare_load = sub {
         my ( $self, $environment, $args ) = @_;
-        $self->SUPER::prepare_load( $environment, $args );
+        $self->SUPER::prepare_load( $args );
         $self->set_loaded_successfully(1);
     };
 }
@@ -146,8 +146,8 @@ sub test_db_status {
     cmp_deeply( $obj->to_db_struct,            \%expected_db_struct, 'Check $obj to_db_struct' );
     cmp_deeply( $activity_in_db->to_db_struct, \%expected_db_struct, 'Check $activity_in_db to_db_struct' );
 
-    $obj->load( $environment, { 'rid' => $RID } );
-    $activity_in_db->load( $environment, { 'rid' => $RID } );
+    $obj->load( { 'rid' => $RID } );
+    $activity_in_db->load( { 'rid' => $RID } );
 
     cmp_deeply(
         $obj->to_rest_response_struct,

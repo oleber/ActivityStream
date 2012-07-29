@@ -37,6 +37,13 @@ has '_load_requested' => (
     'default' => sub {0},
 );
 
+has 'environment' => (
+    'is'       => 'ro',
+    'isa'      => 'ActivityStream::Environment',
+    'weak_ref' => 1,
+    'required' => 1,
+);
+
 no Moose::Util::TypeConstraints;
 
 sub to_db_struct {
@@ -75,24 +82,24 @@ sub to_rest_response_struct {
 } ## end sub to_rest_response_struct
 
 sub prepare_load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
     $self->_set_load_requested(1);
-    $self->get_creator->prepare_load( $environment, $args );
+    $self->get_creator->prepare_load( $args );
 
     return;
 }
 
 sub load {
-    my ( $self, $environment, $args ) = @_;
+    my ( $self, $args ) = @_;
 
-    local $environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent->new(
-        ua    => $environment->get_async_user_agent->get_ua,
-        cache => $environment->get_async_user_agent->get_cache
+    local $self->get_environment->{'async_user_agent'} = ActivityStream::AsyncUserAgent->new(
+        ua    => $self->get_environment->get_async_user_agent->get_ua,
+        cache => $self->get_environment->get_async_user_agent->get_cache
     );
 
-    $self->prepare_load( $environment, $args );
-    $environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
+    $self->prepare_load( $args );
+    $self->get_environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
 
     return;
 }

@@ -34,8 +34,8 @@ Readonly my $PERSON_SUPER_COMMENTER_ID => 'SuperCommenterID:person';
 Readonly my $PERSON_COMMENTER_ID       => 'commenterID:person';
 
 foreach my $person_id ( $PERSON_ACTOR_ID, $PERSON_OBJECT_ID, $PERSON_SUPER_COMMENTER_ID, $PERSON_COMMENTER_ID ) {
-    my $actor = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
-    $t->app->routes->get( $actor->create_request( $environment, { 'rid' => $RID } ) )
+    my $actor = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $person_id );
+    $t->app->routes->get( $actor->create_request( { 'rid' => $RID } ) )
           ->to( 'cb' => $actor->create_test_response( { 'rid' => $RID } ) );
 }
 
@@ -51,8 +51,8 @@ my %SUPER_PARENT_DATA = (
 
 our $super_parent_activity
       = $environment->get_activity_factory->activity_instance_from_rest_request_struct( dclone {%SUPER_PARENT_DATA} );
-$super_parent_activity->save_in_db($environment);
-$super_parent_activity->load( $environment, { 'rid' => $RID } );
+$super_parent_activity->save_in_db;
+$super_parent_activity->load( { 'rid' => $RID } );
 
 my %expected_super_parent_data_to_db_struct = (
     %SUPER_PARENT_DATA,
@@ -89,8 +89,8 @@ my %PARENT_DATA = (
 
 our $parent_activity
       = $environment->get_activity_factory->activity_instance_from_rest_request_struct( dclone {%PARENT_DATA} );
-$parent_activity->save_in_db($environment);
-$parent_activity->load( $environment, { 'rid' => $RID } );
+$parent_activity->save_in_db;
+$parent_activity->load( { 'rid' => $RID } );
 isa_ok( $parent_activity, $PKG );
 
 my %expected_parent_data_to_db_struct = (
@@ -128,8 +128,8 @@ Readonly my %DATA => (
 );
 
 our $activity = $environment->get_activity_factory->activity_instance_from_rest_request_struct( dclone {%DATA} );
-$activity->save_in_db($environment);
-$activity->load( $environment, { 'rid' => $RID } );
+$activity->save_in_db;
+$activity->load( { 'rid' => $RID } );
 isa_ok( $activity, $PKG );
 
 my %expected_data_to_db_struct = (
@@ -185,7 +185,7 @@ my $test_cb = sub {
     foreach my $act ( $super_parent_activity, $parent_activity, $activity ) {
         $act = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $act->get_activity_id } );
-        $act->load( $environment, { 'rid' => $RID } );
+        $act->load( { 'rid' => $RID } );
     }
 
     local $Test::Builder::Level = $Test::Builder::Level + 1;
@@ -221,7 +221,7 @@ my $test_cb = sub {
     my $cb = sub {
         my $data     = shift->to_rest_response_struct;
         my $activity = $environment->get_activity_factory->activity_instance_from_rest_response_struct($data);
-        $activity->load( $environment, { 'rid' => $RID } );
+        $activity->load( { 'rid' => $RID } );
         return $activity->to_rest_response_struct;
     };
 
@@ -244,12 +244,12 @@ my $test_cb = sub {
 
 subtest 'test comments', sub {
     subtest 'comment on super_parent_activity', sub {
-        my $comment = $super_parent_activity->save_comment( $environment,
+        my $comment = $super_parent_activity->save_comment(
             { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => ActivityStream::Util::generate_id } );
 
-        $super_parent_activity->save_in_db($environment);
+        $super_parent_activity->save_in_db;
 
-        $comment->load( $environment, { 'rid' => $RID } );
+        $comment->load( { 'rid' => $RID } );
 
         push( @{ $expected_super_parent_data_to_db_struct{'comments'} }, $comment->to_db_struct );
 
@@ -270,10 +270,10 @@ subtest 'test comments', sub {
         my $mock = Test::MockModule->new($PKG);
         $mock->mock( 'is_commentable' => sub {1} );
 
-        my $comment = $parent_activity->save_comment( $environment,
+        my $comment = $parent_activity->save_comment(
             { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => ActivityStream::Util::generate_id } );
 
-        $comment->load( $environment, { 'rid' => $RID } );
+        $comment->load( { 'rid' => $RID } );
 
         push( @{ $expected_super_parent_data_to_db_struct{'comments'} }, $comment->to_db_struct );
 
@@ -295,7 +295,7 @@ subtest 'test comments', sub {
         $mock->mock( 'is_commentable' => sub {0} );
 
         dies_ok {
-            $parent_activity->save_comment( $environment,
+            $parent_activity->save_comment(
                 { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => ActivityStream::Util::generate_id } );
         };
 
@@ -306,10 +306,10 @@ subtest 'test comments', sub {
         my $mock = Test::MockModule->new($PKG);
         $mock->mock( 'is_commentable' => sub {1} );
 
-        my $comment = $activity->save_comment( $environment,
+        my $comment = $activity->save_comment(
             { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => ActivityStream::Util::generate_id } );
 
-        $comment->load( $environment, { 'rid' => $RID } );
+        $comment->load( { 'rid' => $RID } );
 
         push( @{ $expected_super_parent_data_to_db_struct{'comments'} }, $comment->to_db_struct );
 
@@ -331,7 +331,7 @@ subtest 'test comments', sub {
         $mock->mock( 'is_commentable' => sub {0} );
 
         dies_ok {
-            $activity->save_comment( $environment,
+            $activity->save_comment(
                 { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => ActivityStream::Util::generate_id } );
         };
 
@@ -341,12 +341,11 @@ subtest 'test comments', sub {
 
 subtest 'test likers', sub {
     subtest 'liker on super_parent_activity', sub {
-        my $liker = $super_parent_activity->save_liker( $environment,
-            { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
+        my $liker = $super_parent_activity->save_liker( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
 
-        $super_parent_activity->save_in_db($environment);
+        $super_parent_activity->save_in_db;
 
-        $liker->load( $environment, { 'rid' => $RID } );
+        $liker->load( { 'rid' => $RID } );
 
         push( @{ $expected_super_parent_data_to_db_struct{'likers'} }, $liker->to_db_struct );
 
@@ -367,10 +366,9 @@ subtest 'test likers', sub {
         my $mock = Test::MockModule->new($PKG);
         $mock->mock( 'is_likeable' => sub {1} );
 
-        my $liker
-              = $parent_activity->save_liker( $environment, { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
+        my $liker = $parent_activity->save_liker( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
 
-        $liker->load( $environment, { 'rid' => $RID } );
+        $liker->load( { 'rid' => $RID } );
 
         push( @{ $expected_super_parent_data_to_db_struct{'likers'} }, $liker->to_db_struct );
 
@@ -392,7 +390,7 @@ subtest 'test likers', sub {
         $mock->mock( 'is_likeable' => sub {0} );
 
         dies_ok {
-            $parent_activity->save_liker( $environment, { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
+            $parent_activity->save_liker( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
         };
 
         $test_cb->();
@@ -402,9 +400,9 @@ subtest 'test likers', sub {
         my $mock = Test::MockModule->new($PKG);
         $mock->mock( 'is_likeable' => sub {1} );
 
-        my $liker = $activity->save_liker( $environment, { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
+        my $liker = $activity->save_liker( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
 
-        $liker->load( $environment, { 'rid' => $RID } );
+        $liker->load( { 'rid' => $RID } );
 
         push( @{ $expected_super_parent_data_to_db_struct{'likers'} }, $liker->to_db_struct );
 
@@ -426,7 +424,7 @@ subtest 'test likers', sub {
         $mock->mock( 'is_likeable' => sub {0} );
 
         dies_ok {
-            $activity->save_liker( $environment, { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
+            $activity->save_liker( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
         };
 
         $test_cb->();

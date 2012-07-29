@@ -19,6 +19,10 @@ Readonly my $PKG => 'ActivityStream::API::Object::Person';
 use_ok($PKG);
 isa_ok( $PKG, 'ActivityStream::API::Object' );
 
+my $t = Test::Mojo->new( Mojolicious->new );
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
+my $async_user_agent = $environment->get_async_user_agent;
+
 Readonly my $PERSON_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
 Readonly my $RID => ActivityStream::Util::generate_id;
 
@@ -35,20 +39,20 @@ Readonly my %DATA_RESPONSE => (
 );
 
 my $request_as_string
-      = $PKG->new( 'object_id' => $PERSON_ID )->create_request( ActivityStream::Environment->new, \%DATA_REQUEST );
+      = $PKG->new( 'environment' => $environment, 'object_id' => $PERSON_ID )->create_request( { 'rid' => $RID } );
 
 {
     note('Check object_id');
-    throws_ok { $PKG->new( %DATA, 'object_id' => 'x:xpto:125' ) } qr/object_id/;
+    throws_ok { $PKG->new( 'environment' => $environment, %DATA, 'object_id' => 'x:xpto:125' ) } qr/object_id/;
 }
 
 {
     note('Test DB');
-    my $obj = $PKG->new(%DATA);
+    my $obj = $PKG->new( 'environment' => $environment, %DATA );
     is( $obj->get_type, 'person' );
 
-    cmp_deeply( $obj->to_db_struct,                         \%DATA );
-    cmp_deeply( $PKG->from_db_struct( $obj->to_db_struct ), $obj );
+    cmp_deeply( $obj->to_db_struct, \%DATA );
+    cmp_deeply( $PKG->from_db_struct( $environment, $obj->to_db_struct ), $obj );
 }
 
 {
@@ -65,8 +69,8 @@ my $request_as_string
 
             my $environment = ActivityStream::Environment->new( controller => $c );
 
-            my $person = $PKG->new(%DATA);
-            $person->prepare_load( $environment, { 'rid' => $RID } );
+            my $person = $PKG->new( 'environment' => $environment, %DATA );
+            $person->prepare_load( { 'rid' => $RID } );
 
             $environment->get_async_user_agent->load_all(
                 sub {
@@ -93,8 +97,8 @@ my $request_as_string
 
             my $environment = ActivityStream::Environment->new( controller => $c );
 
-            my $person = $PKG->new(%DATA);
-            $person->prepare_load( $environment, { 'rid' => $RID } );
+            my $person = $PKG->new('environment' => $environment, %DATA);
+            $person->prepare_load( { 'rid' => $RID } );
 
             $environment->get_async_user_agent->load_all(
                 sub {
@@ -109,8 +113,6 @@ my $request_as_string
 }
 
 {
-    my $person = $PKG->new(%DATA);
-
     my $t = Test::Mojo->new( Mojolicious->new );
 
     $t->app->routes->get($request_as_string)
@@ -118,7 +120,8 @@ my $request_as_string
 
     my $environment = ActivityStream::Environment->new( ua => $t->ua );
 
-    $person->load( $environment, { 'rid' => $RID } );
+    my $person = $PKG->new( 'environment' => $environment, %DATA );
+    $person->load( { 'rid' => $RID } );
 
     cmp_deeply( $person->to_rest_response_struct, \%DATA_RESPONSE );
 }

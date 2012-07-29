@@ -37,9 +37,10 @@ Readonly my $USER_3_ID => sprintf( '%s:person', ActivityStream::Util::generate_i
 my %person_object_for;
 foreach my $person_id ( @USERS, $USER_1_ID, $USER_2_ID, $USER_3_ID, $VIEWER_USER_ID ) {
 
-    my $person = ActivityStream::API::Object::Person->new( 'object_id' => $person_id );
+    my $person
+          = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $person_id } );
 
-    $t->app->routes->get( $person->create_request( $environment, { 'rid' => $RID } ) )->to(
+    $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
         'cb' => sub {
             $person->create_test_response( {
                     'first_name' => "first name $person_id",
@@ -47,8 +48,9 @@ foreach my $person_id ( @USERS, $USER_1_ID, $USER_2_ID, $USER_3_ID, $VIEWER_USER
                 } )->(shift);
         } );
 
-    my $object_person = ActivityStream::API::Object::Person->new( { 'object_id' => $person_id } );
-    $object_person->load( $environment, { 'rid' => $RID } );
+    my $object_person
+          = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $person_id } );
+    $object_person->load( { 'rid' => $RID } );
     $person_object_for{$person_id} = $object_person;
 }
 
@@ -74,28 +76,28 @@ my $EPOCH = time;
 
 my @user_1_activities = map {
     $delay -= 24 * 60 * 60;
-    ActivityStream::API::Activity::Friendship->from_rest_request_struct( {
+    ActivityStream::API::Activity::Friendship->from_rest_request_struct( $environment, {
             'actor'         => { 'object_id' => $USER_1_ID },
             'verb'          => 'friendship',
             'object'        => { 'object_id' => $_ },
             'creation_time' => $EPOCH + $delay,
         },
-          )->save_in_db($environment)
+          )->save_in_db
 } (@USERS);
 
 my @user_2_activities = map {
     $delay -= 24 * 60 * 60;
-    ActivityStream::API::Activity::Friendship->from_rest_request_struct( {
+    ActivityStream::API::Activity::Friendship->from_rest_request_struct( $environment, {
             'actor'         => { 'object_id' => $USER_2_ID },
             'verb'          => 'friendship',
             'object'        => { 'object_id' => "$_" },
             'creation_time' => $EPOCH + $delay++,
         },
-          )->save_in_db($environment)
+          )->save_in_db
 } (@USERS);
 
 foreach my $activity ( @user_1_activities, @user_2_activities ) {
-    $activity->load( $environment, { 'rid' => $RID } );
+    $activity->load( { 'rid' => $RID } );
 }
 
 {

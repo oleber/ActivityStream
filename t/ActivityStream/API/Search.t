@@ -31,7 +31,9 @@ Readonly my $USER_4_ID => sprintf( '%s:person', ActivityStream::Util::generate_i
 Readonly my $USER_5_ID => sprintf( '%s:person', ActivityStream::Util::generate_id );
 
 my $delay        = 0;
-my $activity_1_1 = ActivityStream::API::Activity::Friendship->from_rest_request_struct( {
+my $activity_1_1 = ActivityStream::API::Activity::Friendship->from_rest_request_struct(
+    $environment,
+    {
         'actor'         => { 'object_id' => $USER_1_ID },
         'verb'          => 'friendship',
         'object'        => { 'object_id' => $USER_1_ID },
@@ -40,7 +42,9 @@ my $activity_1_1 = ActivityStream::API::Activity::Friendship->from_rest_request_
 );
 
 $delay -= 1_500;
-my $activity_1_2 = ActivityStream::API::Activity::Friendship->from_rest_request_struct( {
+my $activity_1_2 = ActivityStream::API::Activity::Friendship->from_rest_request_struct(
+    $environment,
+    {
         'actor'         => { 'object_id' => $USER_1_ID },
         'verb'          => 'friendship',
         'object'        => { 'object_id' => $USER_2_ID },
@@ -49,7 +53,9 @@ my $activity_1_2 = ActivityStream::API::Activity::Friendship->from_rest_request_
 );
 
 $delay -= 1_500;
-my $activity_1_3 = ActivityStream::API::Activity::Friendship->from_rest_request_struct( {
+my $activity_1_3 = ActivityStream::API::Activity::Friendship->from_rest_request_struct(
+    $environment,
+    {
         'actor'         => { 'object_id' => $USER_1_ID },
         'verb'          => 'friendship',
         'object'        => { 'object_id' => $USER_3_ID },
@@ -58,7 +64,9 @@ my $activity_1_3 = ActivityStream::API::Activity::Friendship->from_rest_request_
 );
 
 $delay -= 1_500;
-my $activity_1_4 = ActivityStream::API::Activity::Friendship->from_rest_request_struct( {
+my $activity_1_4 = ActivityStream::API::Activity::Friendship->from_rest_request_struct(
+    $environment,
+    {
         'actor'         => { 'object_id' => $USER_1_ID },
         'verb'          => 'friendship',
         'object'        => { 'object_id' => $USER_4_ID },
@@ -67,7 +75,9 @@ my $activity_1_4 = ActivityStream::API::Activity::Friendship->from_rest_request_
 );
 
 $delay -= 1_500;
-my $activity_1_5 = ActivityStream::API::Activity::Friendship->from_rest_request_struct( {
+my $activity_1_5 = ActivityStream::API::Activity::Friendship->from_rest_request_struct(
+    $environment,
+    {
         'actor'         => { 'object_id' => $USER_1_ID },
         'verb'          => 'friendship',
         'object'        => { 'object_id' => $USER_5_ID },
@@ -76,7 +86,7 @@ my $activity_1_5 = ActivityStream::API::Activity::Friendship->from_rest_request_
 );
 
 foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $activity_1_4, $activity_1_5 ) ) {
-    $activity->save_in_db($environment);
+    $activity->save_in_db;
 }
 
 {
@@ -157,8 +167,10 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
             },
         );
 
-        my @expected = (
-            ( map { [ 'find' => ignore, { 'timebox' => { '$in' => ["$_:$USER_1_ID"] } } ] } @{ $cursor->get_intervals } ),
+        my @expected = ( (
+                map { [ 'find' => ignore, { 'timebox' => { '$in' => ["$_:$USER_1_ID"] } } ] }
+                      @{ $cursor->get_intervals }
+            ),
             (
                 map { [ 'find' => ignore, { 'activity_id' => $_->get_activity_id } ] }
                       ( $activity_1_1, $activity_1_2, $activity_1_3, $activity_1_4, $activity_1_5 ),

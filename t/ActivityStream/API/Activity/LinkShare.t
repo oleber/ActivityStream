@@ -30,8 +30,13 @@ Readonly my %DATA => (
 );
 Readonly my $RID => ActivityStream::Util::generate_id();
 
+
+my $t = Test::Mojo->new( Mojolicious->new );
+Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
+my $async_user_agent = $environment->get_async_user_agent;
+
 {
-    my $activity = $PKG->from_rest_request_struct( \%DATA );
+    my $activity = $PKG->from_rest_request_struct( $environment, \%DATA );
 
     is( $activity->get_type, 'person:share:link' );
     cmp_deeply(
@@ -47,26 +52,22 @@ Readonly my $RID => ActivityStream::Util::generate_id();
             'sources'       => [$PERSON_ACTOR_ID],
         },
     );
-    cmp_deeply( $PKG->from_db_struct( $activity->to_db_struct ), $activity );
+    cmp_deeply( $PKG->from_db_struct( $environment, $activity->to_db_struct ), $activity );
 }
 
-my $t = Test::Mojo->new( Mojolicious->new );
-Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
-my $async_user_agent = $environment->get_async_user_agent;
-
-my $actor = ActivityStream::API::Object::Person->new( 'object_id' => $PERSON_ACTOR_ID );
-$t->app->routes->get( $actor->create_request( $environment, { 'rid' => $RID } ) )
+my $actor = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $PERSON_ACTOR_ID );
+$t->app->routes->get( $actor->create_request( { 'rid' => $RID } ) )
       ->to( 'cb' => $actor->create_test_response( { 'rid' => $RID } ) );
 
-my $object = ActivityStream::API::Object::Link->new( 'object_id' => $LINK_OBJECT_ID );
-$t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } ) )
+my $object = ActivityStream::API::Object::Link->new( 'environment' => $environment, 'object_id' => $LINK_OBJECT_ID );
+$t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
       ->to( 'cb' => $object->create_test_response( { 'rid' => $RID } ) );
 
 {
     note('Test bad Creation');
-    dies_ok { $PKG->from_rest_request_struct( +{ %DATA, 'actor'  => { 'object_id' => 'link:1' } } ) };
-    dies_ok { $PKG->from_rest_request_struct( +{ %DATA, 'verb'   => 'friendship' } ) };
-    dies_ok { $PKG->from_rest_request_struct( +{ %DATA, 'object' => { 'object_id' => 'person:1' } } ) };
+    dies_ok { $PKG->from_rest_request_struct( $environment, +{ %DATA, 'actor'  => { 'object_id' => 'link:1' } } ) };
+    dies_ok { $PKG->from_rest_request_struct( $environment, +{ %DATA, 'verb'   => 'friendship' } ) };
+    dies_ok { $PKG->from_rest_request_struct( $environment, +{ %DATA, 'object' => { 'object_id' => 'person:1' } } ) };
 }
 
 {
@@ -75,15 +76,15 @@ $t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } )
     ok( $PKG->is_commentable );
     ok( $PKG->is_recommendable );
 
-    my $activity = $PKG->from_rest_request_struct( \%DATA );
+    my $activity = $PKG->from_rest_request_struct( $environment, \%DATA );
     cmp_deeply( [ $activity->get_sources ], [$PERSON_ACTOR_ID] );
 }
 
 {
     note('Store DB');
 
-    my $activity = $PKG->from_rest_request_struct( \%DATA );
-    $activity->save_in_db($environment);
+    my $activity = $PKG->from_rest_request_struct( $environment, \%DATA );
+    $activity->save_in_db;
     cmp_deeply(
         $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $activity->get_activity_id } )->to_db_struct,
@@ -94,14 +95,14 @@ $t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } )
 {
     note("Normal Load");
 
-    my $person_actor = ActivityStream::API::Object::Person->new( { 'object_id' => $PERSON_ACTOR_ID } );
-    $person_actor->load( $environment, { 'rid' => $RID } );
+    my $person_actor = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $PERSON_ACTOR_ID } );
+    $person_actor->load( { 'rid' => $RID } );
 
-    my $link_object = ActivityStream::API::Object::Link->new( { 'object_id' => $LINK_OBJECT_ID } );
-    $link_object->load( $environment, { 'rid' => $RID } );
+    my $link_object = ActivityStream::API::Object::Link->new( { 'environment' => $environment, 'object_id' => $LINK_OBJECT_ID } );
+    $link_object->load( { 'rid' => $RID } );
 
-    my $activity = $PKG->from_rest_request_struct( \%DATA );
-    $activity->load( $environment, { 'rid' => $RID } );
+    my $activity = $PKG->from_rest_request_struct( $environment, \%DATA );
+    $activity->load( { 'rid' => $RID } );
 
     cmp_deeply(
         $activity->to_rest_response_struct,
@@ -123,11 +124,11 @@ $t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } )
 {
     note("Can't Load Actor");
 
-    local $async_user_agent->{'cache'}{ "GET " . $actor->create_request( $environment, { 'rid' => $RID } ) }
+    local $async_user_agent->{'cache'}{ "GET " . $actor->create_request( { 'rid' => $RID } ) }
           = Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 400 ) );
 
-    my $activity = $PKG->from_rest_request_struct( \%DATA );
-    $activity->load( $environment, { 'rid' => $RID } );
+    my $activity = $PKG->from_rest_request_struct( $environment, \%DATA );
+    $activity->load( { 'rid' => $RID } );
 
     dies_ok { $activity->to_rest_response_struct };
     ok( not $activity->has_fully_loaded_successfully );
@@ -136,11 +137,11 @@ $t->app->routes->get( $object->create_request( $environment, { 'rid' => $RID } )
 {
     note("Can't Load Object");
 
-    local $async_user_agent->{'cache'}{ "GET " . $object->create_request( $environment, { 'rid' => $RID } ) }
+    local $async_user_agent->{'cache'}{ "GET " . $object->create_request( { 'rid' => $RID } ) }
           = Mojo::Transaction::HTTP->new( res => Mojo::Message::Response->new( code => 400 ) );
 
-    my $activity = $PKG->from_rest_request_struct( \%DATA );
-    $activity->load( $environment, { 'rid' => $RID } );
+    my $activity = $PKG->from_rest_request_struct( $environment, \%DATA );
+    $activity->load( { 'rid' => $RID } );
 
     dies_ok { $activity->to_rest_response_struct };
     ok( not $activity->has_fully_loaded_successfully );
