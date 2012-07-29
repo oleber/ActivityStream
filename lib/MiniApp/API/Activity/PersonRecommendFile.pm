@@ -2,14 +2,14 @@ package MiniApp::API::Activity::PersonRecommendFile;
 use Moose;
 use Moose::Util::TypeConstraints;
 
-use MiniApp::API::Object::Person;
-use MiniApp::API::Object::File;
+use MiniApp::API::Thing::Person;
+use MiniApp::API::Thing::File;
 
 extends 'ActivityStream::API::ActivityChild';
 
-has '+actor'  => ( 'isa' => 'MiniApp::API::Object::Person' );
+has '+actor'  => ( 'isa' => 'MiniApp::API::Thing::Person' );
 has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^recommend$/} ) );
-has '+object' => ( 'isa' => 'MiniApp::API::Object::File' );
+has '+object' => ( 'isa' => 'MiniApp::API::Thing::File' );
 
 sub is_likeable      { return 1 }
 sub is_commentable   { return 1 }

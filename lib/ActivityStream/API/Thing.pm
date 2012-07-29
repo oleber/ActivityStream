@@ -1,4 +1,4 @@
-package ActivityStream::API::Object;
+package ActivityStream::API::Thing;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
@@ -101,6 +101,8 @@ sub load {
     return;
 }
 
+sub is_likeable    { 0 }
+sub is_commentable { 0 }
 sub is_recommendable {0}
 
 sub save_recommendation {
@@ -111,6 +113,48 @@ sub save_recommendation {
     my %data = (
         'actor'              => $param->{'creator'},
         'verb'               => 'recommend',
+        'object'             => $self->to_simulate_rest_struct,
+        'parent_activity_id' => $parent_activity->get_activity_id,
+    );
+
+    $data{'super_parent_activity_id'}
+          = $parent_activity->can('get_super_parent_activity_id')
+          ? $parent_activity->get_super_parent_activity_id
+          : $parent_activity->get_activity_id;
+
+    return $self->get_environment->get_activity_factory->activity_instance_from_rest_request_struct( \%data )
+          ->save_in_db;
+} ## end sub save_recommendation
+
+sub save_liker {
+    my ( $self, $parent_activity, $param ) = @_;
+
+    confess( sprintf( q(Object %s isn't likeable), $self->get_object_id ) ) if not $self->is_likeable;
+
+    my %data = (
+        'actor'              => $param->{'creator'},
+        'verb'               => 'like',
+        'object'             => $self->to_simulate_rest_struct,
+        'parent_activity_id' => $parent_activity->get_activity_id,
+    );
+
+    $data{'super_parent_activity_id'}
+          = $parent_activity->can('get_super_parent_activity_id')
+          ? $parent_activity->get_super_parent_activity_id
+          : $parent_activity->get_activity_id;
+
+    return $self->get_environment->get_activity_factory->activity_instance_from_rest_request_struct( \%data )
+          ->save_in_db;
+} ## end sub save_recommendation
+
+sub save_comment {
+    my ( $self, $parent_activity, $param ) = @_;
+
+    confess( sprintf( q(Object %s isn't commentable), $self->get_object_id ) ) if not $self->is_commentable;
+
+    my %data = (
+        'actor'              => $param->{'creator'},
+        'verb'               => 'comment',
         'object'             => $self->to_simulate_rest_struct,
         'parent_activity_id' => $parent_activity->get_activity_id,
     );

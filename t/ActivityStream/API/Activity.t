@@ -37,7 +37,7 @@ no warnings 'redefine', 'once';
 local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
     return 'ActivityStream::API::Activity::JustForTest';
 };
-local *ActivityStream::API::Object::prepare_load = sub {
+local *ActivityStream::API::Thing::prepare_load = sub {
     my ( $self, $args ) = @_;
     $self->set_loaded_successfully(1);
 };

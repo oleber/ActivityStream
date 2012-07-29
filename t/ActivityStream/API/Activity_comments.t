@@ -52,7 +52,7 @@ no warnings 'redefine', 'once';
 local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
     return 'ActivityStream::API::Activity_Comments::JustForTest';
 };
-local *ActivityStream::API::Object::prepare_load = sub {
+local *ActivityStream::API::Thing::prepare_load = sub {
     my ( $self, $args ) = @_;
     $self->set_loaded_successfully(1);
 };
@@ -112,7 +112,7 @@ sub test_db_status {
 } ## end sub test_db_status
 
 foreach my $person_id ( $USER_1_ID, $USER_2_ID, $USER_3_ID ) {
-    my $person = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $person_id );
+    my $person = ActivityStream::API::Thing::Person->new( 'environment' => $environment, 'object_id' => $person_id );
     $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
         'cb' => sub {
             $person->create_test_response( { 'first_name' => "first name $person_id", 'rid' => $RID } )->(shift);
@@ -165,7 +165,7 @@ $obj->load( { 'rid' => $RID } );
 
             my $comment = $obj->save_comment( { 'creator' => { 'object_id' => $USER_1_ID }, 'body' => $BODY_1 } );
 
-            my $object_person = ActivityStream::API::Object::Person->new(
+            my $object_person = ActivityStream::API::Thing::Person->new(
                 { 'environment' => $environment, 'object_id' => $USER_1_ID } );
             $object_person->load( { 'rid' => $RID } );
 
@@ -196,7 +196,7 @@ $obj->load( { 'rid' => $RID } );
 
             my $comment = $obj->save_comment( { 'creator' => { 'object_id' => $USER_2_ID }, 'body' => $BODY_2 } );
 
-            my $object_person = ActivityStream::API::Object::Person->new(
+            my $object_person = ActivityStream::API::Thing::Person->new(
                 { 'environment' => $environment, 'object_id' => $USER_2_ID } );
             $object_person->load( { 'rid' => $RID } );
 
@@ -226,7 +226,7 @@ $obj->load( { 'rid' => $RID } );
 
             my $comment = $obj->save_comment( { 'creator' => { 'object_id' => $USER_3_ID }, 'body' => $BODY_3 } );
 
-            my $object_person = ActivityStream::API::Object::Person->new(
+            my $object_person = ActivityStream::API::Thing::Person->new(
                 { 'environment' => $environment, 'object_id' => $USER_3_ID } );
             $object_person->load( { 'rid' => $RID } );
 
@@ -361,7 +361,7 @@ $obj->load( { 'rid' => $RID } );
     note("Fail user load");
 
     my $user_2_request
-          = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $USER_2_ID )
+          = ActivityStream::API::Thing::Person->new( 'environment' => $environment, 'object_id' => $USER_2_ID )
           ->create_request( { 'rid' => $RID } );
     my $previous_response = $async_user_agent->get_response_to($user_2_request);
     $async_user_agent->put_response_to( "GET $user_2_request",

@@ -1,4 +1,4 @@
-package MiniApp::API::Object::Link;
+package MiniApp::API::Thing::Link;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
@@ -7,7 +7,7 @@ use Data::Dumper;
 use Carp;
 use Readonly;
 
-extends 'ActivityStream::API::Object';
+extends 'ActivityStream::API::Thing';
 
 Readonly my %FIELDS => (
     'url'         => [ 'is' => 'rw', 'isa' => 'Str', 'required' => 1 ],

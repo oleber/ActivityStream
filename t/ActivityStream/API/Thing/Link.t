@@ -14,10 +14,10 @@ use Try::Tiny;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
-Readonly my $PKG => 'ActivityStream::API::Object::Link';
+Readonly my $PKG => 'ActivityStream::API::Thing::Link';
 
 use_ok($PKG);
-isa_ok( $PKG, 'ActivityStream::API::Object' );
+isa_ok( $PKG, 'ActivityStream::API::Thing' );
 
 my $t = Test::Mojo->new( Mojolicious->new );
 Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
@@ -61,7 +61,7 @@ my $request_as_string
 
     $t->app->routes->get($request_as_string)->to(
         'cb' => sub {
-            ActivityStream::API::Object::Link->create_test_response( +{ %DATA_RESPONSE, 'rid' => $RID } )->(shift);
+            ActivityStream::API::Thing::Link->create_test_response( +{ %DATA_RESPONSE, 'rid' => $RID } )->(shift);
         },
     );
 

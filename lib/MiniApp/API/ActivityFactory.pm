@@ -14,9 +14,9 @@ use MiniApp::API::Activity::PersonRecommendFile;
 use MiniApp::API::Activity::PersonShareLink;
 use MiniApp::API::Activity::PersonRecommendLink;
 
-use MiniApp::API::Object::Person;
-use MiniApp::API::Object::StatusMessage;
-use MiniApp::API::Object::File;
+use MiniApp::API::Thing::Person;
+use MiniApp::API::Thing::StatusMessage;
+use MiniApp::API::Thing::File;
 
 sub activity_package_for {
     return (
@@ -30,10 +30,10 @@ sub activity_package_for {
 
 sub object_package_for {
     return (
-        [ qr/^ma_person$/ => 'MiniApp::API::Object::Person' ],
-        [ qr/^ma_status$/ => 'MiniApp::API::Object::StatusMessage' ],
-        [ qr/^ma_file$/   => 'MiniApp::API::Object::File' ],
-        [ qr/^ma_link$/   => 'MiniApp::API::Object::Link' ],
+        [ qr/^ma_person$/ => 'MiniApp::API::Thing::Person' ],
+        [ qr/^ma_status$/ => 'MiniApp::API::Thing::StatusMessage' ],
+        [ qr/^ma_file$/   => 'MiniApp::API::Thing::File' ],
+        [ qr/^ma_link$/   => 'MiniApp::API::Thing::Link' ],
     );
 }
 

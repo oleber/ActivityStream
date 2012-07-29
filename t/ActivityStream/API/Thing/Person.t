@@ -14,10 +14,10 @@ use Try::Tiny;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
-Readonly my $PKG => 'ActivityStream::API::Object::Person';
+Readonly my $PKG => 'ActivityStream::API::Thing::Person';
 
 use_ok($PKG);
-isa_ok( $PKG, 'ActivityStream::API::Object' );
+isa_ok( $PKG, 'ActivityStream::API::Thing' );
 
 my $t = Test::Mojo->new( Mojolicious->new );
 Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );

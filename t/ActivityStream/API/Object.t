@@ -14,7 +14,7 @@ use ActivityStream::Environment;
 my $t = Test::Mojo->new( Mojolicious->new );
 Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
 
-Readonly my $PKG => 'ActivityStream::API::Object';
+Readonly my $PKG => 'ActivityStream::API::Thing';
 
 use_ok($PKG);
 

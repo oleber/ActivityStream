@@ -1,4 +1,4 @@
-package ActivityStream::API::Object::Link;
+package ActivityStream::API::Thing::Link;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
@@ -6,7 +6,7 @@ use MooseX::FollowPBP;
 use Carp;
 use Readonly;
 
-extends 'ActivityStream::API::Object';
+extends 'ActivityStream::API::Thing';
 
 Readonly my %FIELDS => (
     'title'       => [ 'is' => 'rw', 'isa' => 'Str' ],

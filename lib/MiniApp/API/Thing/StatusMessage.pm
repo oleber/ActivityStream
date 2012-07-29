@@ -1,4 +1,4 @@
-package MiniApp::API::Object::StatusMessage;
+package MiniApp::API::Thing::StatusMessage;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
@@ -7,7 +7,7 @@ use Data::Dumper;
 use Carp;
 use Readonly;
 
-extends 'ActivityStream::API::Object';
+extends 'ActivityStream::API::Thing';
 
 Readonly my %FIELDS => (
     'message'  => [ 'is' => 'rw', 'isa' => 'Str' ],

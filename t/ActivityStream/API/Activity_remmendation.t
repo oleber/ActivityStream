@@ -54,7 +54,7 @@ subtest 'Test is Recommendable', sub {
 
     my @callbacks;
 
-    my $mock_thing = Test::MockModule->new('ActivityStream::API::Object');
+    my $mock_thing = Test::MockModule->new('ActivityStream::API::Thing');
     $mock_thing->mock(
         'save_recommendation' => sub {
             my ( $self, @param ) = @_;

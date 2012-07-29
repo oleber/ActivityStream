@@ -7,7 +7,7 @@ use Mojo::Base 'Mojolicious::Controller';
 use Carp;
 use Data::Dumper;
 
-use MiniApp::API::Object::Person;
+use MiniApp::API::Thing::Person;
 
 sub get_handler {
     my ($c) = @_;
@@ -17,7 +17,7 @@ sub get_handler {
 
     my $environment = ActivityStream::Environment->new( controller => $c );
 
-    my $person = MiniApp::API::Object::Person->new( 'object_id' => $person_id );
+    my $person = MiniApp::API::Thing::Person->new( 'object_id' => $person_id );
     $person->prepare_load( { rid => $rid } );
 
     $environment->get_async_user_agent->load_all(

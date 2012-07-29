@@ -5,7 +5,7 @@ use MooseX::FollowPBP;
 
 use Data::Dumper;
 
-use ActivityStream::API::Object::Person;
+use ActivityStream::API::Thing::Person;
 use ActivityStream::Util;
 
 has 'like_id' => (
@@ -16,7 +16,7 @@ has 'like_id' => (
 
 has 'creator' => (
     'is'  => 'rw',
-    'isa' => 'ActivityStream::API::Object',
+    'isa' => 'ActivityStream::API::Thing',
 );
 
 has 'creation_time' => (

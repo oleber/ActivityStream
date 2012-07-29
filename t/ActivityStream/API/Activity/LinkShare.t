@@ -17,8 +17,8 @@ Readonly my $PKG => 'ActivityStream::API::Activity::LinkShare';
 use_ok($PKG);
 isa_ok( $PKG => 'ActivityStream::API::Activity' );
 
-is( $PKG->get_attribute_base_class('actor'),  'ActivityStream::API::Object::Person' );
-is( $PKG->get_attribute_base_class('object'), 'ActivityStream::API::Object::Link' );
+is( $PKG->get_attribute_base_class('actor'),  'ActivityStream::API::Thing::Person' );
+is( $PKG->get_attribute_base_class('object'), 'ActivityStream::API::Thing::Link' );
 
 Readonly my $PERSON_ACTOR_ID => '1:person';
 Readonly my $LINK_OBJECT_ID  => '2:link';
@@ -55,11 +55,11 @@ my $async_user_agent = $environment->get_async_user_agent;
     cmp_deeply( $PKG->from_db_struct( $environment, $activity->to_db_struct ), $activity );
 }
 
-my $actor = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $PERSON_ACTOR_ID );
+my $actor = ActivityStream::API::Thing::Person->new( 'environment' => $environment, 'object_id' => $PERSON_ACTOR_ID );
 $t->app->routes->get( $actor->create_request( { 'rid' => $RID } ) )
       ->to( 'cb' => $actor->create_test_response( { 'rid' => $RID } ) );
 
-my $object = ActivityStream::API::Object::Link->new( 'environment' => $environment, 'object_id' => $LINK_OBJECT_ID );
+my $object = ActivityStream::API::Thing::Link->new( 'environment' => $environment, 'object_id' => $LINK_OBJECT_ID );
 $t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
       ->to( 'cb' => $object->create_test_response( { 'rid' => $RID } ) );
 
@@ -95,10 +95,10 @@ $t->app->routes->get( $object->create_request( { 'rid' => $RID } ) )
 {
     note("Normal Load");
 
-    my $person_actor = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $PERSON_ACTOR_ID } );
+    my $person_actor = ActivityStream::API::Thing::Person->new( { 'environment' => $environment, 'object_id' => $PERSON_ACTOR_ID } );
     $person_actor->load( { 'rid' => $RID } );
 
-    my $link_object = ActivityStream::API::Object::Link->new( { 'environment' => $environment, 'object_id' => $LINK_OBJECT_ID } );
+    my $link_object = ActivityStream::API::Thing::Link->new( { 'environment' => $environment, 'object_id' => $LINK_OBJECT_ID } );
     $link_object->load( { 'rid' => $RID } );
 
     my $activity = $PKG->from_rest_request_struct( $environment, \%DATA );

@@ -12,7 +12,7 @@ use Readonly;
 use Storable qw(dclone);
 use Test::MockModule;
 
-use ActivityStream::API::Object::Person;
+use ActivityStream::API::Thing::Person;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
@@ -32,7 +32,7 @@ my $user_creator_3_id = sprintf( '%s:person', ActivityStream::Util::generate_id 
 my $user_creator_4_id = sprintf( '%s:person', ActivityStream::Util::generate_id );
 
 foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id, $user_creator_4_id ) {
-    my $user = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $user_id } );
+    my $user = ActivityStream::API::Thing::Person->new( { 'environment' => $environment, 'object_id' => $user_id } );
 
     $t->app->routes->get( $user->create_request( { 'rid' => $RID } ) )->to(
         'cb' => sub {
@@ -222,7 +222,7 @@ my $json = Mojo::JSON->new;
             ActivityStream::API::ActivityLike->new(
                 'environment' => $environment,
                 'like_id'     => $t->tx->res->json->{'like_id'},
-                'creator'     => ActivityStream::API::Object::Person->new(
+                'creator'     => ActivityStream::API::Thing::Person->new(
                     'environment' => $environment,
                     'object_id'   => $user_creator_3_id
                 ),
@@ -250,7 +250,7 @@ my $json = Mojo::JSON->new;
             ActivityStream::API::ActivityLike->new(
                 'environment' => $environment,
                 'like_id'     => $t->tx->res->json->{'like_id'},
-                'creator'     => ActivityStream::API::Object::Person->new(
+                'creator'     => ActivityStream::API::Thing::Person->new(
                     'environment' => $environment,
                     'object_id'   => $user_creator_4_id
                 ),
@@ -399,7 +399,7 @@ my $json = Mojo::JSON->new;
         my $activity_comment = ActivityStream::API::ActivityComment->new(
             'environment' => $environment,
             'comment_id'  => $t->tx->res->json->{'comment_id'},
-            'creator'     => ActivityStream::API::Object::Person->new(
+            'creator'     => ActivityStream::API::Thing::Person->new(
                 'environment' => $environment,
                 'object_id'   => $user_creator_3_id
             ),

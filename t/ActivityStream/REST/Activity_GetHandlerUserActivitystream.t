@@ -11,7 +11,7 @@ use Mojo::JSON;
 use Readonly;
 
 use ActivityStream::API::Activity::Friendship;
-use ActivityStream::API::Object::Person;
+use ActivityStream::API::Thing::Person;
 use ActivityStream::Environment;
 use ActivityStream::Util;
 
@@ -38,7 +38,7 @@ my %person_object_for;
 foreach my $person_id ( @USERS, $USER_1_ID, $USER_2_ID, $USER_3_ID, $VIEWER_USER_ID ) {
 
     my $person
-          = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $person_id } );
+          = ActivityStream::API::Thing::Person->new( { 'environment' => $environment, 'object_id' => $person_id } );
 
     $t->app->routes->get( $person->create_request( { 'rid' => $RID } ) )->to(
         'cb' => sub {
@@ -49,7 +49,7 @@ foreach my $person_id ( @USERS, $USER_1_ID, $USER_2_ID, $USER_3_ID, $VIEWER_USER
         } );
 
     my $object_person
-          = ActivityStream::API::Object::Person->new( { 'environment' => $environment, 'object_id' => $person_id } );
+          = ActivityStream::API::Thing::Person->new( { 'environment' => $environment, 'object_id' => $person_id } );
     $object_person->load( { 'rid' => $RID } );
     $person_object_for{$person_id} = $object_person;
 }

@@ -10,6 +10,7 @@ use Storable qw(dclone);
 use ActivityStream::API::Activity::Friendship;
 use ActivityStream::API::Activity::LinkShare;
 use ActivityStream::API::Activity::PersonRecommendPerson;
+use ActivityStream::API::Activity::PersonLikePerson;
 
 use ActivityStream::X::ActivityNotFound;
 
@@ -17,10 +18,11 @@ Readonly my @ACTIVITY_PACKAGE_FOR => (
     [ qr/person:friendship:person/ => 'ActivityStream::API::Activity::Friendship' ],
     [ qr/person:share:link/        => 'ActivityStream::API::Activity::LinkShare' ],
     [ qr/person:recommend:person/  => 'ActivityStream::API::Activity::PersonRecommendPerson' ],
+    [ qr/person:like:person/       => 'ActivityStream::API::Activity::PersonLikePerson' ],
 
 );
 
-Readonly my @OBJECT_PACKAGE_FOR => ( [ qr/person/ => 'ActivityStream::API::Object::Person' ], );
+Readonly my @OBJECT_PACKAGE_FOR => ( [ qr/person/ => 'ActivityStream::API::Thing::Person' ], );
 
 has 'environment' => (
     'is'       => 'ro',
@@ -80,7 +82,7 @@ sub activity_instance_from_rest_request_struct {
         $obj->{'creator'} = $self->object_instance_from_rest_request_struct( $obj->{'creator'} );
     }
 
-    return $pkg->from_rest_request_struct($self->get_environment, $data);
+    return $pkg->from_rest_request_struct( $self->get_environment, $data );
 } ## end sub activity_instance_from_rest_request_struct
 
 sub activity_instance_from_db {
@@ -107,7 +109,7 @@ sub activity_instance_from_db {
             $obj->{'creator'} = $self->object_instance_from_db( $obj->{'creator'} );
         }
 
-        return $pkg->from_db_struct($self->get_environment, $data);
+        return $pkg->from_db_struct( $self->get_environment, $data );
     } else {
         die ActivityStream::X::ActivityNotFound->new;
     }
@@ -135,8 +137,8 @@ sub activity_instance_from_rest_response_struct {
         $obj->{'creator'} = $self->object_instance_from_rest_response_struct( $obj->{'creator'} );
     }
 
-    return $pkg->from_rest_response_struct($self->get_environment, $data);
-} ## end sub activity_instance_from_rest_request_struct
+    return $pkg->from_rest_response_struct( $self->get_environment, $data );
+} ## end sub activity_instance_from_rest_response_struct
 
 sub object_package_for {
     return @OBJECT_PACKAGE_FOR;
@@ -175,7 +177,7 @@ sub object_instance_from_rest_request_struct {
         Dumper($data), Dumper( [ $self->object_package_for ] ),
     ) if not defined $pkg;
 
-    return $pkg->from_rest_request_struct($self->get_environment, $data);
+    return $pkg->from_rest_request_struct( $self->get_environment, $data );
 }
 
 sub object_instance_from_db {
@@ -189,7 +191,7 @@ sub object_instance_from_db {
         Dumper($data), Dumper( [ $self->object_package_for ] ),
     ) if not defined $pkg;
 
-    return $pkg->from_db_struct($self->get_environment, $data);
+    return $pkg->from_db_struct( $self->get_environment, $data );
 }
 
 sub object_instance_from_rest_response_struct {
@@ -203,9 +205,8 @@ sub object_instance_from_rest_response_struct {
         Dumper($data), Dumper( [ $self->object_package_for ] ),
     ) if not defined $pkg;
 
-    return $pkg->from_rest_response_struct($self->get_environment, $data);
+    return $pkg->from_rest_response_struct( $self->get_environment, $data );
 }
-
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

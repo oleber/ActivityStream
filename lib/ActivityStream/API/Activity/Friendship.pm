@@ -2,13 +2,13 @@ package ActivityStream::API::Activity::Friendship;
 use Moose;
 use Moose::Util::TypeConstraints;
 
-use ActivityStream::API::Object::Person;
+use ActivityStream::API::Thing::Person;
 
 extends 'ActivityStream::API::Activity';
 
-has '+actor'  => ( 'isa' => 'ActivityStream::API::Object::Person' );
+has '+actor'  => ( 'isa' => 'ActivityStream::API::Thing::Person' );
 has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^friendship$/} ) );
-has '+object' => ( 'isa' => 'ActivityStream::API::Object::Person' );
+has '+object' => ( 'isa' => 'ActivityStream::API::Thing::Person' );
 
 sub is_likeable     { return 1 }
 sub is_commentable  { return 1 }

@@ -1,4 +1,4 @@
-package MiniApp::API::Object::File;
+package MiniApp::API::Thing::File;
 use Moose;
 use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
@@ -7,7 +7,7 @@ use Data::Dumper;
 use Carp;
 use Readonly;
 
-extends 'ActivityStream::API::Object';
+extends 'ActivityStream::API::Thing';
 
 Readonly my %FIELDS => (
     'filename'              => [ 'is' => 'rw', 'isa' => 'Str' ],

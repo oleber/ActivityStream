@@ -11,7 +11,7 @@ use Scalar::Util qw(blessed);
 
 use ActivityStream::API::ActivityLike;
 use ActivityStream::API::ActivityComment;
-use ActivityStream::API::Object;
+use ActivityStream::API::Thing;
 use ActivityStream::Util;
 use ActivityStream::X::CommentNotFound;
 use ActivityStream::X::LikerNotFound;
@@ -30,7 +30,7 @@ has 'creation_time' => (
 
 has 'actor' => (
     'is'       => 'rw',
-    'isa'      => 'ActivityStream::API::Object',
+    'isa'      => 'ActivityStream::API::Thing',
     'required' => 1,
 );
 
@@ -42,13 +42,13 @@ has 'verb' => (
 
 has 'object' => (
     'is'       => 'rw',
-    'isa'      => 'ActivityStream::API::Object',
+    'isa'      => 'ActivityStream::API::Thing',
     'required' => 1,
 );
 
 has 'target' => (
     'is'  => 'rw',
-    'isa' => 'Maybe[ActivityStream::API::Object]'
+    'isa' => 'Maybe[ActivityStream::API::Thing]'
 );
 
 has 'visibility' => (
@@ -441,6 +441,9 @@ sub save_visibility {
 sub save_liker {
     my ( $self, $param ) = @_;
 
+    my $dont_save_object_like = $param->{'dont_save_object_like'};
+    delete local $param->{'dont_save_object_like'};
+
     $self->set_loaded_successfully(undef);
 
     confess( "Can't like: " . ref($self) ) if not $self->is_likeable;
@@ -458,12 +461,16 @@ sub save_liker {
         },
     );
 
-    $self->add_like($activity_like);
-
     $collection_activity->update_activity(
         { 'activity_id' => $self->get_activity_id },
         { '$push'       => { 'likers' => $activity_like->to_db_struct } },
     );
+
+    $self->add_like($activity_like);
+
+    if ( not($dont_save_object_like) and $self->get_object->is_likeable ) {
+        $self->get_object->save_liker($self, $param) if $self->get_object->is_likeable;
+    }
 
     return $activity_like;
 } ## end sub save_liker
@@ -495,6 +502,9 @@ sub delete_liker {
 sub save_comment {
     my ( $self, $param ) = @_;
 
+    my $dont_save_object_comment = $param->{'dont_save_object_comment'};
+    delete local $param->{'dont_save_object_comment'};
+
     $self->set_loaded_successfully(undef);
 
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
@@ -516,6 +526,11 @@ sub save_comment {
     );
 
     $self->add_comment($activity_comment);
+
+
+    if ( not($dont_save_object_comment) and $self->get_object->is_commentable ) {
+        $self->get_object->save_comment($self, $param) if $self->get_object->is_commentable;
+    }
 
     return $activity_comment;
 } ## end sub save_comment
@@ -581,14 +596,14 @@ ActivityStream::API::Activity - Base class of all the Activities
   use Moose;
   use Moose::Util::TypeConstraints;
 
-  use ActivityStream::API::Object::Person;
-  use ActivityStream::API::Object::Child;
+  use ActivityStream::API::Thing::Person;
+  use ActivityStream::API::Thing::Child;
 
   extends 'ActivityStream::API::Activity';
 
-  has '+actor'  => ( 'isa' => 'ActivityStream::API::Object::Person' );
+  has '+actor'  => ( 'isa' => 'ActivityStream::API::Thing::Person' );
   has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^child$/} ) );
-  has '+object' => ( 'isa' => 'ActivityStream::API::Object::Child' );
+  has '+object' => ( 'isa' => 'ActivityStream::API::Thing::Child' );
 
   __PACKAGE__->meta->make_immutable;
   no Moose;
@@ -610,7 +625,7 @@ Time of the Activity Creation, defaults to C<time()>.
 
 =head2 C<actor>
 
-The entity making the activity, a child class of C<ActivityStream::API::Object>.
+The entity making the activity, a child class of C<ActivityStream::API::Thing>.
 
 =head2 C<verb>
 
@@ -618,11 +633,11 @@ A single word String that identifies the type of activity.
 
 =head2 C<object>
 
-The entity over which the activity was maid, a child class of C<ActivityStream::API::Object>.
+The entity over which the activity was maid, a child class of C<ActivityStream::API::Thing>.
 
 =head2 C<target>
 
-The entity over which the activity was maid, a child class of C<ActivityStream::API::Object>.
+The entity over which the activity was maid, a child class of C<ActivityStream::API::Thing>.
 
 =head2 C<visibility>
 

@@ -19,8 +19,8 @@ Readonly my $PKG => 'ActivityStream::API::Activity::PersonRecommendPerson';
 use_ok($PKG);
 isa_ok( $PKG => 'ActivityStream::API::Activity' );
 
-is( $PKG->get_attribute_base_class('actor'),  'ActivityStream::API::Object::Person' );
-is( $PKG->get_attribute_base_class('object'), 'ActivityStream::API::Object::Person' );
+is( $PKG->get_attribute_base_class('actor'),  'ActivityStream::API::Thing::Person' );
+is( $PKG->get_attribute_base_class('object'), 'ActivityStream::API::Thing::Person' );
 
 my $t = Test::Mojo->new( Mojolicious->new );
 Readonly my $environment => ActivityStream::Environment->new( ua => $t->ua );
@@ -34,7 +34,7 @@ Readonly my $PERSON_SUPER_COMMENTER_ID => 'SuperCommenterID:person';
 Readonly my $PERSON_COMMENTER_ID       => 'commenterID:person';
 
 foreach my $person_id ( $PERSON_ACTOR_ID, $PERSON_OBJECT_ID, $PERSON_SUPER_COMMENTER_ID, $PERSON_COMMENTER_ID ) {
-    my $actor = ActivityStream::API::Object::Person->new( 'environment' => $environment, 'object_id' => $person_id );
+    my $actor = ActivityStream::API::Thing::Person->new( 'environment' => $environment, 'object_id' => $person_id );
     $t->app->routes->get( $actor->create_request( { 'rid' => $RID } ) )
           ->to( 'cb' => $actor->create_test_response( { 'rid' => $RID } ) );
 }
@@ -429,6 +429,128 @@ subtest 'test likers', sub {
 
         $test_cb->();
     };
+};
+
+subtest 'test activities created on action', sub {
+    my @callbacks;
+
+    no warnings 'once';
+    local *Test::UsefullActivity::save_in_db = sub { push( @callbacks, [ 'save_in_db' => @_ ] ); };
+
+    my $usefull_activity = bless( [], 'Test::UsefullActivity' );
+
+    my $mock_activity = Test::MockModule->new( ref $activity );
+    $mock_activity->mock( 'is_likeable'      => sub {1} );
+    $mock_activity->mock( 'is_commentable'   => sub {1} );
+    $mock_activity->mock( 'is_recommendable' => sub {1} );
+
+    my $mock_factory = Test::MockModule->new( ref $environment->get_activity_factory );
+    $mock_factory->mock(
+        'activity_instance_from_rest_request_struct' => sub {
+            push( @callbacks, [ 'activity_instance_from_rest_request_struct' => @_ ] );
+            return $usefull_activity;
+        } );
+
+    subtest 'comment on activity when thing commentable', sub {
+        @callbacks = ();
+
+        Readonly my $BODY => ActivityStream::Util::generate_id;
+
+        my $mock_thing = Test::MockModule->new('ActivityStream::API::Thing');
+        $mock_thing->mock( 'is_commentable' => sub {1} );
+
+        $activity->save_comment( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => $BODY } );
+
+        cmp_deeply(
+            \@callbacks,
+            [ [
+                    'activity_instance_from_rest_request_struct' => $environment->get_activity_factory,
+                    {
+                        'actor'                    => { 'object_id' => 'commenterID:person' },
+                        'verb'                     => 'comment',
+                        'object'                   => { 'object_id' => 'objectID:person' },
+                        'parent_activity_id'       => $activity->get_activity_id,
+                        'super_parent_activity_id' => $activity->get_super_parent_activity_id,
+                    }
+                ],
+                [ 'save_in_db' => $usefull_activity ],
+            ] );
+    };
+
+    subtest 'comment on activity when thing not commentable', sub {
+        @callbacks = ();
+
+        Readonly my $BODY => ActivityStream::Util::generate_id;
+
+        my $mock_thing = Test::MockModule->new('ActivityStream::API::Thing');
+        $mock_thing->mock( 'is_commentable' => sub {0} );
+
+        $activity->save_comment( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => $BODY } );
+
+        cmp_deeply( \@callbacks, [] );
+    };
+
+    subtest 'liker on activity when thing likerable', sub {
+        @callbacks = ();
+
+        my $mock_thing = Test::MockModule->new('ActivityStream::API::Thing');
+        $mock_thing->mock( 'is_likeable' => sub {1} );
+
+        $activity->save_liker( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
+
+        cmp_deeply(
+            \@callbacks,
+            [ [
+                    'activity_instance_from_rest_request_struct' => $environment->get_activity_factory,
+                    {
+                        'actor'                    => { 'object_id' => 'commenterID:person' },
+                        'verb'                     => 'like',
+                        'object'                   => { 'object_id' => 'objectID:person' },
+                        'parent_activity_id'       => $activity->get_activity_id,
+                        'super_parent_activity_id' => $activity->get_super_parent_activity_id,
+                    }
+                ],
+                [ 'save_in_db' => $usefull_activity ],
+            ] );
+    };
+
+    subtest 'liker on activity when thing not likerable', sub {
+        @callbacks = ();
+
+        my $mock_thing = Test::MockModule->new('ActivityStream::API::Thing');
+        $mock_thing->mock( 'is_likeable' => sub {0} );
+
+        $activity->save_liker( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID } } );
+
+        cmp_deeply( \@callbacks, [] );
+    };
+
+    subtest 'recommendation on activity when thing recommendable', sub {
+        @callbacks = ();
+
+        Readonly my $BODY => ActivityStream::Util::generate_id;
+
+        my $mock_thing = Test::MockModule->new('ActivityStream::API::Thing');
+        $mock_thing->mock( 'is_recommendable' => sub {1} );
+
+        $activity->save_recommendation( { 'creator' => { 'object_id' => $PERSON_COMMENTER_ID }, 'body' => $BODY } );
+
+        cmp_deeply(
+            \@callbacks,
+            [ [
+                    'activity_instance_from_rest_request_struct' => $environment->get_activity_factory,
+                    {
+                        'actor'                    => { 'object_id' => 'commenterID:person' },
+                        'verb'                     => 'recommend',
+                        'object'                   => { 'object_id' => 'objectID:person' },
+                        'parent_activity_id'       => $activity->get_activity_id,
+                        'super_parent_activity_id' => $activity->get_super_parent_activity_id,
+                    }
+                ],
+                [ 'save_in_db' => $usefull_activity ],
+            ] );
+    };
+
 };
 
 done_testing;

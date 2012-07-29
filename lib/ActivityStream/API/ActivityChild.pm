@@ -30,13 +30,13 @@ has 'super_parent_activity' => (
 sub prepare_load {
     my ( $self, $args ) = @_;
 
-    $self->SUPER::prepare_load( $args );
+    $self->SUPER::prepare_load($args);
 
     # Load super_parent_activity
     my $super_parent_activity = $self->get_environment->get_activity_factory->activity_instance_from_db(
         { 'activity_id' => $self->get_super_parent_activity_id } );
     $self->set_super_parent_activity($super_parent_activity);
-    $self->get_super_parent_activity->prepare_load( $args );
+    $self->get_super_parent_activity->prepare_load($args);
 
     return;
 }
@@ -121,9 +121,14 @@ sub add_comment {
 }
 
 sub save_comment {
-    my ( $self, @args ) = @_;
+    my ( $self, $param ) = @_;
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
-    return $self->get_super_parent_activity->save_comment(@args);
+
+    my $comment = $self->get_super_parent_activity->save_comment( { %$param, 'dont_save_object_comment' => 1 } );
+
+    $self->get_object->save_comment( $self, $param ) if $self->get_object->is_commentable;
+
+    return $comment;
 }
 
 sub delete_comment {
@@ -154,9 +159,14 @@ sub add_liker {
 }
 
 sub save_liker {
-    my ( $self, @args ) = @_;
+    my ( $self, $param ) = @_;
     confess( "Can't liker: " . ref($self) ) if not $self->is_likeable;
-    return $self->get_super_parent_activity->save_liker(@args);
+
+    my $like = $self->get_super_parent_activity->save_liker( { %$param, 'dont_save_object_like' => 1 } );
+
+    $self->get_object->save_liker( $self, $param ) if $self->get_object->is_likeable;
+
+    return $like;
 }
 
 sub delete_liker {
