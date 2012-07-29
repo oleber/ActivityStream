@@ -1,6 +1,6 @@
 % my $activity_title = begin
     % my $activity = shift;
-    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a> shared Link:
+    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a> recommend Link:
 % end
 
 % my %data = (

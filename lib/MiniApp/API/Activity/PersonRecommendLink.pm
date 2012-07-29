@@ -1,4 +1,4 @@
-package MiniApp::API::Activity::PersonShareLink;
+package MiniApp::API::Activity::PersonRecommendLink;
 use Moose;
 use Moose::Util::TypeConstraints;
 
@@ -8,7 +8,7 @@ use MiniApp::API::Object::Link;
 extends 'ActivityStream::API::Activity';
 
 has '+actor'  => ( 'isa' => 'MiniApp::API::Object::Person' );
-has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^share$/} ) );
+has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^recommend$/} ) );
 has '+object' => ( 'isa' => 'MiniApp::API::Object::Link' );
 
 sub is_likeable      { return 1 }

@@ -78,6 +78,9 @@ sub startup {
     $r->post('/rest/activitystream/user/:user_id/comment/activity/:activity_id')
           ->to( 'namespace' => 'ActivityStream::REST::Activity', 'action' => 'post_handler_user_activity_comment' );
 
+    $r->post('/rest/activitystream/user/:user_id/recommend/activity/:activity_id')
+          ->to( 'namespace' => 'ActivityStream::REST::Activity', 'action' => 'post_handler_user_activity_recommendation' );
+
 
     my $mojolicious_startup = $environment->get_config->{'packages'}->{'mojolicious_startup'};
     if ( defined $mojolicious_startup ) {

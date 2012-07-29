@@ -8,8 +8,9 @@ use Test::Mojo;
 use Data::Dumper;
 use HTTP::Status qw(:constants);
 use Mojo::JSON;
-use Storable qw(dclone);
 use Readonly;
+use Storable qw(dclone);
+use Test::MockModule;
 
 use ActivityStream::API::Object::Person;
 use ActivityStream::Environment;
@@ -33,13 +34,12 @@ my $user_creator_4_id = sprintf( '%s:person', ActivityStream::Util::generate_id 
 foreach my $user_id ( $user_creator_1_id, $user_creator_2_id, $user_creator_3_id, $user_creator_4_id ) {
     my $user = ActivityStream::API::Object::Person->new( 'object_id' => $user_id );
 
-    $t->app->routes->get( $user->create_request( $environment, { 'rid' => $RID } ) )
-          ->to(
-        'cb' => sub { 
+    $t->app->routes->get( $user->create_request( $environment, { 'rid' => $RID } ) )->to(
+        'cb' => sub {
             $user->create_test_response( {
-                'first_name' => 'person ' . $user_id,
-                'rid' => $RID 
-            } )->(shift);
+                    'first_name' => 'person ' . $user_id,
+                    'rid'        => $RID
+                } )->(shift);
         } );
 }
 
@@ -108,7 +108,7 @@ my $json = Mojo::JSON->new;
         note("GET single activity: existing");
         $t->get_ok("/rest/activitystream/activity/$friendship_activity{'activity_id'}?rid=$RID")->status_is(HTTP_OK);
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -123,7 +123,7 @@ my $json = Mojo::JSON->new;
 
     {
         note("GET single activity: existing");
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -134,7 +134,7 @@ my $json = Mojo::JSON->new;
     {
         note("DELETE single activity: without rid");
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $second_friendship_activity{'activity_id'} } );
 
         $t->delete_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}")
@@ -157,7 +157,7 @@ my $json = Mojo::JSON->new;
     {
         note("DELETE single activity: BAD rid");
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $second_friendship_activity{'activity_id'} } );
 
         $t->delete_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$RID")
@@ -181,7 +181,7 @@ my $json = Mojo::JSON->new;
     {
         note("DELETE single activity: good rid");
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $second_friendship_activity{'activity_id'} } );
 
         $t->delete_ok("/rest/activitystream/activity/$second_friendship_activity{'activity_id'}?rid=$user_creator_2_id")
@@ -203,6 +203,7 @@ my $json = Mojo::JSON->new;
 }
 
 {
+    note('Test Like');
     my @expected_likes;
 
     {
@@ -212,7 +213,7 @@ my $json = Mojo::JSON->new;
             $json->encode( { 'rid' => 'internal' } ) )->status_is(HTTP_OK);
         cmp_deeply( $t->tx->res->json, { 'like_id' => re(qr/^[a-zA-Z]{10,}$/), 'creation_time' => num( time, 2 ) } );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -236,7 +237,7 @@ my $json = Mojo::JSON->new;
             $json->encode( { 'rid' => 'internal' } ) )->status_is(HTTP_OK);
         cmp_deeply( $t->tx->res->json, { 'like_id' => re(qr/^[a-zA-Z]{10,}$/), 'creation_time' => num( time, 2 ) } );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -270,7 +271,7 @@ my $json = Mojo::JSON->new;
                 $expected_likes[-1]->get_like_id, 'internal',
             ) )->status_is(HTTP_OK)->json_content_is( {} );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -290,7 +291,7 @@ my $json = Mojo::JSON->new;
             ),
         )->status_is(HTTP_NOT_FOUND)->json_content_is( { 'error' => 'LIKE_NOT_FOUND' } );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -307,7 +308,7 @@ my $json = Mojo::JSON->new;
             ),
         )->status_is(HTTP_NOT_FOUND)->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -325,7 +326,7 @@ my $json = Mojo::JSON->new;
                 $user_creator_4_id
             ) )->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'BAD_RID' } );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -343,7 +344,7 @@ my $json = Mojo::JSON->new;
             ),
             $json->encode( {} ) )->status_is(HTTP_FORBIDDEN)->json_content_is( { 'error' => 'NO_RID_DEFINED' } );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
         $activity->load( $environment, { 'rid' => $RID } );
 
@@ -362,7 +363,7 @@ my $json = Mojo::JSON->new;
             ),
             $json->encode( { 'rid' => $user_creator_3_id } ) )->status_is(HTTP_OK)->json_content_is( {} );
 
-        my $activity = $environment->get_activity_factory->activity_instance_from_db( 
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
             { 'activity_id' => $friendship_activity{'activity_id'} } );
 
         pop @expected_likes;
@@ -372,27 +373,105 @@ my $json = Mojo::JSON->new;
 }
 
 {
-    note("POST User Comment Existing activity");
+    note('Test comment');
+    {
+        note("POST User Comment Existing activity");
 
-    Readonly my $BODY => ActivityStream::Util::generate_id;
+        Readonly my $BODY => ActivityStream::Util::generate_id;
 
-    $t->post_ok( "/rest/activitystream/user/$user_creator_3_id/comment/activity/$friendship_activity{'activity_id'}",
-        $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(HTTP_OK);
-    cmp_deeply( $t->tx->res->json, { 'comment_id' => ignore, 'creation_time' => num( time, 2 ) } );
+        $t->post_ok(
+            "/rest/activitystream/user/$user_creator_3_id/comment/activity/$friendship_activity{'activity_id'}",
+            $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(HTTP_OK);
+        cmp_deeply( $t->tx->res->json, { 'comment_id' => ignore, 'creation_time' => num( time, 2 ) } );
 
-    my $activity = $environment->get_activity_factory->activity_instance_from_db( 
-        { 'activity_id' => $friendship_activity{'activity_id'} } );
-    $activity->load( $environment, { 'rid' => $RID } );
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
+            { 'activity_id' => $friendship_activity{'activity_id'} } );
+        $activity->load( $environment, { 'rid' => $RID } );
 
-    my $activity_comment = ActivityStream::API::ActivityComment->new(
-        'comment_id'    => $t->tx->res->json->{'comment_id'},
-        'creator'       => ActivityStream::API::Object::Person->new( 'object_id' => $user_creator_3_id ),
-        'body'          => $BODY,
-        'creation_time' => $t->tx->res->json->{'creation_time'},
+        my $activity_comment = ActivityStream::API::ActivityComment->new(
+            'comment_id'    => $t->tx->res->json->{'comment_id'},
+            'creator'       => ActivityStream::API::Object::Person->new( 'object_id' => $user_creator_3_id ),
+            'body'          => $BODY,
+            'creation_time' => $t->tx->res->json->{'creation_time'},
+        );
+        $activity_comment->load( $environment, { 'rid' => $RID } );
+
+        cmp_deeply( $activity->get_comments, [$activity_comment], );
+    }
+}
+
+{
+    note('Test recommend');
+
+    my @callback;
+    my $cb;
+    my $mock = Test::MockModule->new('ActivityStream::API::Activity::Friendship');
+    $mock->mock(
+        'save_recommendation',
+        sub {
+            push( @callback, [ 'save_recommendation' => @_ ] );
+            return $cb->();
+        },
     );
-    $activity_comment->load( $environment, { 'rid' => $RID } );
 
-    cmp_deeply( $activity->get_comments, [$activity_comment], );
+    {
+        note("POST User recommend Existing activity no activity generated");
+        @callback = ();
+        $cb = sub {return};
+        Readonly my $BODY => ActivityStream::Util::generate_id;
+
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
+            { 'activity_id' => $friendship_activity{'activity_id'} } );
+
+        $t->post_ok(
+            "/rest/activitystream/user/$user_creator_3_id/recommend/activity/$friendship_activity{'activity_id'}",
+            $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(HTTP_OK)->json_content_is( {} );
+        cmp_deeply(
+            \@callback,
+            [ [
+                    'save_recommendation' => $activity,
+                    ignore, { 'creator' => { 'object_id' => $user_creator_3_id }, 'body' => $BODY } ] ] );
+    }
+
+    {
+        note("POST User recommend Existing activity and generate activity");
+        @callback = ();
+
+        my %test_friendship_activity = %{ dclone \%FRIENDSHIP_ACTIVITY_TEMPLATE };
+        my $new_activity             = $environment->get_activity_factory->activity_instance_from_rest_request_struct(
+            \%test_friendship_activity );
+        $cb = sub { return $new_activity };
+        Readonly my $BODY => ActivityStream::Util::generate_id;
+
+        my $activity = $environment->get_activity_factory->activity_instance_from_db(
+            { 'activity_id' => $friendship_activity{'activity_id'} } );
+
+        $t->post_ok(
+            "/rest/activitystream/user/$user_creator_3_id/recommend/activity/$friendship_activity{'activity_id'}",
+            $json->encode( { 'rid' => 'internal', 'body' => $BODY } ) )->status_is(HTTP_OK)->json_content_is( {
+                'activity_id'   => $new_activity->get_activity_id,
+                'creation_time' => $new_activity->get_creation_time,
+            } );
+
+        cmp_deeply( \@callback,
+            [ [ 'save_recommendation', $activity, ignore, { 'creator' => { 'object_id' => $user_creator_3_id }, 'body' => $BODY } ] ] );
+    }
+
+    {
+        note("POST User recommend Not Existing activity");
+        @callback = ();
+        $cb = sub {return};
+        Readonly my $BODY => ActivityStream::Util::generate_id;
+
+        my $not_existing_activity_id = sprintf( '%s:activity', ActivityStream::Util::generate_id );
+
+        $t->post_ok( "/rest/activitystream/user/$user_creator_3_id/recommend/activity/$not_existing_activity_id",
+            $json->encode( { 'rid' => $user_creator_3_id, 'body' => $BODY } ) )->status_is(HTTP_NOT_FOUND)
+              ->json_content_is( { 'error' => 'ACTIVITY_NOT_FOUND' } );
+
+        cmp_deeply( \@callback, [] );
+    }
+
 }
 
 done_testing;

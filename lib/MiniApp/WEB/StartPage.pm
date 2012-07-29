@@ -56,16 +56,18 @@ sub get_handler_activitystream {
             # TODO: deal with error
 
             my $activity_factory = $environment->get_activity_factory;
-            my @activities = map { $activity_factory->activity_instance_from_rest_request_struct($_) }
+            my @activities = map { $activity_factory->activity_instance_from_rest_response_struct($_) }
                   @{ $tx->res->json->{'activities'} };
 
             $c->stash( 'environment' => $environment );
             $c->stash( 'activities'  => \@activities );
+            warn Dumper \@activities;
         },
     );
 
     $async_user_agent->load_all( sub { $c->render( 'myapp/start_page/activitystream', environment => $environment ) } );
 
+    $c->render_later;
     return;
 } ## end sub get_handler_activitystream
 
@@ -89,8 +91,41 @@ sub post_handler_delete_activity {
 
     $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
 
+    $c->render_later;
+
     return;
 } ## end sub post_handler_delete_activity
+
+sub post_handler_recommend_activity {
+    my ($c) = @_;
+
+    my $rid = $c->session('rid');
+    confess "rid not defined" if not defined $rid;
+
+    my $activity_id = $c->param('activity_id');
+    confess "activity_id not defined" if not defined $activity_id;
+
+    my $body = $c->param('body') // 'TODO';
+    confess "body not defined" if not defined $body;
+    confess "body length = 0"  if 0 == length $body;
+
+    my $environment = ActivityStream::Environment->new( controller => $c );
+
+    my $async_user_agent = $environment->get_async_user_agent;
+
+    my $url = Mojo::URL->new( sprintf( "/rest/activitystream/user/%s/recommend/activity/%s", $rid, $activity_id ) );
+    $url->query->param( rid => $rid );
+
+    my $json = Mojo::JSON->new;
+
+    $async_user_agent->add_post_web_request( $url, $json->encode( { 'body' => $body } ), sub { } );
+
+    $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+
+    $c->render_later;
+
+    return;
+} ## end sub post_handler_recommend_activity
 
 sub post_handler_comment_activity {
     my ($c) = @_;
@@ -118,6 +153,8 @@ sub post_handler_comment_activity {
 
     $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
 
+    $c->render_later;
+
     return;
 } ## end sub post_handler_comment_activity
 
@@ -143,7 +180,7 @@ sub post_handler_share_status {
                 'actor'  => { 'object_id' => $rid },
                 'verb'   => 'share',
                 'object' => {
-                    'object_id' => ActivityStream::Util::generate_id().':ma_status',
+                    'object_id' => ActivityStream::Util::generate_id() . ':ma_status',
                     'message'   => $text
                 },
             },
@@ -152,6 +189,8 @@ sub post_handler_share_status {
     );
 
     $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+
+    $c->render_later;
 
     return;
 } ## end sub post_handler_share_status
@@ -216,6 +255,8 @@ sub post_handler_share_link {
         );
 
         $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+
+        $c->render_later;
     } else {
         $c->flash( 'ERROR' => { 'MESSAGE' => "Can't load URL: $url" } );
         $c->redirect_to( '/web/miniapp/startpage', 'status' => 500 );
@@ -287,7 +328,7 @@ sub post_handler_share_file {
                     'actor'  => { 'object_id' => $rid },
                     'verb'   => 'share',
                     'object' => {
-                        'object_id'         => ActivityStream::Util::generate_id().':ma_file',
+                        'object_id'         => ActivityStream::Util::generate_id() . ':ma_file',
                         'filename'          => $upfile_filename,
                         'size'              => $upfile->size,
                         'original_filepath' => File::Spec->abs2rel( $original_filepath, $storage_path ),
@@ -302,6 +343,8 @@ sub post_handler_share_file {
         );
 
         $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
+
+        $c->render_later;
 
     } ## end try
     catch {

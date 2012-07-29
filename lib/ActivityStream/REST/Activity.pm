@@ -26,8 +26,6 @@ sub post_handler_activity {
 
     my $environment = ActivityStream::Environment->new( controller => $self );
 
-    warn( 'Try to create activity: ' . Dumper($self->tx->req->json) );
-
     my $activity
           = $environment->get_activity_factory->activity_instance_from_rest_request_struct( $self->tx->req->json );
 
@@ -95,9 +93,9 @@ sub get_handler_activity {
 
                 #TODO: fail on activity load error
             } );
-            
+
         $self->render_later;
-        
+
         return;
     } else {
         return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
@@ -158,13 +156,10 @@ sub post_handler_user_activity_like {
     my $environment = ActivityStream::Environment->new( controller => $self );
 
     my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
+    return $self->render_json( {}, 'status' => HTTP_NOT_FOUND ) if not defined $activity;
 
-    if ( defined $activity ) {
-        my $like = $activity->save_liker( $environment, { 'creator' => { 'object_id' => $user_id } } );
-        return $self->render_json( { 'like_id' => $like->get_like_id, 'creation_time' => $like->get_creation_time } );
-    } else {
-        return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
-    }
+    my $like = $activity->save_liker( $environment, { 'creator' => { 'object_id' => $user_id } } );
+    return $self->render_json( { 'like_id' => $like->get_like_id, 'creation_time' => $like->get_creation_time } );
 }
 
 sub delete_handler_activity_like {
@@ -200,26 +195,53 @@ sub post_handler_user_activity_comment {
 
     my $user_id = $self->param('user_id');
 
-    my $rid     = $self->req->json->{'rid'};
+    my $rid = $self->param('rid') || $self->req->json->{'rid'};
     return $self->render_json( {}, 'status' => HTTP_FORBIDDEN ) if not( $rid ~~ [ $user_id, 'internal' ] );
 
     my $activity_id = $self->param('activity_id');
     my $body        = $self->req->json->{'body'};
+
     my $environment = ActivityStream::Environment->new( controller => $self );
 
     my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
+    return $self->render_json( {}, 'status' => HTTP_NOT_FOUND ) if not defined $activity;
 
-    if ( defined $activity ) {
-        my $comment
-              = $activity->save_comment( $environment, { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
+    my $comment
+          = $activity->save_comment( $environment, { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
 
+    return $self->render_json( {
+            'comment_id'    => $comment->get_comment_id,
+            'creation_time' => $comment->get_creation_time,
+    } );
+
+} ## end sub post_handler_user_activity_comment
+
+sub post_handler_user_activity_recommendation {
+    my $self = shift;
+
+    my $rid         = $self->param('rid') || $self->req->json->{'rid'};
+    my $user_id     = $self->param('user_id');
+    my $activity_id = $self->param('activity_id');
+    my $body        = $self->req->json->{'body'};
+
+    return $self->render_json( {}, 'status' => HTTP_FORBIDDEN ) if not( $rid ~~ [ $user_id, 'internal' ] );
+
+    my $environment = ActivityStream::Environment->new( controller => $self );
+
+    my $activity = $environment->get_activity_factory->activity_instance_from_db( { 'activity_id' => $activity_id } );
+    return $self->render_json( {}, 'status' => HTTP_NOT_FOUND ) if not defined $activity;
+
+    my $new_activity = $activity->save_recommendation( $environment,
+        { 'creator' => { 'object_id' => $user_id }, 'body' => $body } );
+
+    if ( defined $new_activity ) {
         return $self->render_json( {
-                'comment_id'    => $comment->get_comment_id,
-                'creation_time' => $comment->get_creation_time,
+                'activity_id'   => $new_activity->get_activity_id,
+                'creation_time' => $new_activity->get_creation_time,
         } );
     } else {
-        return $self->render_json( {}, 'status' => HTTP_NOT_FOUND );
+        return $self->render_json( {} );
     }
-} ## end sub post_handler_user_activity_comment
+} ## end sub post_handler_user_activity_recommendation
 
 1;

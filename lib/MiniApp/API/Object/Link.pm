@@ -10,11 +10,11 @@ use Readonly;
 extends 'ActivityStream::API::Object';
 
 Readonly my %FIELDS => (
-    'url'           => [ 'is' => 'rw', 'isa' => 'Str', 'required' => 1 ],
-    'image'         => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
-    'title'         => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
-    'description'   => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
-    'site_name'     => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
+    'url'         => [ 'is' => 'rw', 'isa' => 'Str', 'required' => 1 ],
+    'image'       => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
+    'title'       => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
+    'description' => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
+    'site_name'   => [ 'is' => 'rw', 'isa' => 'Maybe[Str]' ],
 );
 
 has '+object_id' => ( 'isa' => subtype( 'Str' => where {/^\w+:ma_link$/} ) );
@@ -23,6 +23,8 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 }
 
 no Moose::Util::TypeConstraints;
+
+sub is_recommendable { 1 }
 
 sub to_rest_response_struct {
     my ($self) = @_;
@@ -47,6 +49,7 @@ sub to_db_struct {
 
     return $data;
 }
+
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

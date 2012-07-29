@@ -22,6 +22,11 @@ sub to_struct {
     return { 'object_id' => $self->get_object_id };
 }
 
+sub to_simulate_rest_struct {
+    my ($self) = @_;
+    return { 'object_id' => $self->get_object_id };
+}
+
 sub to_db_struct {
     my ($self) = @_;
     return $self->to_struct;
@@ -40,12 +45,17 @@ sub from_struct {
     return $pkg->new($data);
 }
 
+sub from_rest_request_struct {
+    my ( $pkg, $data ) = @_;
+    return $pkg->from_struct($data);
+}
+
 sub from_db_struct {
     my ( $pkg, $data ) = @_;
     return $pkg->from_struct($data);
 }
 
-sub from_rest_request_struct {
+sub from_rest_response_struct {
     my ( $pkg, $data ) = @_;
     return $pkg->from_struct($data);
 }
@@ -80,6 +90,24 @@ sub load {
     $environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
 
     return;
+}
+
+sub is_recommendable {0}
+
+sub save_recommendation {
+    my ( $self, $environment, $param ) = @_;
+
+    confess( sprintf( q(Object %s isn't recommendable), $self->get_object_id ) ) if not $self->is_recommendable;
+
+    my $activity = $environment->get_activity_factory->activity_instance_from_rest_request_struct( {
+            actor  => $param->{'creator'},
+            verb   => 'recommend',
+            object => $self->to_db_struct,
+    } );
+
+    $activity->save_in_db($environment);
+
+    return $activity;
 }
 
 __PACKAGE__->meta->make_immutable;

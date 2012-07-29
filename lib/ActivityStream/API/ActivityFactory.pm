@@ -9,11 +9,15 @@ use Storable qw(dclone);
 
 use ActivityStream::API::Activity::Friendship;
 use ActivityStream::API::Activity::LinkShare;
+use ActivityStream::API::Activity::PersonRecommendPerson;
+
 use ActivityStream::X::ActivityNotFound;
 
 Readonly my @ACTIVITY_PACKAGE_FOR => (
     [ qr/person:friendship:person/ => 'ActivityStream::API::Activity::Friendship' ],
     [ qr/person:share:link/        => 'ActivityStream::API::Activity::LinkShare' ],
+    [ qr/person:recommend:person/  => 'ActivityStream::API::Activity::PersonRecommendPerson' ],
+
 );
 
 Readonly my @OBJECT_PACKAGE_FOR => ( [ qr/person/ => 'ActivityStream::API::Object::Person' ], );
@@ -67,36 +71,72 @@ sub activity_instance_from_rest_request_struct {
         Dumper($data), Dumper( [ $self->activity_package_for ] ),
     ) if not defined $pkg;
 
+    if ( ( exists $data->{'super_parent_activity_id'} ) and ( not exists $data->{'super_parent_activity'} ) ) {
+        $data->{'super_parent_activity'}
+              = $self->activity_instance_from_db( { 'activity_id' => $data->{'super_parent_activity_id'} } );
+    }
+
     foreach my $obj ( @{ $data->{'comments'} }, @{ $data->{'likers'} } ) {
-        $obj->{'creator'} = $self->object_instance_from_rest_request_struct($obj->{'creator'});
+        $obj->{'creator'} = $self->object_instance_from_rest_request_struct( $obj->{'creator'} );
     }
 
     return $pkg->from_rest_request_struct($data);
-}
+} ## end sub activity_instance_from_rest_request_struct
 
 sub activity_instance_from_db {
     my ( $self, $criteria ) = @_;
 
     my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
-    my $db_activity         = $collection_activity->find_one_activity($criteria);
+    my $data                = $collection_activity->find_one_activity($criteria);
 
-    if ( defined $db_activity ) {
-        my $pkg = $self->_activity_structure_class($db_activity);
+    if ( defined $data ) {
+        my $pkg = $self->_activity_structure_class($data);
 
         confess sprintf(
             "Class not found for %s on %s with mapping %s on %s",
-            $self->_activity_type($db_activity), Dumper($db_activity),
-            Dumper( [ $self->activity_package_for ] ), ref($self) ) if not defined $pkg;
+            $self->_activity_type($data),
+            Dumper($data), Dumper( [ $self->activity_package_for ] ),
+            ref($self) ) if not defined $pkg;
 
-        foreach my $obj ( @{ $db_activity->{'comments'} }, @{ $db_activity->{'likers'} } ) {
-            $obj->{'creator'} = $self->object_instance_from_db($obj->{'creator'});
+        if ( ( exists $data->{'super_parent_activity_id'} ) and ( not exists $data->{'super_parent_activity'} ) ) {
+            $data->{'super_parent_activity'}
+                  = $self->activity_instance_from_db( { 'activity_id' => $data->{'super_parent_activity_id'} } );
         }
 
-        return $pkg->from_db_struct($db_activity);
+        foreach my $obj ( @{ $data->{'comments'} }, @{ $data->{'likers'} } ) {
+            $obj->{'creator'} = $self->object_instance_from_db( $obj->{'creator'} );
+        }
+
+        return $pkg->from_db_struct($data);
     } else {
         die ActivityStream::X::ActivityNotFound->new;
     }
 } ## end sub activity_instance_from_db
+
+sub activity_instance_from_rest_response_struct {
+    my ( $self, $data ) = @_;
+
+    $data = dclone $data;
+
+    my $pkg = $self->_activity_structure_class($data);
+
+    confess sprintf(
+        "Class not found for %s on %s with mapping %s",
+        $self->_activity_type($data),
+        Dumper($data), Dumper( [ $self->activity_package_for ] ),
+    ) if not defined $pkg;
+
+    if ( defined $data->{'super_parent_activity'} ) {
+        $data->{'super_parent_activity'}
+              = $self->activity_instance_from_rest_response_struct( $data->{'super_parent_activity'} );
+    }
+
+    foreach my $obj ( @{ $data->{'comments'} }, @{ $data->{'likers'} } ) {
+        $obj->{'creator'} = $self->object_instance_from_rest_response_struct( $obj->{'creator'} );
+    }
+
+    return $pkg->from_rest_response_struct($self->get_environment, $data);
+} ## end sub activity_instance_from_rest_request_struct
 
 sub object_package_for {
     return @OBJECT_PACKAGE_FOR;
@@ -149,8 +189,23 @@ sub object_instance_from_db {
         Dumper($data), Dumper( [ $self->object_package_for ] ),
     ) if not defined $pkg;
 
-    return $pkg->from_rest_request_struct($data);
+    return $pkg->from_db_struct($data);
 }
+
+sub object_instance_from_rest_response_struct {
+    my ( $self, $data ) = @_;
+
+    my $pkg = $self->_object_structure_class($data);
+
+    confess sprintf(
+        "Class not found for %s on %s with mapping %s",
+        $self->_object_type($data),
+        Dumper($data), Dumper( [ $self->object_package_for ] ),
+    ) if not defined $pkg;
+
+    return $pkg->from_rest_response_struct($data);
+}
+
 
 __PACKAGE__->meta->make_immutable;
 no Moose;

@@ -21,13 +21,29 @@
                 <span class="ui-icon ui-icon-trash" style="display:inline-block"></span>
                 Delete
             </div>
-            <form id="delete_<%= $clean_activity_id %>" action="/web/miniapp/startpage/delete_activity/<%= $activity->{"activity_id"} %>" method="post"></form>
+            <form
+                id="delete_<%= $clean_activity_id %>" 
+                action="/web/miniapp/startpage/delete_activity/<%= $activity->{"activity_id"} %>" 
+                method="post"
+                style="display: none"
+            ></form>
         </div>
     </div>
 
     <ul>
         <li class="activity-title"><%= $activity_title %></li>
-        <li class="activity-body"><%= $activity_body %></li>
+        <li class="activity-body">
+%           my $activity_body = stash('activity_body');
+%           if ( not defined $activity_body ) {
+%               $activity_body = include(
+%                   'myapp/start_page/activity/body/' . $activity->get_object->get_type, 
+%                   'activity'          => $activity,
+%                   'environment'       => $environment,
+%                   'thing'             => $activity->get_object
+%               );
+%           }
+            <%= $activity_body %>
+        </li>
     </ul>
 
     <div style='clear:both'></div>
@@ -39,9 +55,20 @@
             </span>
 %       }
 %       if ( $activity->is_recommendable ) {
-            <span class="ui-widget ui-state-default ui-corner-all margin-M">
+
+            <span
+                class="ui-widget ui-state-default ui-corner-all margin-M"
+                onclick="javascript: $('#recommend_<%= $clean_activity_id %>').submit();"
+            >
                 <span class="ui-icon ui-icon-signal-diag" style="display:inline-table"></span> Recommend
             </span>
+
+            <form
+                id="recommend_<%= $clean_activity_id %>"
+                style="display: none"
+                action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/recommend"
+                method="post"
+            ></form>
 %       }
 %       if ( $activity->is_commentable ) {
             <span

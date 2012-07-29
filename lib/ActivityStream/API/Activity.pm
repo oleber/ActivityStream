@@ -1,8 +1,10 @@
 package ActivityStream::API::Activity;
 use Moose;
+use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use Data::Dumper;
+use List::Util qw(max);
 use List::MoreUtils qw(any);
 use Scalar::Util qw(blessed);
 
@@ -14,8 +16,8 @@ use ActivityStream::X::CommentNotFound;
 use ActivityStream::X::LikerNotFound;
 
 has 'activity_id' => (
-    'is'      => 'rw',
-    'isa'     => 'Str',
+    'is'  => 'rw',
+    'isa' => subtype( 'Str' => where {/^\w+:activity$/} ),
     'default' => sub { ActivityStream::Util::generate_id . ':activity' },
 );
 
@@ -91,9 +93,30 @@ around BUILDARGS => sub {
     return $args;
 };
 
-sub is_likeable      { return 0 }
-sub is_commentable   { return 0 }
-sub is_recommendable { return 0 }
+sub is_likeable    { return 0 }
+sub is_commentable { return 0 }
+
+sub get_recommendable_thing { shift->get_object }
+
+sub is_recommendable {
+    my ($self) = @_;
+    my $recommendable_thing = $self->get_recommendable_thing;
+    return ( defined($recommendable_thing) and $recommendable_thing->is_recommendable );
+}
+
+sub to_simulate_rest_struct {
+    my ($self) = @_;
+
+    my %data = (
+        'actor'  => $self->get_actor->to_simulate_rest_struct,
+        'verb'   => $self->get_verb,
+        'object' => $self->get_object->to_simulate_rest_struct,
+    );
+
+    $data{target} = $self->get_target->to_simulate_rest_struct if defined $self->get_target;
+
+    return \%data;
+}
 
 sub to_db_struct {
     my ($self) = @_;
@@ -110,23 +133,35 @@ sub to_db_struct {
 
     my %data = (
         'activity_id'   => $self->get_activity_id,
-        'actor'         => $self->get_actor->to_db_struct,
+        'actor'         => $self->_to_db_struct_actor,
         'verb'          => $self->get_verb,
-        'object'        => $self->get_object->to_db_struct,
+        'object'        => $self->_to_db_struct_object,
         'visibility'    => $self->get_visibility,
-        'likers'        => [ map { $_->to_db_struct } @{ $self->get_likers } ],
-        'comments'      => [ map { $_->to_db_struct } @{ $self->get_comments } ],
+        'likers'        => $self->_to_db_struct_likers,
+        'comments'      => $self->_to_db_struct_comments,
         'creation_time' => $self->get_creation_time,
         'sources'       => \@sources,
         'timebox'       => \@timebox,
     );
 
     if ( defined $self->get_target ) {
-        $data{'target'} = $self->get_target->to_db_struct;
+        $data{'target'} = $self->_to_db_struct_target;
     }
 
     return \%data;
 } ## end sub to_db_struct
+
+sub _to_db_struct_actor  { shift->get_actor->to_db_struct }
+sub _to_db_struct_object { shift->get_object->to_db_struct }
+sub _to_db_struct_target { shift->get_target->to_db_struct }
+
+sub _to_db_struct_likers {
+    [ map { $_->to_db_struct } @{ shift->get_likers } ];
+}
+
+sub _to_db_struct_comments {
+    [ map { $_->to_db_struct } @{ shift->get_comments } ];
+}
 
 sub save_in_db {
     my ( $self, $environment ) = @_;
@@ -159,34 +194,59 @@ sub to_rest_response_struct {
 
     my %data = (
         'activity_id'   => $self->get_activity_id,
-        'actor'         => $self->get_actor->to_rest_response_struct,
+        'actor'         => $self->_to_rest_response_struct_actor,
         'verb'          => $self->get_verb,
-        'object'        => $self->get_object->to_rest_response_struct,
-        'likers'        => [ map { $_->to_rest_response_struct } @{ $self->get_likers } ],
-        'comments'      => [ map { $_->to_rest_response_struct } @{ $self->get_comments } ],
+        'object'        => $self->_to_rest_response_struct_object,
+        'likers'        => $self->_to_rest_response_struct_likers,
+        'comments'      => $self->_to_rest_response_struct_comments,
         'creation_time' => $self->get_creation_time,
     );
 
     if ( defined $self->get_target ) {
-        $data{'target'} = $self->get_target->to_rest_response_struct;
+        $data{'target'} = $self->_to_rest_response_struct_target;
     }
 
     return \%data;
 } ## end sub to_rest_response_struct
 
-sub get_sources {
-    my ($self) = @_;
-    return ( $self->get_actor->get_object_id );
+sub _to_rest_response_struct_actor  { shift->get_actor->to_rest_response_struct }
+sub _to_rest_response_struct_object { shift->get_object->to_rest_response_struct }
+sub _to_rest_response_struct_target { shift->get_target->to_rest_response_struct }
+
+sub _to_rest_response_struct_likers {
+    [ map { $_->to_rest_response_struct } @{ shift->get_likers } ];
 }
+
+sub _to_rest_response_struct_comments {
+    [ map { $_->to_rest_response_struct } @{ shift->get_comments } ];
+}
+
+sub get_sources { return ( shift->get_actor->get_object_id ) }
 
 sub get_type {
     my ($self) = @_;
-    return join( ':',
+    return join(
+        ':',
         $self->get_actor->get_type,
         $self->get_verb,
         $self->get_object->get_type,
         ( $self->get_target ? $self->get_target->get_type : () ),
     );
+}
+
+sub from_rest_request_struct {
+    my ( $pkg, $data ) = @_;
+
+    my %data = %$data;
+
+    $data{'actor'}  = $pkg->get_attribute_base_class('actor')->from_rest_request_struct( $data{'actor'} );
+    $data{'object'} = $pkg->get_attribute_base_class('object')->from_rest_request_struct( $data{'object'} );
+
+    if ( defined $data{'target'} ) {
+        $data{'target'} = $pkg->get_attribute_base_class('target')->from_rest_request_struct( $data{'target'} );
+    }
+
+    return $pkg->new(%data);
 }
 
 sub from_db_struct {
@@ -204,16 +264,20 @@ sub from_db_struct {
     return $pkg->new(%data);
 }
 
-sub from_rest_request_struct {
-    my ( $pkg, $data ) = @_;
+sub from_rest_response_struct {
+    my ( $pkg, $environment, $data ) = @_;
+
+    if ( not defined $data ) {
+        confess "Data is undefined";
+    }
 
     my %data = %$data;
 
-    $data{'actor'}  = $pkg->get_attribute_base_class('actor')->from_rest_request_struct( $data{'actor'} );
-    $data{'object'} = $pkg->get_attribute_base_class('object')->from_rest_request_struct( $data{'object'} );
+    $data{'actor'}  = $pkg->get_attribute_base_class('actor')->from_rest_response_struct( $data{'actor'} );
+    $data{'object'} = $pkg->get_attribute_base_class('object')->from_rest_response_struct( $data{'object'} );
 
     if ( defined $data{'target'} ) {
-        $data{'target'} = $pkg->get_attribute_base_class('target')->from_rest_request_struct( $data{'target'} );
+        $data{'target'} = $pkg->get_attribute_base_class('target')->from_rest_response_struct( $data{'target'} );
     }
 
     return $pkg->new(%data);
@@ -272,8 +336,6 @@ sub prepare_load_target {
     return;
 }
 
-use List::Util qw(max);
-
 sub prepare_load_comments {
     my ( $self, $environment, $args ) = @_;
 
@@ -315,7 +377,7 @@ sub load {
     $self->prepare_load( $environment, $args );
     $environment->get_async_user_agent->load_all( sub { Mojo::IOLoop->stop } );
 
-    return;
+    return $self;
 }
 
 sub has_fully_loaded_successfully {
@@ -423,8 +485,6 @@ sub save_comment {
 
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
 
-    my $collection_activity = $environment->get_collection_factory->collection_activity;
-
     my $activity_comment = blessed($param) ? $param : ActivityStream::API::ActivityComment->new( {
             %$param,
             'creator' => (
@@ -435,12 +495,12 @@ sub save_comment {
         },
     );
 
-    $self->add_comment($activity_comment);
-
-    $collection_activity->update_activity(
+    $environment->get_collection_factory->collection_activity->update_activity(
         { 'activity_id' => $self->get_activity_id },
         { '$push'       => { 'comments' => $activity_comment->to_db_struct } },
     );
+
+    $self->add_comment($activity_comment);
 
     return $activity_comment;
 } ## end sub save_comment
@@ -468,6 +528,14 @@ sub delete_comment {
 
     return;
 } ## end sub delete_comment
+
+sub save_recommendation {
+    my ( $self, $environment, $param ) = @_;
+
+    confess( sprintf( q(Activity %s isn't recommendable), $self->get_activity_id ) ) if not $self->is_recommendable;
+
+    return $self->get_object->save_recommendation( $environment, $param );
+}
 
 sub preload_filter_pass {
     my ( $self, $filter ) = @_;

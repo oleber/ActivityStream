@@ -1,0 +1,8 @@
+<div>
+    <div class='activity-body-title'>
+        <a href='<%= $thing->get_url %>'> <%= $thing->get_title %></a>
+    </div>
+    <div class='activity-body-discreet'> <%= $thing->get_site_name %> </div>
+    <div class='activity-body-body'>     <%= $thing->get_description %> </div>
+</div>
+

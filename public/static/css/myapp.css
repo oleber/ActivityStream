@@ -40,7 +40,7 @@
 	float:         left;
 	width:         100px;
 	height:        100px;
-	margin-right: 5px;
+	margin:        0px 5px 5px 0px;
 	text-align:    center;
 }
 
@@ -56,10 +56,12 @@
 
 .activitystream .activity .activity-body-body {
     font-size:     90%;
-    color:         #aaa;
+    color:         #111;
 }
 
-.activitystream .activity .activity-body-descrite {
+.activitystream .activity .activity-body-discreet {
+	font-size:     70%;
+	color:         #aaa;
 }
 
 

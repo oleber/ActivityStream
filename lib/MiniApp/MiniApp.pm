@@ -36,6 +36,9 @@ sub startup {
     $r->post('/web/miniapp/startpage/comment_activity/:activity_id')
           ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_comment_activity' );
 
+    $r->post('/web/miniapp/startpage/:activity_id/recommend')
+          ->to( 'namespace' => 'MiniApp::WEB::StartPage', 'action' => 'post_handler_recommend_activity' );
+
     #
     # /web/miniapp/default
 

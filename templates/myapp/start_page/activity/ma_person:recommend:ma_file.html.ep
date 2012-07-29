@@ -1,6 +1,6 @@
 % my $activity_title = begin
     % my $activity = shift;
-    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a> shared file: 
+    <a href="<%= $activity->get_actor->get_profile_url %>"><%= $activity->get_actor->get_full_name %></a> recommend file:
     <a href='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_original_filepath %>'>
         <%= $activity->get_object->get_filename %>
     </a>

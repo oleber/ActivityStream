@@ -23,6 +23,8 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 
 no Moose::Util::TypeConstraints;
 
+sub is_recommendable { 1 }
+
 sub to_rest_response_struct {
     my ($self) = @_;
 
