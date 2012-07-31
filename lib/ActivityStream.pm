@@ -48,6 +48,7 @@ sub startup {
 
     if ( defined $environment->get_config->{'packages'} ) {
         foreach my $package ( values %{ $environment->get_config->{'packages'} } ) {
+            ## no critic BuiltinFunctions::ProhibitStringyEval
             eval "use $package;";
             confess($@) if $@;
         }

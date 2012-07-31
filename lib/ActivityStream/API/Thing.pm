@@ -101,9 +101,9 @@ sub load {
     return;
 }
 
-sub is_likeable    { 0 }
-sub is_commentable { 0 }
-sub is_recommendable {0}
+sub is_likeable    { return 0 }
+sub is_commentable { return 0 }
+sub is_recommendable { return 0 }
 
 sub save_recommendation {
     my ( $self, $parent_activity, $param ) = @_;

@@ -10,6 +10,7 @@ use Data::Dumper;
 
 sub get_handler_show_uploaded_file {
     my ($c) = @_;
+    return;
 }
 
 1;

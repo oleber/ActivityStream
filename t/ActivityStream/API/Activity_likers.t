@@ -44,6 +44,7 @@ use_ok($PKG);
     }
 }
 
+## no critic TestingAndDebugging::ProhibitNoWarnings
 no warnings 'redefine', 'once';
 
 local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
@@ -149,7 +150,7 @@ $obj->load( { 'rid' => $RID } );
 
     {
         {
-
+            ## no critic Modules::ProhibitMultiplePackages
             package ActivityStream::API::Activity_Likers::JustForTest;
             *is_likeable = sub { return 1 };
         }

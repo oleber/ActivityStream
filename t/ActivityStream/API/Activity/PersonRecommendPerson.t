@@ -434,6 +434,7 @@ subtest 'test likers', sub {
 subtest 'test activities created on action', sub {
     my @callbacks;
 
+    ## no criticTestingAndDebugging::ProhibitNoWarnings
     no warnings 'once';
     local *Test::UsefullActivity::save_in_db = sub { push( @callbacks, [ 'save_in_db' => @_ ] ); };
 

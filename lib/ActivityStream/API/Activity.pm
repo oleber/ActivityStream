@@ -104,7 +104,7 @@ around BUILDARGS => sub {
 sub is_likeable    { return 0 }
 sub is_commentable { return 0 }
 
-sub get_recommendable_thing { shift->get_object }
+sub get_recommendable_thing { return shift->get_object }
 
 sub is_recommendable {
     my ($self) = @_;
@@ -159,17 +159,12 @@ sub to_db_struct {
     return \%data;
 } ## end sub to_db_struct
 
-sub _to_db_struct_actor  { shift->get_actor->to_db_struct }
-sub _to_db_struct_object { shift->get_object->to_db_struct }
-sub _to_db_struct_target { shift->get_target->to_db_struct }
+sub _to_db_struct_actor  { return shift->get_actor->to_db_struct }
+sub _to_db_struct_object { return shift->get_object->to_db_struct }
+sub _to_db_struct_target { return shift->get_target->to_db_struct }
 
-sub _to_db_struct_likers {
-    [ map { $_->to_db_struct } @{ shift->get_likers } ];
-}
-
-sub _to_db_struct_comments {
-    [ map { $_->to_db_struct } @{ shift->get_comments } ];
-}
+sub _to_db_struct_likers { return [ map { $_->to_db_struct } @{ shift->get_likers } ] }
+sub _to_db_struct_comments { return [ map { $_->to_db_struct } @{ shift->get_comments } ] }
 
 sub save_in_db {
     my ($self) = @_;
@@ -217,17 +212,12 @@ sub to_rest_response_struct {
     return \%data;
 } ## end sub to_rest_response_struct
 
-sub _to_rest_response_struct_actor  { shift->get_actor->to_rest_response_struct }
-sub _to_rest_response_struct_object { shift->get_object->to_rest_response_struct }
-sub _to_rest_response_struct_target { shift->get_target->to_rest_response_struct }
+sub _to_rest_response_struct_actor  { return shift->get_actor->to_rest_response_struct }
+sub _to_rest_response_struct_object { return shift->get_object->to_rest_response_struct }
+sub _to_rest_response_struct_target { return shift->get_target->to_rest_response_struct }
 
-sub _to_rest_response_struct_likers {
-    [ map { $_->to_rest_response_struct } @{ shift->get_likers } ];
-}
-
-sub _to_rest_response_struct_comments {
-    [ map { $_->to_rest_response_struct } @{ shift->get_comments } ];
-}
+sub _to_rest_response_struct_likers { return [ map { $_->to_rest_response_struct } @{ shift->get_likers } ] }
+sub _to_rest_response_struct_comments { return [ map { $_->to_rest_response_struct } @{ shift->get_comments } ] }
 
 sub get_sources { return ( shift->get_actor->get_object_id ) }
 

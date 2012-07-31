@@ -24,9 +24,9 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
 
 no Moose::Util::TypeConstraints;
 
-sub is_likeable      {1}
-sub is_commentable   {1}
-sub is_recommendable {1}
+sub is_likeable      { return 1 }
+sub is_commentable   { return 1 }
+sub is_recommendable { return 1 }
 
 sub _to_helper {
     my ( $self, $data ) = @_;

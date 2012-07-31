@@ -16,7 +16,7 @@ use_ok $PKG;
 
 {
 
-    package ActivityStream::AsyncUserAgent::TestApp;
+    package ActivityStream::AsyncUserAgent::TestApp;    ## no critic Modules::ProhibitMultiplePackages
     use Mojo::Base 'Mojolicious';
     use Try::Tiny;
 

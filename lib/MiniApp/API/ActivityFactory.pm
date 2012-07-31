@@ -8,7 +8,7 @@ use Carp;
 use Data::Dumper;
 use Readonly;
 
-use MiniApp::API::Activity::Status;
+use MiniApp::API::Activity::PersonShareStatus;
 use MiniApp::API::Activity::PersonShareFile;
 use MiniApp::API::Activity::PersonShareLink;
 
@@ -21,12 +21,12 @@ use MiniApp::API::Activity::PersonLikeLink;
 use MiniApp::API::Activity::PersonRecommendLink;
 
 use MiniApp::API::Thing::Person;
-use MiniApp::API::Thing::StatusMessage;
+use MiniApp::API::Thing::Status;
 use MiniApp::API::Thing::File;
 
 sub activity_package_for {
     return (
-        [ qr/^ma_person:share:ma_status$/   => 'MiniApp::API::Activity::Status' ],
+        [ qr/^ma_person:share:ma_status$/   => 'MiniApp::API::Activity::PersonShareStatus' ],
         [ qr/^ma_person:share:ma_file$/     => 'MiniApp::API::Activity::PersonShareFile' ],
         [ qr/^ma_person:share:ma_link$/     => 'MiniApp::API::Activity::PersonShareLink' ],
         [ qr/^ma_person:comment:ma_link$/   => 'MiniApp::API::Activity::PersonCommentLink' ],
@@ -41,7 +41,7 @@ sub activity_package_for {
 sub object_package_for {
     return (
         [ qr/^ma_person$/ => 'MiniApp::API::Thing::Person' ],
-        [ qr/^ma_status$/ => 'MiniApp::API::Thing::StatusMessage' ],
+        [ qr/^ma_status$/ => 'MiniApp::API::Thing::Status' ],
         [ qr/^ma_file$/   => 'MiniApp::API::Thing::File' ],
         [ qr/^ma_link$/   => 'MiniApp::API::Thing::Link' ],
     );

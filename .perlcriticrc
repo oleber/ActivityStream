@@ -1,0 +1,9 @@
+verbose   = %f (%l) [%p] %m at , near '%r'.  (Severity: %s)\n
+severity  = 4
+color     = 1
+
+[TestingAndDebugging::RequireUseStrict]
+equivalent_modules = Mojo::Base
+
+[TestingAndDebugging::RequireUseWarnings]
+equivalent_modules = Mojo::Base

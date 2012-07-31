@@ -47,6 +47,7 @@ use_ok($PKG);
     }
 }
 
+## no critic TestingAndDebugging::ProhibitNoWarnings
 no warnings 'redefine', 'once';
 
 local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
@@ -421,7 +422,7 @@ $obj->load( { 'rid' => $RID } );
         note('delete second existing comment');
         $obj->delete_comment( { 'comment_id' => $expected_to_rest_response_struct{'comments'}[0]{'comment_id'} }, );
 
-        $expected_db_struct{'comments'} = [ $expected_db_struct{'comments'}[1] ];
+        $expected_db_struct{'comments'}               = [ $expected_db_struct{'comments'}[1] ];
         $expected_to_rest_response_struct{'comments'} = [ $expected_to_rest_response_struct{'comments'}[1] ];
         test_db_status;
     }

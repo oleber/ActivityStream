@@ -59,11 +59,11 @@ sub to_db_struct {
     };
 }
 
-sub _to_db_struct_likers   { [] }
-sub _to_db_struct_comments { [] }
+sub _to_db_struct_likers   { return [] }
+sub _to_db_struct_comments { return [] }
 
-sub _to_rest_response_struct_likers   { [] }
-sub _to_rest_response_struct_comments { [] }
+sub _to_rest_response_struct_likers   { return [] }
+sub _to_rest_response_struct_comments { return [] }
 
 sub to_rest_response_struct {
     my ($self) = @_;
@@ -124,7 +124,7 @@ sub save_comment {
     my ( $self, $param ) = @_;
     confess( "Can't comment: " . ref($self) ) if not $self->is_commentable;
 
-    my $comment = $self->get_super_parent_activity->save_comment( { %$param, 'dont_save_object_comment' => 1 } );
+    my $comment = $self->get_super_parent_activity->save_comment( +{ %$param, 'dont_save_object_comment' => 1 } );
 
     $self->get_object->save_comment( $self, $param ) if $self->get_object->is_commentable;
 
@@ -162,7 +162,7 @@ sub save_liker {
     my ( $self, $param ) = @_;
     confess( "Can't liker: " . ref($self) ) if not $self->is_likeable;
 
-    my $like = $self->get_super_parent_activity->save_liker( { %$param, 'dont_save_object_like' => 1 } );
+    my $like = $self->get_super_parent_activity->save_liker( +{ %$param, 'dont_save_object_like' => 1 } );
 
     $self->get_object->save_liker( $self, $param ) if $self->get_object->is_likeable;
 

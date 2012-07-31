@@ -26,12 +26,13 @@ use_ok($PKG);
 
 {
 
-    package ActivityStream::API::Activity::JustForTest;
+    package ActivityStream::API::Activity::JustForTest;    ## no critic Modules::ProhibitMultiplePackages
     use Moose;
 
     extends 'ActivityStream::API::Activity';
 }
 
+## no critic TestingAndDebugging::ProhibitNoWarnings
 no warnings 'redefine', 'once';
 
 local *ActivityStream::API::ActivityFactory::_activity_structure_class = sub {
@@ -56,7 +57,7 @@ Readonly my %DATA => (
     ok( not $obj->is_recommendable );
 }
 
-my $obj = ActivityStream::API::Activity::JustForTest->from_rest_request_struct($environment, \%DATA );
+my $obj = ActivityStream::API::Activity::JustForTest->from_rest_request_struct( $environment, \%DATA );
 Readonly my $ACTIVITY_ID => $obj->get_activity_id;
 
 like( $obj->get_activity_id, qr/^\w{20}:activity$/ );
@@ -71,7 +72,7 @@ my %EXPECTED = (
 my %expected_db_struct = (
     %{ dclone( \%EXPECTED ) },
     'visibility' => 1,
-    'sources'    => [ 'xxx:123' ],
+    'sources'    => ['xxx:123'],
     'timebox'    => ignore,
 );
 
@@ -112,11 +113,11 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
     {
         note('to_rest_response_struct success with prepare_load overwritten and loaded_successfully set');
 
-        package ActivityStream::API::Activity::JustForTest;
+        package ActivityStream::API::Activity::JustForTest;    ## no critic Modules::ProhibitMultiplePackages
         local *ActivityStream::API::Activity::JustForTest::prepare_load = sub {
             my ( $self, $environment, $args ) = @_;
             $self->set_loaded_successfully(1);
-            $self->SUPER::prepare_load( $args );
+            $self->SUPER::prepare_load($args);
         };
 
         $obj->load( { 'rid' => $RID } );
@@ -129,10 +130,10 @@ my %expected_to_rest_response_struct = %{ dclone( \%EXPECTED ) };
 
 {
 
-    package ActivityStream::API::Activity::JustForTest;
+    package ActivityStream::API::Activity::JustForTest;    ## no critic Modules::ProhibitMultiplePackages
     *prepare_load = sub {
         my ( $self, $environment, $args ) = @_;
-        $self->SUPER::prepare_load( $args );
+        $self->SUPER::prepare_load($args);
         $self->set_loaded_successfully(1);
     };
 }
