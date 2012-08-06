@@ -362,6 +362,7 @@ sub post_handler_share_file {
                 },
             ),
             sub {
+                warn Dumper \@_;
             },
         );
 
