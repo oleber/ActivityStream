@@ -85,6 +85,17 @@
     margin-bottom:  5px;
 }
 
+.ui-state-default {
+	cursor: pointer;
+    margin: 4px;
+    padding: 5px;
+    display: inline-block;
+}
+
+.ui-state-default .ui-icon {
+    display:inline-table;
+}
+
 
 
 .page-title {

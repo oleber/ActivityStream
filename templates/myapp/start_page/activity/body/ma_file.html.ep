@@ -1,47 +1,46 @@
     <div>
 %       my $clean_activity_id = md5_hex( $activity->get_activity_id );
-%       my $img_element_id = "activity_image_$clean_activity_id";
 
 %       if ( @{$activity->get_object->get_thumbernail_filepaths} == 1 ) {
             <img
-                id="<%= $img_element_id %>"
+                class="thing_file_image"
                 style='border:2px solid; margin: 5px'
                 src='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_thumbernail_filepaths->[0] %>'
                 thumbernail_index='0'
             >
 %       } elsif ( @{$activity->get_object->get_thumbernail_filepaths} > 1 ) {
-            <table>
-                <tr>
-                    <td 
-                        style="vertical-align: middle"
-                        onclick="miniapp.startpage.activity.presentfile.previous('<%= $img_element_id %>')"
-                    >
-                        <span class="ui-widget ui-corner-all">
-                            <span class="ui-icon ui-icon-circle-arrow-w"></span>
-                        </span>
-                    <td>
-                    <td>
-                        <img
-                            id="<%= $img_element_id %>"
-                            style='border:2px solid; margin: 5px'
-                            src='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_thumbernail_filepaths->[0] %>'
-                            thumbernail_index='0'
-                        >
-                    </td>
-                    <td
-                        style="vertical-align: middle" 
-                        onclick="miniapp.startpage.activity.presentfile.next('<%= $img_element_id %>')"
-                    >
-                        <span class="ui-widget ui-corner-all" >
-                            <span class="ui-icon ui-icon-circle-arrow-e"></span>
-                        </span>
-                    </td>
-                </tr>
-            </table>
+            <div>
+                <div>
+                    <img
+                        class="thing_file_image"
+                        style='border:2px solid; margin: 5px'
+                        src='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_thumbernail_filepaths->[0] %>'
+                        thumbernail_index='0'
+                    ></img>
+                </div>
+
+                <div style='text-align: center' class='thing_ma_file_pager'>
+                    <span class="ui-state-default ui-corner-all" onclick="miniapp.startpage.activity.presentfile.first('<%= $clean_activity_id %>')">
+                        <span class="ui-icon ui-icon-arrowstop-1-w"></span>
+                    </span>
+                    <span class="ui-state-default ui-corner-all" onclick="miniapp.startpage.activity.presentfile.previous('<%= $clean_activity_id %>')">
+                        <span class="ui-icon ui-icon-arrow-1-w"></span>
+                    </span>
+                    <span class='js_pager' style='width:70px; display: inline-block; '>1/1</span>
+                    <span class="ui-state-default ui-corner-all" onclick="miniapp.startpage.activity.presentfile.next('<%= $clean_activity_id %>')">
+                        <span class="ui-icon ui-icon-arrow-1-e"></span>
+                    </span>
+                    <span class="ui-state-default ui-corner-all" onclick="miniapp.startpage.activity.presentfile.last('<%= $clean_activity_id %>')">
+                        <span class="ui-icon ui-icon-arrowstop-1-e"></span>
+                    </span>
+                </div>
+
+            </div>
 
             <script>
-                miniapp.startpage.activity.presentfile.render.<%= $img_element_id %> =
+                miniapp.startpage.activity.presentfile.render['<%= $clean_activity_id %>'] =
                     <%== Mojo::JSON->new->encode( $activity->get_object->get_thumbernail_filepaths ) %>;
+                miniapp.startpage.activity.presentfile.show_image('<%= $clean_activity_id %>', 0)
             </script>
 %       } else {
             <%= $activity->get_object->get_filename %>

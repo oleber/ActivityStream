@@ -19,12 +19,20 @@
             };
 
             miniapp.default.config_css_buttons = function() {
-                $('.ui-state-default').hover(
-                    function(){ $(this).addClass('ui-state-hover'); }, 
-                    function(){ $(this).removeClass('ui-state-hover'); }
+
+                var button_elements = $('.ui-state-default');
+
+                button_elements.hover(
+                    function(){ $(this).addClass('ui-state-hover') },
+                    function(){ $(this).removeClass('ui-state-hover') }
                 );
 
-                $('.ui-state-default').click(function(){ $(this).toggleClass('ui-state-active'); });
+                //button_elements.click(function(){ $(this).toggleClass('ui-state-active'); });
+
+                button_elements.mouseup(function(){   $(this).removeClass('ui-state-active') });
+                button_elements.mouseout(function(){  $(this).removeClass('ui-state-active') });
+
+                button_elements.mousedown(function(){ $(this).addClass('ui-state-active') });
             };
 
             $( function() {

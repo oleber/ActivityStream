@@ -2,27 +2,52 @@
     $( function() { miniapp.default.config_css_buttons() } );
 </script>
 <script>
-    miniapp.startpage.activity.presentfile = {
+     miniapp.startpage.activity.presentfile = {
         "render" : {},
-        "next"   : function (name) {
-            var image_element = $('#' + name);
-            var actual_index = parseInt( image_element.attr( 'thumbernail_index' ) );
-            var next_index = actual_index + 1;
-            var next_image = miniapp.startpage.activity.presentfile.render[name][next_index];
 
-            image_element.attr( 'thumbernail_index', next_index );
+        "show_image"   : function (clean_activity_id, index) {
+            var image_element = $('#activity_' + clean_activity_id + ' .thing_file_image');
+            var next_image = miniapp.startpage.activity.presentfile.render[clean_activity_id][index];
+
+            image_element.attr( 'thumbernail_index', index );
             image_element.attr( 'src', miniapp.storage_path + next_image );
+
+            $('#activity_' + clean_activity_id + ' .thing_ma_file_pager .js_pager').text(
+                '' + ( index + 1 ) + ' / ' + miniapp.startpage.activity.presentfile.render[clean_activity_id].length
+            );
         },
-        "previous"   : function (name) {
-            var image_element = $('#' + name);
-            var actual_index = parseInt( image_element.attr( 'thumbernail_index' ) );
-            var next_index = actual_index - 1;
-            var next_image = miniapp.startpage.activity.presentfile.render[name][next_index];
 
-            image_element.attr( 'thumbernail_index', next_index );
-            image_element.attr( 'src', miniapp.storage_path + next_image );
+        "first"   : function (clean_activity_id) {
+            miniapp.startpage.activity.presentfile.show_image(clean_activity_id, 0);
+        },
+
+        "previous"   : function (clean_activity_id) {
+            var image_element = $('#activity_' + clean_activity_id + ' .thing_file_image');
+            var actual_index = parseInt( image_element.attr( 'thumbernail_index' ) );
+
+            if ( actual_index === 0 ) return;
+
+            miniapp.startpage.activity.presentfile.show_image(clean_activity_id, actual_index - 1);
+        },
+
+        "next"   : function (clean_activity_id) {
+            var image_element = $('#activity_' + clean_activity_id + ' .thing_file_image');
+            var actual_index = parseInt( image_element.attr( 'thumbernail_index' ) );
+            var images = miniapp.startpage.activity.presentfile.render[clean_activity_id];
+
+            if ( actual_index === images.length - 1 ) return;
+
+            miniapp.startpage.activity.presentfile.show_image(clean_activity_id, actual_index + 1);
+        },
+
+        "last"   : function (clean_activity_id) {
+            miniapp.startpage.activity.presentfile.show_image(
+                clean_activity_id,
+                miniapp.startpage.activity.presentfile.render[clean_activity_id].length - 1
+            );
         }
     };
+
 </script>
 
 <div class="activitystream" style="clear: both;">

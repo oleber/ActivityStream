@@ -22,7 +22,13 @@
             <div id="comunication-box_tabs-message">
                 <form name="input" action="/web/miniapp/startpage/share_status" method="post">
                     <textarea style="width:100%" name="text"></textarea>
-                    <input type="submit" value="Share" style="float: right;"/>
+                        <span
+                            class="ui-widget ui-state-default ui-corner-all"
+                            onclick="$(this).parents('form:first').submit()"
+                            style="float: right;"
+                        >
+                            <span class="ui-icon ui-icon-volume-on"></span> Share
+                        </span>
                     <div style="clear: both" ></div>
                 </form>
             </div>
@@ -30,14 +36,26 @@
                 <form name="input" action="/web/miniapp/startpage/share_link" method="post">
                     <input style="width:100%" name="link" autocomplete="off"/>
                     <textarea style="width:100%" name="text"></textarea>
-                    <input type="submit" value="Share" style="float: right;" />
+                        <span
+                            class="ui-widget ui-state-default ui-corner-all"
+                            onclick="$(this).parents('form:first').submit()"
+                            style="float: right;"
+                        >
+                            <span class="ui-icon ui-icon-volume-on"></span> Share
+                        </span>
                     <div style="clear: both" ></div>
                 </form>
             </div>
             <div id="comunication-box_tabs-share_file">
                 <form name="input" action="/web/miniapp/startpage/share_file" method="post" enctype="multipart/form-data">
                     <input type="file" name="upfile" />
-                    <input type="submit" value="Share" style="float: right;" />
+                        <span
+                            class="ui-widget ui-state-default ui-corner-all"
+                            onclick="$(this).parents('form:first').submit()"
+                            style="float: right;"
+                        >
+                            <span class="ui-icon ui-icon-volume-on"></span> Share
+                        </span>
                     <div style="clear: both" ></div>
                 </form>
             </div>

@@ -15,17 +15,11 @@
             </span>
         </span>
         <div class='clearboth'></div>
-        <div class="js_menu ui-widget-content ui-corner-all padding-M" style="display: none">
-            <div onclick="javascript: $('#activity_<%= $clean_activity_id %> .js_delete').submit()">
-                <span class="ui-icon ui-icon-trash" style="display:inline-block"></span>
-                Delete
-            </div>
-            <form
-                class="js_delete"
-                action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/delete"
-                method="post"
-                style="display: none"
-            ></form>
+        <div class="js_menu ui-widget ui-corner-all ui-state-default" style="display: none; z-index:1; position:absolute; background: white;">
+            <span class="ui-widget ui-state-default ui-corner-all" onclick="javascript: $('#activity_<%= $clean_activity_id %> .js_delete').submit();">
+                <span class="ui-icon ui-icon-trash" ></span> Delete
+            </span>
+            <form class="js_delete" action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/delete" method="post" style="display: none" ></form>
         </div>
     </div>
 
@@ -51,9 +45,9 @@
 
 
 %       if ( $activity->is_likeable ) {
-            <span class="ui-widget ui-state-default ui-corner-all margin-M">
+            <span class="ui-widget ui-state-default ui-corner-all">
                 <span
-                    class="ui-icon ui-icon-heart" style="display:inline-table"
+                    class="ui-icon ui-icon-heart"
                     onclick="javascript: $('#activity_<%= $clean_activity_id %> .js_like').submit();"
                 ></span> Like
             </span>
@@ -70,10 +64,10 @@
 %       if ( $activity->is_recommendable ) {
 
             <span
-                class="ui-widget ui-state-default ui-corner-all margin-M"
+                class="ui-widget ui-state-default ui-corner-all"
                 onclick="javascript: $('#activity_<%= $clean_activity_id %> .js_recommend %>').submit();"
             >
-                <span class="ui-icon ui-icon-signal-diag" style="display:inline-table"></span> Recommend
+                <span class="ui-icon ui-icon-signal-diag"></span> Recommend
             </span>
 
             <form
@@ -87,16 +81,16 @@
 
 %       if ( $activity->is_commentable ) {
             <span
-                class="ui-widget ui-state-default ui-corner-all margin-M"
+                class="ui-widget ui-state-default ui-corner-all"
                 onclick="$('#activity_<%= $clean_activity_id %> .js_comment').toggle( 'blind', {}, 100 );"
             >
-                <span class="ui-icon ui-icon-comment" style="display:inline-table"></span> Comment
+                <span class="ui-icon ui-icon-comment"></span> Comment
             </span>
 %       }
     </div>
 
 %   if ( $activity->is_commentable ) {
-        <div class="js_comment ui-widget-content ui-corner-all padding-M margin-M" style="display: none">
+        <div class="js_comment ui-widget-content ui-corner-all" style="display: none">
             <form action="/web/miniapp/startpage/<%= $activity->{"activity_id"} %>/comment" method="post" >
                 <textarea name="body" style="width:100%; display:inline-block; margin-bottom:5px;" ></textarea>
                 <div style="text-align:right" >
