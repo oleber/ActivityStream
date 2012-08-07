@@ -8,7 +8,6 @@ use Test::Mojo;
 use Data::Dumper;
 use Mojolicious;
 use Readonly;
-use Time::Local;
 
 Readonly my $PKG => 'ActivityStream::AsyncUserAgent';
 

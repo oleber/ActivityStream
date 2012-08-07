@@ -4,10 +4,8 @@ use MooseX::FollowPBP;
 
 use Carp;
 use Data::Dumper;
-use HTTP::Async;
 
-use Mojo::Message::Response;
-use Mojolicious::Controller;
+use Mojo::IOLoop;
 use Try::Tiny;
 
 has 'ua' => (

@@ -1,4 +1,9 @@
 <div>
+% if ( defined $thing->get_image ) {
+    <div style='float:left; width: 200px; height: 200px; padding: 5px'>
+        <img src='<%= $thing->get_image %>' style='width: 100%; height: auto; '>
+    </div>
+% }
     <div class='activity-body-title'>
         <a href='<%= $thing->get_url %>'> <%= $thing->get_title %></a>
     </div>

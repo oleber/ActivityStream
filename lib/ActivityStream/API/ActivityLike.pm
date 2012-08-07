@@ -4,6 +4,7 @@ use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use Data::Dumper;
+use Mojo::IOLoop;
 
 use ActivityStream::API::Thing::Person;
 use ActivityStream::Util;

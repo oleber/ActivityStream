@@ -11,6 +11,7 @@ has '+verb'   => ( 'isa' => subtype( 'Str' => where sub {/^recommend$/} ) );
 has '+object' => ( 'isa' => 'ActivityStream::API::Thing::Person' );
 
 __PACKAGE__->meta->make_immutable;
+no Moose::Util::TypeConstraints;
 no Moose;
 
 1;

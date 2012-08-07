@@ -7,9 +7,7 @@ use Test::Most;
 use Test::Mojo;
 
 use Data::Dumper;
-use Mojo::JSON;
 use Readonly;
-use Storable qw(dclone);
 
 use ActivityStream::API::ActivityFactory;
 use ActivityStream::Environment;
@@ -50,7 +48,7 @@ my %SUPER_PARENT_DATA = (
 );
 
 our $super_parent_activity
-      = $environment->get_activity_factory->activity_instance_from_rest_request_struct( dclone {%SUPER_PARENT_DATA} );
+      = $environment->get_activity_factory->activity_instance_from_rest_request_struct( {%SUPER_PARENT_DATA} );
 $super_parent_activity->save_in_db;
 $super_parent_activity->load( { 'rid' => $RID } );
 
@@ -88,7 +86,7 @@ my %PARENT_DATA = (
 );
 
 our $parent_activity
-      = $environment->get_activity_factory->activity_instance_from_rest_request_struct( dclone {%PARENT_DATA} );
+      = $environment->get_activity_factory->activity_instance_from_rest_request_struct( {%PARENT_DATA} );
 $parent_activity->save_in_db;
 $parent_activity->load( { 'rid' => $RID } );
 isa_ok( $parent_activity, $PKG );
@@ -127,7 +125,7 @@ Readonly my %DATA => (
     'parent_activity_id'       => $parent_activity->get_activity_id,
 );
 
-our $activity = $environment->get_activity_factory->activity_instance_from_rest_request_struct( dclone {%DATA} );
+our $activity = $environment->get_activity_factory->activity_instance_from_rest_request_struct( {%DATA} );
 $activity->save_in_db;
 $activity->load( { 'rid' => $RID } );
 isa_ok( $activity, $PKG );

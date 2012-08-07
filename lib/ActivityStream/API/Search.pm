@@ -1,6 +1,5 @@
 package ActivityStream::API::Search;
 use Moose;
-use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use Carp;

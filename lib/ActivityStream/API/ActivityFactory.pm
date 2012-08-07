@@ -5,7 +5,6 @@ use MooseX::FollowPBP;
 use Carp;
 use Data::Dumper;
 use Readonly;
-use Storable qw(dclone);
 
 use ActivityStream::API::Activity::Friendship;
 use ActivityStream::API::Activity::LinkShare;
@@ -63,7 +62,7 @@ sub _activity_structure_class {
 sub activity_instance_from_rest_request_struct {
     my ( $self, $data ) = @_;
 
-    $data = dclone $data;
+    $data = {%$data};
 
     my $pkg = $self->_activity_structure_class($data);
 
@@ -118,7 +117,7 @@ sub activity_instance_from_db {
 sub activity_instance_from_rest_response_struct {
     my ( $self, $data ) = @_;
 
-    $data = dclone $data;
+    $data = {%$data};
 
     my $pkg = $self->_activity_structure_class($data);
 

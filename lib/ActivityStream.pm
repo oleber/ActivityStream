@@ -6,7 +6,7 @@ use Mojo::Base 'Mojolicious';
 use Carp;
 use Data::Dumper;
 use Digest::MD5 qw(md5_hex);
-use HTTP::Status qw(:constants);
+use HTTP::Status qw( :constants );
 use Try::Tiny;
 
 use ActivityStream::Environment;

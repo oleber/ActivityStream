@@ -6,7 +6,6 @@ use MooseX::FollowPBP;
 use Carp;
 use Data::Dumper;
 use Scalar::Util qw(blessed);
-use Storable qw(dclone);
 
 extends 'ActivityStream::API::Activity';
 
@@ -26,6 +25,10 @@ has 'super_parent_activity' => (
     'is'  => 'rw',
     'isa' => 'ActivityStream::API::Activity',
 );
+
+__PACKAGE__->meta->make_immutable;
+no Moose::Util::TypeConstraints;
+no Moose;
 
 sub prepare_load {
     my ( $self, $args ) = @_;
@@ -174,8 +177,5 @@ sub delete_liker {
     confess( "Can't liker: " . ref($self) ) if not $self->is_likeable;
     return $self->get_super_parent_activity->delete_liker(@args);
 }
-
-__PACKAGE__->meta->make_immutable;
-no Moose;
 
 1;

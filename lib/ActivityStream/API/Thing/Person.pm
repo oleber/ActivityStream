@@ -23,7 +23,9 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }
 
+__PACKAGE__->meta->make_immutable;
 no Moose::Util::TypeConstraints;
+no Moose;
 
 sub create_request {
     my ( $self, $data ) = @_;
@@ -90,8 +92,5 @@ sub prepare_load {
 
     return;
 } ## end sub prepare_load
-
-__PACKAGE__->meta->make_immutable;
-no Moose;
 
 1;

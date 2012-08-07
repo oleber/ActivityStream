@@ -10,6 +10,7 @@ use File::Basename 'dirname';
 use File::Slurp qw(read_file);
 use File::Spec;
 use Mojo::JSON;
+use Mojolicious::Controller;
 use MongoDB::Connection;
 use Readonly;
 

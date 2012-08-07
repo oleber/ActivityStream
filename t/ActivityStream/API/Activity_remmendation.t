@@ -6,8 +6,6 @@ use Test::Most;
 use Test::Mojo;
 
 use Data::Dumper;
-use Mojo::JSON;
-use Storable qw(dclone);
 use Readonly;
 use Test::MockModule;
 

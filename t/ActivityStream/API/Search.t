@@ -7,10 +7,8 @@ use Test::Mojo;
 
 use Data::Dumper;
 use List::Util qw(shuffle);
-use Mojo::JSON;
 use Readonly;
 use Test::MockModule;
-use Time::Local;
 
 use ActivityStream::API::ActivityFactory;
 use ActivityStream::Environment;

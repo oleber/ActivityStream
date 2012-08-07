@@ -6,7 +6,6 @@ use Test::Most;
 use Test::Mojo;
 
 use Data::Dumper;
-use Mojo::JSON;
 use Storable qw(dclone);
 use Readonly;
 
@@ -78,7 +77,7 @@ my %EXPECTED = (
 );
 
 my %expected_db_struct = (
-    %{ dclone( \%EXPECTED ) },
+    %{ \%EXPECTED },
     'visibility' => 1,
     'timebox'    => ignore,
     'sources'    => ['123:xxx'],

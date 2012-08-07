@@ -6,7 +6,7 @@ use Test::Most;
 use Test::Mojo;
 
 use Data::Dumper;
-use HTTP::Status qw(:constants);
+use HTTP::Status qw( :constants );
 use Mojo::JSON;
 use Readonly;
 use Storable qw(dclone);

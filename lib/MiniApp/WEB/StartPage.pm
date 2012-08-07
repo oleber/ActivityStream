@@ -11,8 +11,8 @@ use File::Basename 'dirname';
 use File::Path qw(make_path);
 use File::Spec;
 use HTTP::Status qw( :constants );
-use List::Util qw(min first);
-use List::MoreUtils qw(any);
+use Mojo::JSON;
+use Mojo::URL;
 use Readonly;
 use Try::Tiny;
 
@@ -361,9 +361,7 @@ sub post_handler_share_file {
                     },
                 },
             ),
-            sub {
-                warn Dumper \@_;
-            },
+            sub {},
         );
 
         $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
@@ -375,8 +373,6 @@ sub post_handler_share_file {
         warn $_;
         $c->render( 'text' => 'Fail file convertion.', 'status' => HTTP_INTERNAL_SERVER_ERROR );
     }
-
-    # return $c->redirect_to('/web/miniapp/activitystream/share_file/show_uploaded_file');
 } ## end sub post_handler_share_file
 
 1;

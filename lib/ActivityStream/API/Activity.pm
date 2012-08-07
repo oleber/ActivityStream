@@ -7,6 +7,7 @@ use Carp;
 use Data::Dumper;
 use List::Util qw(max);
 use List::MoreUtils qw(any);
+use Mojo::IOLoop;
 use Scalar::Util qw(blessed);
 
 use ActivityStream::API::ActivityLike;
@@ -101,6 +102,10 @@ around BUILDARGS => sub {
     return $args;
 };
 
+__PACKAGE__->meta->make_immutable;
+no Moose::Util::TypeConstraints;
+no Moose;
+
 sub is_likeable    { return 0 }
 sub is_commentable { return 0 }
 
@@ -169,22 +174,9 @@ sub _to_db_struct_comments { return [ map { $_->to_db_struct } @{ shift->get_com
 sub save_in_db {
     my ($self) = @_;
 
-    my $collection_source   = $self->get_environment->get_collection_factory->collection_source;
     my $collection_activity = $self->get_environment->get_collection_factory->collection_activity;
 
     $collection_activity->upsert_activity( { 'activity_id' => $self->get_activity_id }, $self->to_db_struct );
-
-    foreach my $source ( $self->get_sources ) {
-        $collection_source->upsert_source(
-            { 'source_id' => $source, 'day' => ActivityStream::Util::get_day_of( $self->get_creation_time ) },
-            {
-                '$set' => {
-                    sprintf( 'activity.%s', $self->get_activity_id ) => $self->get_creation_time,
-                    'status' => ActivityStream::Util::generate_id,
-                }
-            },
-        );
-    }
 
     return $self;
 } ## end sub save_in_db
@@ -570,9 +562,6 @@ sub preload_filter_pass {
 
     return 1;
 }
-
-__PACKAGE__->meta->make_immutable;
-no Moose;
 
 1;
 

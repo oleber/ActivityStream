@@ -6,8 +6,7 @@ use Test::Most;
 use Test::Mojo;
 
 use Data::Dumper;
-use HTTP::Status qw(:constants);
-use Mojo::JSON;
+use HTTP::Status qw( :constants );
 use Readonly;
 
 use ActivityStream::API::Activity::Friendship;

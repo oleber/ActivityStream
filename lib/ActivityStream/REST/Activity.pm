@@ -5,7 +5,7 @@ use warnings;
 use Mojo::Base 'Mojolicious::Controller';
 
 use Data::Dumper;
-use HTTP::Status qw(:constants);
+use HTTP::Status qw( :constants );
 use List::Util qw(first);
 use List::MoreUtils qw(any);
 
@@ -25,6 +25,8 @@ sub post_handler_activity {
           if not defined $rid;
 
     my $environment = ActivityStream::Environment->new( controller => $self );
+
+    $self->app->log->debug("Creating activity: " . $self->tx->req->body);
 
     my $activity
           = $environment->get_activity_factory->activity_instance_from_rest_request_struct( $self->tx->req->json );

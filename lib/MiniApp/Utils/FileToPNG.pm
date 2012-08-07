@@ -7,15 +7,10 @@ use Data::Dumper;
 use File::Copy qw(copy);
 use File::Glob qw(bsd_glob);
 use File::Path qw(make_path);
-use File::Slurp qw(read_file);
+use File::Spec;
 use File::Temp;
-use IO::Handle;
-use IO::Select;
-use IPC::Open2;
-use List::MoreUtils qw(any);
-use Mojo::DOM;
+use IPC::Open2 qw(open2);
 use Readonly;
-use Scalar::Util qw(blessed);
 
 Readonly my %CONVERT_FOR => (
     '.svg'  => 'convert',
@@ -96,13 +91,6 @@ has 'tempdir' => (
     'is'      => 'ro',
     'isa'     => 'File::Temp::Dir',
     'default' => sub { File::Temp->newdir },
-);
-
-has 'io_select' => (
-    'is'      => 'ro',
-    'isa'     => 'IO::Select',
-    'lazy'    => 1,
-    'default' => sub { IO::Select->new },
 );
 
 has 'filetype' => (

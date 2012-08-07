@@ -6,9 +6,7 @@ use Test::Most;
 use Test::Mojo;
 
 use Data::Dumper;
-use Mojo::JSON;
 use Readonly;
-use Storable qw(dclone);
 use Try::Tiny;
 
 use ActivityStream::Environment;

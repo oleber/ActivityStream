@@ -5,6 +5,7 @@ use MooseX::FollowPBP;
 
 use Carp;
 use Data::Dumper;
+use Mojo::IOLoop;
 
 use ActivityStream::Environment;
 
@@ -25,6 +26,11 @@ has 'environment' => (
     'weak_ref' => 1,
     'required' => 1,
 );
+
+__PACKAGE__->meta->make_immutable;
+no Moose::Util::TypeConstraints;
+no Moose;
+
 
 sub to_struct {
     my ($self) = @_;
@@ -167,8 +173,5 @@ sub save_comment {
     return $self->get_environment->get_activity_factory->activity_instance_from_rest_request_struct( \%data )
           ->save_in_db;
 } ## end sub save_recommendation
-
-__PACKAGE__->meta->make_immutable;
-no Moose;
 
 1;

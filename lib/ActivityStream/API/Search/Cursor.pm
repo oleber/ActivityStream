@@ -1,6 +1,5 @@
 package ActivityStream::API::Search::Cursor;
 use Moose;
-use Moose::Util::TypeConstraints;
 use MooseX::FollowPBP;
 
 use Data::Dumper;
@@ -9,7 +8,7 @@ use Readonly;
 use Tie::IxHash;
 use Try::Tiny;
 
-use ActivityStream::Data::Collection::Source;
+use ActivityStream::Data::Collection::Activity;
 use ActivityStream::API::Activity;
 use ActivityStream::API::ActivityFactory;
 use ActivityStream::API::Search::Filter;

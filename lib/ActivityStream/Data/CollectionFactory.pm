@@ -5,8 +5,6 @@ use MooseX::FollowPBP;
 
 use ActivityStream::Data::Collection;
 use ActivityStream::Data::Collection::Activity;
-use ActivityStream::Data::Collection::Consumer;
-use ActivityStream::Data::Collection::Source;
 
 has 'database' => (
     'is'  => 'ro',
@@ -20,14 +18,6 @@ sub create_collection {
 
 sub collection_activity {
     return ActivityStream::Data::Collection::Activity->new( collection => shift->create_collection('activity') );
-}
-
-sub collection_consumer {
-    return ActivityStream::Data::Collection::Consumer->new( collection => shift->create_collection('consumer') );
-}
-
-sub collection_source {
-    return ActivityStream::Data::Collection::Source->new( collection => shift->create_collection('source') );
 }
 
 __PACKAGE__->meta->make_immutable;
