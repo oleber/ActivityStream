@@ -1,4 +1,6 @@
 package MiniApp::Utils::FileToPNG;
+use v5.10.1;
+
 use Moose;
 use MooseX::FollowPBP;
 
@@ -11,6 +13,24 @@ use File::Spec;
 use File::Temp;
 use IPC::Open2 qw(open2);
 use Readonly;
+
+has 'gs_path' => (
+    'is'      => 'rw',
+    'isa'     => 'Str',
+    'default' => sub { return 'gs' },
+);
+
+has 'convert_path' => (
+    'is'      => 'rw',
+    'isa'     => 'Str',
+    'default' => sub { return 'convert' },
+);
+
+has 'libreoffice_path' => (
+    'is'      => 'rw',
+    'isa'     => 'Str',
+    'default' => sub { return 'libreoffice3.5' },
+);
 
 Readonly my %CONVERT_FOR => (
     '.svg'  => 'convert',
@@ -181,7 +201,7 @@ sub _convert_with_libreoffice_via_pdf {
     copy( $filepath, $to_convert_filepath ) or confess "Copy failed: $!";
 
     $self->_execute(
-        'libreoffice3.5', '--invisible',
+        $self->get_libreoffice_path, '--invisible',
         '--convert-to' => 'pdf',
         '--outdir'     => $convert_dirpath,
         $to_convert_filepath
@@ -220,11 +240,11 @@ sub _convert_with_convert {
     my $convert_dirpath = File::Spec->join( $self->get_tempdir, 'convert' );
     make_path($convert_dirpath);
 
-    $self->_execute( 'convert', $filepath, File::Spec->join( $convert_dirpath, 'tumbernail.png' ) );
+    $self->_execute( $self->get_convert_path, $filepath, File::Spec->join( $convert_dirpath, 'tumbernail.png' ) );
     my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, 'tumbernail*.png' ) );
 
     if ( @pngs > 1 ) {
-        my $index_for = sub {
+        state $index_for = sub {
             my ($index) = ( shift =~ /.*tumbernail-(\d+).png/ );
             return $index;
         };
@@ -239,7 +259,6 @@ sub _convert_with_convert {
 
 } ## end sub _convert_with_convert
 
-
 sub _convert_with_gs {
     my ( $self, $filepath ) = @_;
 
@@ -247,7 +266,7 @@ sub _convert_with_gs {
     make_path($convert_dirpath);
 
     $self->_execute(
-        'gs',
+        $self->get_gs_path,
         '-dPARANOIDSAFER',
         '-dNOPAUSE',
         '-o' => File::Spec->join( $convert_dirpath, 'page-%05d.png' ),
@@ -256,12 +275,12 @@ sub _convert_with_gs {
         $filepath
     );
 
-    my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, 'page-*.png' ) );
-warn Dumper \@pngs;
-    my $index_for = sub {
+    state $index_for = sub {
         my ($index) = ( shift =~ /.*page-(\d+).png/ );
         return $index;
     };
+
+    my @pngs = bsd_glob( File::Spec->join( $convert_dirpath, 'page-*.png' ) );
     @pngs = sort { $index_for->($a) <=> $index_for->($b) } @pngs;
 
     confess sprintf( "convert of %s content-type %s failed", $filepath, $self->get_filetype ) if 0 == @pngs;
@@ -270,7 +289,7 @@ warn Dumper \@pngs;
 
     return;
 
-} ## end sub _convert_with_convert
+} ## end sub _convert_with_gs
 
 sub _convert_with_no_conversion {
     my ( $self, $filepath ) = @_;

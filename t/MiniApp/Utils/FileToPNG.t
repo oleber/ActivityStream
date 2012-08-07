@@ -36,7 +36,7 @@ my $directory = File::Spec->join( $path, 'FileToPNG' );
     foreach my $filepath (@good_files) {
         note("converting $filepath");
         try {
-            my $obj = MiniApp::Utils::FileToPNG->new( 'filepath' => $filepath );
+            my $obj = MiniApp::Utils::FileToPNG->new( 'filepath' => $filepath, 'libreoffice_path' => 'libreoffice3.5' );
             is( $obj->get_filepath, $filepath );
 
             lives_ok { $obj->convert };

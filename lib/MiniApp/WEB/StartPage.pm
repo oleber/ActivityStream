@@ -317,7 +317,12 @@ sub post_handler_share_file {
 
     $upfile->move_to($original_filepath);
 
-    my $file_to_png = try { MiniApp::Utils::FileToPNG->new( 'filepath' => $original_filepath ) } catch { warn $_ };
+    my $file_to_png = try {
+        MiniApp::Utils::FileToPNG->new(
+            'filepath' => $original_filepath,
+            %{ $environment->get_config->{'MiniApp::Utils::FileToPNG'}{'paths'} // {} } );
+    }
+    catch { warn $_ };
     if ( not defined $file_to_png ) {
         return $c->render( 'text' => 'Unrecognized media type.', status => HTTP_UNSUPPORTED_MEDIA_TYPE );
     }
@@ -361,7 +366,8 @@ sub post_handler_share_file {
                     },
                 },
             ),
-            sub {},
+            sub {
+            },
         );
 
         $async_user_agent->load_all( sub { $c->redirect_to('/web/miniapp/startpage') } );
