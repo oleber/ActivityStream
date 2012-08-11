@@ -8,6 +8,7 @@ use Carp;
 use Cwd 'abs_path';
 use Data::Dumper;
 use File::Basename 'dirname';
+use File::Copy qw(move);
 use File::Path qw(make_path);
 use File::Spec;
 use HTTP::Status qw( :constants );
@@ -291,6 +292,8 @@ sub post_handler_share_link {
 sub post_handler_share_file {
     my ($c) = @_;
 
+    Mojo::IOLoop->stream( $c->tx->connection )->timeout(300);
+
     my $rid = $c->session('rid');
 
     return $c->render( 'text' => 'File is too big.', status => HTTP_REQUEST_ENTITY_TOO_LARGE )
@@ -346,6 +349,14 @@ sub post_handler_share_file {
             push( @thumbnail_filepaths, $thumbnail_filepath );
         }
 
+        my $final_intermedium_pdf_filepath;
+        if ( defined( my $intermedium_pdf_filepath = $file_to_png->get_intermedium_pdf_filepath ) ) {
+            my ( undef, undef, $file ) = File::Spec->splitpath($intermedium_pdf_filepath);
+            my $finalintermedium_pdf_filepath = File::Spec->join( $converted_dirpath, $file );
+            $final_intermedium_pdf_filepath = File::Spec->join( $converted_dirpath, $file );
+            move( $intermedium_pdf_filepath, $final_intermedium_pdf_filepath );
+        }
+
         my $post_url = Mojo::URL->new('/rest/activitystream/activity');
         $post_url->query->param( rid => $rid );
 
@@ -362,7 +373,11 @@ sub post_handler_share_file {
                         'original_filepath' => File::Spec->abs2rel( $original_filepath, $storage_path ),
                         'thumbernail_filepaths' =>
                               [ map { File::Spec->abs2rel( $_, $storage_path ) } @thumbnail_filepaths ],
-
+                        (
+                            $final_intermedium_pdf_filepath
+                            ? ( 'intermedium_pdf_filepath' => File::Spec->abs2rel( $final_intermedium_pdf_filepath, $storage_path ) )
+                            : ()
+                        ),
                     },
                 },
             ),

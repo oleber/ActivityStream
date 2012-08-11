@@ -14,24 +14,6 @@ use File::Temp;
 use IPC::Open2 qw(open2);
 use Readonly;
 
-has 'gs_path' => (
-    'is'      => 'rw',
-    'isa'     => 'Str',
-    'default' => sub { return 'gs' },
-);
-
-has 'convert_path' => (
-    'is'      => 'rw',
-    'isa'     => 'Str',
-    'default' => sub { return 'convert' },
-);
-
-has 'libreoffice_path' => (
-    'is'      => 'rw',
-    'isa'     => 'Str',
-    'default' => sub { return 'libreoffice3.5' },
-);
-
 Readonly my %CONVERT_FOR => (
     '.svg'  => 'convert',
     '.jpg'  => 'convert',
@@ -92,6 +74,24 @@ Readonly my %CONVERT_FOR => (
     '.exe'  => 'no_conversion',
 );
 
+has 'gs_path' => (
+    'is'      => 'rw',
+    'isa'     => 'Str',
+    'default' => sub { return 'gs' },
+);
+
+has 'convert_path' => (
+    'is'      => 'rw',
+    'isa'     => 'Str',
+    'default' => sub { return 'convert' },
+);
+
+has 'libreoffice_path' => (
+    'is'      => 'rw',
+    'isa'     => 'Str',
+    'default' => sub { return 'libreoffice3.5' },
+);
+
 has 'filepath' => (
     'is'      => 'ro',
     'isa'     => 'Str',
@@ -105,6 +105,11 @@ has 'filepath' => (
 has 'converted_filepaths' => (
     'is'  => 'rw',
     'isa' => 'ArrayRef[Str]',
+);
+
+has 'intermedium_pdf_filepath' => (
+    'is'  => 'rw',
+    'isa' => 'Str',
 );
 
 has 'tempdir' => (
@@ -159,9 +164,7 @@ sub BUILD {
 sub find_filetype {
     my ( $pkg, $filepath ) = @_;
 
-    #while ( my ( $key, $data ) = each %CONVERT_FOR ) {
-    foreach my $key ( sort keys %CONVERT_FOR ) {
-        my $data = $CONVERT_FOR{$key};
+    while ( my ( $key, $data ) = each %CONVERT_FOR ) {
         return $key if $filepath =~ /\Q$key\E$/;
     }
 
@@ -171,21 +174,14 @@ sub find_filetype {
 sub convert {
     my ($self) = @_;
 
-    my $data = $CONVERT_FOR{ $self->get_filetype };
-
-    if ( $data eq 'convert' ) {
-        return $self->_convert_with_convert( $self->get_filepath );
-    } elsif ( $data eq 'gs' ) {
-        return $self->_convert_with_gs( $self->get_filepath );
-    } elsif ( $data eq 'libreoffice_via_pdf' ) {
-        return $self->_convert_with_libreoffice_via_pdf( $self->get_filepath );
-    } elsif ( $data eq 'copy' ) {
-        return $self->_convert_with_copy( $self->get_filepath );
-    } elsif ( $data eq 'no_conversion' ) {
-        return $self->_convert_with_no_conversion( $self->get_filepath );
+    given ( $CONVERT_FOR{ $self->get_filetype } ) {
+        when ('convert')             { return $self->_convert_with_convert( $self->get_filepath ) }
+        when ('gs')                  { return $self->_convert_with_gs( $self->get_filepath ) }
+        when ('libreoffice_via_pdf') { return $self->_convert_with_libreoffice_via_pdf( $self->get_filepath ) }
+        when ('copy')                { return $self->_convert_with_copy( $self->get_filepath ) }
+        when ('no_conversion')       { return $self->_convert_with_no_conversion( $self->get_filepath ) }
+        default                      { confess "Can't convert $_ for filetype: " . $self->get_filetype; }
     }
-
-    confess "Can't convert $data for filetype: " . $self->get_filetype;
 }
 
 sub _convert_with_libreoffice_via_pdf {
@@ -194,24 +190,20 @@ sub _convert_with_libreoffice_via_pdf {
     my $convert_dirpath = File::Spec->join( $self->get_tempdir, 'convert' );
     make_path($convert_dirpath);
 
-    my ( undef, undef, $file ) = File::Spec->splitpath($filepath);
-
-    my $to_convert_filepath = File::Spec->join( $convert_dirpath, $file );
-
-    copy( $filepath, $to_convert_filepath ) or confess "Copy failed: $!";
-
     $self->_execute(
         $self->get_libreoffice_path, '--invisible',
         '--convert-to' => 'pdf',
         '--outdir'     => $convert_dirpath,
-        $to_convert_filepath
+        $filepath
     );
 
     my @pdfs = bsd_glob( File::Spec->join( $convert_dirpath, '*.pdf' ) );
     confess sprintf( "unoconv of %s content-type %s failed", $filepath, $self->get_filetype ) if 1 != @pdfs;
 
-    return $self->_convert_with_gs( $pdfs[0] );
+    my $pdf = $pdfs[0];
 
+    $self->set_intermedium_pdf_filepath($pdf);
+    return $self->_convert_with_gs($pdf);
 } ## end sub _convert_with_libreoffice_via_pdf
 
 sub _convert_with_copy {

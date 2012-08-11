@@ -4,6 +4,11 @@
     <a href='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_original_filepath %>'>
         <%= $activity->get_object->get_filename %>
     </a>
+%   if ( defined $activity->get_object->get_intermedium_pdf_filepath ) {
+        , <a href='<%= $environment->get_config->{'myapp'}{'stories'}{'share_file'}{'storage_webpath'} %>/<%= $activity->get_object->get_intermedium_pdf_filepath %>'>
+            PDF
+        </a>
+%   }
 % end
 
 % my %data = (
