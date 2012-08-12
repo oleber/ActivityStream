@@ -59,6 +59,19 @@
     color:         #111;
 }
 
+.activitystream .activity div.activity-body-image {
+    float:left;
+    text-align : center;
+    width: 150px;
+    max-height: 150px;
+    padding: 5px
+}
+
+.activitystream .activity div.activity-body-image img {
+    max-width: 100%;
+    max-height: 100%;
+}
+
 .activitystream .activity .activity-body-discreet {
 	font-size:     70%;
 	color:         #aaa;
