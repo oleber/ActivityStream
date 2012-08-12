@@ -7,8 +7,10 @@ use Carp;
 use Data::Dumper;
 use List::Util qw(max);
 use List::MoreUtils qw(any);
+use MIME::Base64 ();
 use Mojo::IOLoop;
 use Scalar::Util qw(blessed);
+use Readonly;
 
 use ActivityStream::API::ActivityLike;
 use ActivityStream::API::ActivityComment;
@@ -91,11 +93,11 @@ around BUILDARGS => sub {
 
     my $args = $class->$orig(@args);
 
-    foreach my $value ( @{ $args->{'likers'} // [] } ) {# change inline
+    foreach my $value ( @{ $args->{'likers'} // [] } ) {    # change inline
         $value = ActivityStream::API::ActivityLike->new( { 'environment' => $args->{'environment'}, %$value } );
     }
 
-    foreach my $value ( @{ $args->{'comments'} // [] } ) { # change inline
+    foreach my $value ( @{ $args->{'comments'} // [] } ) {    # change inline
         $value = ActivityStream::API::ActivityComment->new( { 'environment' => $args->{'environment'}, %$value } );
     }
 
@@ -131,16 +133,36 @@ sub to_simulate_rest_struct {
     return \%data;
 }
 
+Readonly our $MINOR_INTERVAL_LENGTH    => 60 * 60;
+Readonly our $NUMBER_OF_INTERVAL_TYPES => 15;
+Readonly our $NUMBER_OF_INTERVAL_DELTA => 100;
+
 sub to_db_struct {
     my ($self) = @_;
 
-    my @intervals = map { $_ + 10 * int( $self->get_creation_time / ( 60 * 60 * 2**$_ ) ) } ( 0 .. 9 );
+    my @intervals;
+    foreach my $index ( 0 .. $NUMBER_OF_INTERVAL_TYPES - 1 ) {
+        my $interval = MIME::Base64::encode_base64url(
+            pack( 'V',
+                        $index
+                      + $NUMBER_OF_INTERVAL_DELTA * int( $self->get_creation_time / $MINOR_INTERVAL_LENGTH / 2**$index )
+            ) );
+        push( @intervals, $interval );
+    }
+
     my @sources = $self->get_sources;
     my @timebox;
 
-    foreach my $intervals (@intervals) {
+    foreach my $interval (@intervals) {
         foreach my $source (@sources) {
-            push( @timebox, "$intervals:$source" );
+            push(
+                @timebox,
+                sprintf( '%s:%s:%s',
+                    $interval,
+                    MIME::Base64::encode_base64url( pack( 'V', ActivityStream::Util::calc_hash($source) ) ), 
+                    $source,
+                ),
+            );
         }
     }
 
@@ -168,8 +190,13 @@ sub _to_db_struct_actor  { return shift->get_actor->to_db_struct }
 sub _to_db_struct_object { return shift->get_object->to_db_struct }
 sub _to_db_struct_target { return shift->get_target->to_db_struct }
 
-sub _to_db_struct_likers { return [ map { $_->to_db_struct } @{ shift->get_likers } ] }
-sub _to_db_struct_comments { return [ map { $_->to_db_struct } @{ shift->get_comments } ] }
+sub _to_db_struct_likers {
+    return [ map { $_->to_db_struct } @{ shift->get_likers } ];
+}
+
+sub _to_db_struct_comments {
+    return [ map { $_->to_db_struct } @{ shift->get_comments } ];
+}
 
 sub save_in_db {
     my ($self) = @_;
@@ -179,7 +206,7 @@ sub save_in_db {
     $collection_activity->upsert_activity( { 'activity_id' => $self->get_activity_id }, $self->to_db_struct );
 
     return $self;
-} ## end sub save_in_db
+}
 
 sub to_rest_response_struct {
     my ($self) = @_;
@@ -208,8 +235,13 @@ sub _to_rest_response_struct_actor  { return shift->get_actor->to_rest_response_
 sub _to_rest_response_struct_object { return shift->get_object->to_rest_response_struct }
 sub _to_rest_response_struct_target { return shift->get_target->to_rest_response_struct }
 
-sub _to_rest_response_struct_likers { return [ map { $_->to_rest_response_struct } @{ shift->get_likers } ] }
-sub _to_rest_response_struct_comments { return [ map { $_->to_rest_response_struct } @{ shift->get_comments } ] }
+sub _to_rest_response_struct_likers {
+    return [ map { $_->to_rest_response_struct } @{ shift->get_likers } ];
+}
+
+sub _to_rest_response_struct_comments {
+    return [ map { $_->to_rest_response_struct } @{ shift->get_comments } ];
+}
 
 sub get_sources { return ( shift->get_actor->get_object_id ) }
 
@@ -451,7 +483,7 @@ sub save_liker {
     $self->add_like($activity_like);
 
     if ( not($dont_save_object_like) and $self->get_object->is_likeable ) {
-        $self->get_object->save_liker($self, $param) if $self->get_object->is_likeable;
+        $self->get_object->save_liker( $self, $param ) if $self->get_object->is_likeable;
     }
 
     return $activity_like;
@@ -509,9 +541,8 @@ sub save_comment {
 
     $self->add_comment($activity_comment);
 
-
     if ( not($dont_save_object_comment) and $self->get_object->is_commentable ) {
-        $self->get_object->save_comment($self, $param) if $self->get_object->is_commentable;
+        $self->get_object->save_comment( $self, $param ) if $self->get_object->is_commentable;
     }
 
     return $activity_comment;

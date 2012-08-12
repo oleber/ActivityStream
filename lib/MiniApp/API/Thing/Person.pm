@@ -28,7 +28,9 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }
 
+__PACKAGE__->meta->make_immutable;
 no Moose::Util::TypeConstraints;
+no Moose;
 
 sub is_commentable   { return 1 }
 sub is_likeable      { return 1 }
@@ -72,8 +74,5 @@ sub get_full_name {
     my ($self) = @_;
     return join( ' ', $self->get_first_name, $self->get_last_name );
 }
-
-__PACKAGE__->meta->make_immutable;
-no Moose;
 
 1;

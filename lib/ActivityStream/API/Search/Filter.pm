@@ -18,6 +18,24 @@ has 'see_source_ids' => (
     'required' => 1,
 );
 
+has 'see_source_id_suffixs' => (
+    'is'      => 'rw',
+    'isa'     => 'ArrayRef[Str]',
+    'lazy'    => 1,
+    'default' => sub {
+        my @see_source_id_suffixs;
+        foreach my $see_source_id ( @{ shift->get_see_source_ids } ) {
+            push(
+                @see_source_id_suffixs,
+                sprintf( '%s:%s',
+                    MIME::Base64::encode_base64url( pack( 'V', ActivityStream::Util::calc_hash($see_source_id) ) ),
+                    $see_source_id, ),
+            );
+        }
+        return \@see_source_id_suffixs;
+    },
+);
+
 has 'ignore_source_ids' => (
     'is'      => 'rw',
     'isa'     => 'ArrayRef[Str]',

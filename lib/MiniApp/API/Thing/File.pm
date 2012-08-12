@@ -22,7 +22,9 @@ while ( my ( $field, $description ) = each(%FIELDS) ) {
     has $field => @$description;
 }
 
+__PACKAGE__->meta->make_immutable;
 no Moose::Util::TypeConstraints;
+no Moose;
 
 sub is_commentable   { return 1 }
 sub is_likeable      { return 1 }
@@ -53,8 +55,5 @@ sub to_rest_response_struct {
     my ($self) = @_;
     return $self->_to_helper( $self->SUPER::to_rest_response_struct );
 }
-
-__PACKAGE__->meta->make_immutable;
-no Moose;
 
 1;

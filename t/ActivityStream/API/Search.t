@@ -87,42 +87,53 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
     $activity->save_in_db;
 }
 
-{
-    note('test cursor intervals');
-
-    my $cursor = ActivityStream::API::Search::Cursor->new(
-        environment => $environment,
-        filter      => ActivityStream::API::Search::Filter->new(
-            'consumer_id'    => sprintf( '%s:person',   ActivityStream::Util::generate_id ),
-            'see_source_ids' => [ sprintf( '%s:person', ActivityStream::Util::generate_id ) ],
-        ),
-        now_time => 1341556469,
+subtest 'test cursor intervals', sub {
+    Readonly my $NOW_TIME => 1341556469;
+    Readonly my @EXPECTED => (
+        MIME::Base64::encode_base64url( pack( 'V', 37265400 ) ),    # now
+        MIME::Base64::encode_base64url( pack( 'V', 18632601 ) ),    # previous 2 hours
+        MIME::Base64::encode_base64url( pack( 'V', 9316202 ) ),     # previous 4 hours
+        MIME::Base64::encode_base64url( pack( 'V', 4658003 ) ),     # previous 8 hours
+        MIME::Base64::encode_base64url( pack( 'V', 2328904 ) ),     # previous 16 hours
+        MIME::Base64::encode_base64url( pack( 'V', 2328804 ) ),     # repeate previous 16 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1164305 ) ),     # previous 32 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1164205 ) ),     # repeate previous 32 hours
+        MIME::Base64::encode_base64url( pack( 'V', 582006 ) ),      # previous 64 hours
+        MIME::Base64::encode_base64url( pack( 'V', 290907 ) ),      # previous 128 hours
+        MIME::Base64::encode_base64url( pack( 'V', 290807 ) ),      # repeate previous 128 hours
+        MIME::Base64::encode_base64url( pack( 'V', 145308 ) ),      # previous 256 hours
+        MIME::Base64::encode_base64url( pack( 'V', 145208 ) ),      # repeate previous 256 hours
+        MIME::Base64::encode_base64url( pack( 'V', 72509 ) ),       # previous 512 hours
+        MIME::Base64::encode_base64url( pack( 'V', 72409 ) ),       # repeate previous 512 hours
+        MIME::Base64::encode_base64url( pack( 'V', 36110 ) ),       # previous 1024 hours
+        MIME::Base64::encode_base64url( pack( 'V', 36010 ) ),       # repeate previous 1024 hours
+        MIME::Base64::encode_base64url( pack( 'V', 17911 ) ),       # previous 2048 hours
+        MIME::Base64::encode_base64url( pack( 'V', 17811 ) ),       # repeate previous 2048 hours
+        MIME::Base64::encode_base64url( pack( 'V', 8812 ) ),        # previous 4096 hours
+        MIME::Base64::encode_base64url( pack( 'V', 4313 ) ),        # previous 8192 hours
+        MIME::Base64::encode_base64url( pack( 'V', 4213 ) ),        # repeate previous 8192 hours
+        MIME::Base64::encode_base64url( pack( 'V', 2014 ) ),        # previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1914 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1814 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1714 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1614 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1514 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1414 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'V', 1314 ) ),        # repeate previous 16384 hours
     );
 
-    my @expected = (
-        3726540,    # now
-        1863261,    # previous 2 hours
-        931622,     # previous 4 hours
-        465803,     # previous 8 hours
-        232894,     # previous 16 hours
-        232884,     # previous 16 hours
-        116435,     # repeate previous 32 hours
-        116425,
-        58206,
-        29097,
-        29087,
-        14538,
-        14528,
-        7259,
-        7249,
-        7239,
-        7229,
-        7219,
-        7209,
-        7199,
-    );
-    eq_or_diff( $cursor->get_intervals, \@expected );
-    is( scalar( @{ $cursor->get_intervals } ), 20 );
+    {
+        my $cursor = ActivityStream::API::Search::Cursor->new(
+            environment => $environment,
+            filter      => ActivityStream::API::Search::Filter->new(
+                'consumer_id'    => sprintf( '%s:person',   ActivityStream::Util::generate_id ),
+                'see_source_ids' => [ sprintf( '%s:person', ActivityStream::Util::generate_id ) ],
+            ),
+            now_time => $NOW_TIME,
+        );
+
+        eq_or_diff( $cursor->get_intervals, \@EXPECTED );
+    }
 
     $PKG->search(
         $environment,
@@ -131,12 +142,9 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
             'see_source_ids' => [$USER_1_ID],
         },
     );
+};
 
-}
-
-{
-    note('basic search');
-
+subtest 'basic search', sub {
     my @callbacks;
 
     my $mongodb_collection_mock = Test::MockModule->new('MongoDB::Collection');
@@ -154,9 +162,7 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
         },
     );
 
-    {
-        note('1 source');
-
+    subtest '1 source', sub {
         my $cursor = $PKG->search(
             $environment,
             {
@@ -166,12 +172,25 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
         );
 
         my @expected = ( (
-                map { [ 'find' => ignore, { 'timebox' => { '$in' => ["$_:$USER_1_ID"] } } ] }
-                      @{ $cursor->get_intervals }
+                map { [
+                        'find' => ignore,
+                        {
+                            'timebox' => {
+                                '$in' => [
+                                    sprintf(
+                                        '%s:%s:%s',
+                                        $_,
+                                        MIME::Base64::encode_base64url(
+                                            pack( 'V', ActivityStream::Util::calc_hash($USER_1_ID) )
+                                        ),
+                                        $USER_1_ID,
+                                    ) ] } } ]
+                      } @{ $cursor->get_intervals }
             ),
             (
-                map { [ 'find' => ignore, { 'activity_id' => $_->get_activity_id } ] }
-                      ( $activity_1_1, $activity_1_2, $activity_1_3, $activity_1_4, $activity_1_5 ),
+                map {
+                    [ 'find' => ignore, { 'activity_id' => $_->get_activity_id } ]
+                      } ( $activity_1_1, $activity_1_2, $activity_1_3, $activity_1_4, $activity_1_5 ),
             ),
         );
 
@@ -183,10 +202,9 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
         cmp_deeply( $cursor->next_activity,               undef );
 
         cmp_deeply( \@callbacks, bag(@expected) );
-    }
+    };
 
-    {
-        note('2 sources');
+    subtest '2 source', sub {
 
         my $cursor = $PKG->search(
             $environment,
@@ -199,10 +217,9 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
         cmp_deeply( $cursor->next_activity->to_db_struct, $activity_1_2->to_db_struct );
         cmp_deeply( $cursor->next_activity->to_db_struct, $activity_1_3->to_db_struct );
         cmp_deeply( $cursor->next_activity,               undef );
-    }
+    };
 
-    {
-        note('reverse 2 sources');
+    subtest 'reverse 2 sources', sub {
 
         my $cursor = $PKG->search(
             $environment,
@@ -215,7 +232,7 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
         cmp_deeply( $cursor->next_activity->to_db_struct, $activity_1_2->to_db_struct );
         cmp_deeply( $cursor->next_activity->to_db_struct, $activity_1_3->to_db_struct );
         cmp_deeply( $cursor->next_activity,               undef );
-    }
-}
+    };
+};
 
 done_testing;
