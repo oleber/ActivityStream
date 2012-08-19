@@ -5,7 +5,7 @@ use Mojo::Base -strict;
 use Test::Most;
 use Test::Mojo;
 
-use Data::Dumper;
+use Data::Dumper; local $Data::Dumper::Sortkeys = 1;
 use File::Basename 'dirname';
 use File::Glob qw(bsd_glob);
 use Readonly;

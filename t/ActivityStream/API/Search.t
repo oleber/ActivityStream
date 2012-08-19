@@ -90,39 +90,39 @@ foreach my $activity ( shuffle( $activity_1_1, $activity_1_2, $activity_1_3, $ac
 subtest 'test cursor intervals', sub {
     Readonly my $NOW_TIME => 1341556469;
     Readonly my @EXPECTED => (
-        MIME::Base64::encode_base64url( pack( 'V', 37265400 ) ),    # now
-        MIME::Base64::encode_base64url( pack( 'V', 18632601 ) ),    # previous 2 hours
-        MIME::Base64::encode_base64url( pack( 'V', 9316202 ) ),     # previous 4 hours
-        MIME::Base64::encode_base64url( pack( 'V', 4658003 ) ),     # previous 8 hours
-        MIME::Base64::encode_base64url( pack( 'V', 2328904 ) ),     # previous 16 hours
-        MIME::Base64::encode_base64url( pack( 'V', 2328804 ) ),     # repeate previous 16 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1164305 ) ),     # previous 32 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1164205 ) ),     # repeate previous 32 hours
-        MIME::Base64::encode_base64url( pack( 'V', 582006 ) ),      # previous 64 hours
-        MIME::Base64::encode_base64url( pack( 'V', 290907 ) ),      # previous 128 hours
-        MIME::Base64::encode_base64url( pack( 'V', 290807 ) ),      # repeate previous 128 hours
-        MIME::Base64::encode_base64url( pack( 'V', 145308 ) ),      # previous 256 hours
-        MIME::Base64::encode_base64url( pack( 'V', 145208 ) ),      # repeate previous 256 hours
-        MIME::Base64::encode_base64url( pack( 'V', 72509 ) ),       # previous 512 hours
-        MIME::Base64::encode_base64url( pack( 'V', 72409 ) ),       # repeate previous 512 hours
-        MIME::Base64::encode_base64url( pack( 'V', 36110 ) ),       # previous 1024 hours
-        MIME::Base64::encode_base64url( pack( 'V', 36010 ) ),       # repeate previous 1024 hours
-        MIME::Base64::encode_base64url( pack( 'V', 17911 ) ),       # previous 2048 hours
-        MIME::Base64::encode_base64url( pack( 'V', 17811 ) ),       # repeate previous 2048 hours
-        MIME::Base64::encode_base64url( pack( 'V', 8812 ) ),        # previous 4096 hours
-        MIME::Base64::encode_base64url( pack( 'V', 4313 ) ),        # previous 8192 hours
-        MIME::Base64::encode_base64url( pack( 'V', 4213 ) ),        # repeate previous 8192 hours
-        MIME::Base64::encode_base64url( pack( 'V', 2014 ) ),        # previous 16384 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1914 ) ),        # repeate previous 16384 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1814 ) ),        # repeate previous 16384 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1714 ) ),        # repeate previous 16384 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1614 ) ),        # repeate previous 16384 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1514 ) ),        # repeate previous 16384 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1414 ) ),        # repeate previous 16384 hours
-        MIME::Base64::encode_base64url( pack( 'V', 1314 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 37265400 ) ),    # now
+        MIME::Base64::encode_base64url( pack( 'N', 18632601 ) ),    # previous 2 hours
+        MIME::Base64::encode_base64url( pack( 'N', 9316202 ) ),     # previous 4 hours
+        MIME::Base64::encode_base64url( pack( 'N', 4658003 ) ),     # previous 8 hours
+        MIME::Base64::encode_base64url( pack( 'N', 2328904 ) ),     # previous 16 hours
+        MIME::Base64::encode_base64url( pack( 'N', 2328804 ) ),     # repeate previous 16 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1164305 ) ),     # previous 32 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1164205 ) ),     # repeate previous 32 hours
+        MIME::Base64::encode_base64url( pack( 'N', 582006 ) ),      # previous 64 hours
+        MIME::Base64::encode_base64url( pack( 'N', 290907 ) ),      # previous 128 hours
+        MIME::Base64::encode_base64url( pack( 'N', 290807 ) ),      # repeate previous 128 hours
+        MIME::Base64::encode_base64url( pack( 'N', 145308 ) ),      # previous 256 hours
+        MIME::Base64::encode_base64url( pack( 'N', 145208 ) ),      # repeate previous 256 hours
+        MIME::Base64::encode_base64url( pack( 'N', 72509 ) ),       # previous 512 hours
+        MIME::Base64::encode_base64url( pack( 'N', 72409 ) ),       # repeate previous 512 hours
+        MIME::Base64::encode_base64url( pack( 'N', 36110 ) ),       # previous 1024 hours
+        MIME::Base64::encode_base64url( pack( 'N', 36010 ) ),       # repeate previous 1024 hours
+        MIME::Base64::encode_base64url( pack( 'N', 17911 ) ),       # previous 2048 hours
+        MIME::Base64::encode_base64url( pack( 'N', 17811 ) ),       # repeate previous 2048 hours
+        MIME::Base64::encode_base64url( pack( 'N', 8812 ) ),        # previous 4096 hours
+        MIME::Base64::encode_base64url( pack( 'N', 4313 ) ),        # previous 8192 hours
+        MIME::Base64::encode_base64url( pack( 'N', 4213 ) ),        # repeate previous 8192 hours
+        MIME::Base64::encode_base64url( pack( 'N', 2014 ) ),        # previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1914 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1814 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1714 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1614 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1514 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1414 ) ),        # repeate previous 16384 hours
+        MIME::Base64::encode_base64url( pack( 'N', 1314 ) ),        # repeate previous 16384 hours
     );
 
-    {
+    subtest 'All Intervals', sub {
         my $cursor = ActivityStream::API::Search::Cursor->new(
             environment => $environment,
             filter      => ActivityStream::API::Search::Filter->new(
@@ -133,15 +133,50 @@ subtest 'test cursor intervals', sub {
         );
 
         eq_or_diff( $cursor->get_intervals, \@EXPECTED );
-    }
+    };
 
-    $PKG->search(
-        $environment,
-        {
-            'consumer_id'    => sprintf( "person:%s", ActivityStream::Util::generate_id ),
-            'see_source_ids' => [$USER_1_ID],
-        },
-    );
+    subtest 'before 3 hours', sub {
+        my $cursor = ActivityStream::API::Search::Cursor->new(
+            environment => $environment,
+            filter      => ActivityStream::API::Search::Filter->new(
+                'consumer_id'    => sprintf( '%s:person',   ActivityStream::Util::generate_id ),
+                'see_source_ids' => [ sprintf( '%s:person', ActivityStream::Util::generate_id ) ],
+                'before_time'    => $NOW_TIME - 3 * 60 * 60
+            ),
+            now_time => $NOW_TIME,
+        );
+
+        eq_or_diff( $cursor->get_intervals, [ @EXPECTED[ 2 .. $#EXPECTED ] ] );
+    };
+
+    subtest 'after 3 hours', sub {
+        my $cursor = ActivityStream::API::Search::Cursor->new(
+            environment => $environment,
+            filter      => ActivityStream::API::Search::Filter->new(
+                'consumer_id'    => sprintf( '%s:person',   ActivityStream::Util::generate_id ),
+                'see_source_ids' => [ sprintf( '%s:person', ActivityStream::Util::generate_id ) ],
+                'after_time'     => $NOW_TIME - 3 * 60 * 60
+            ),
+            now_time => $NOW_TIME,
+        );
+
+        eq_or_diff( $cursor->get_intervals, [ @EXPECTED[ 0 .. 2 ] ] );
+    };
+
+    subtest 'interval 3 to 24 hours', sub {
+        my $cursor = ActivityStream::API::Search::Cursor->new(
+            environment => $environment,
+            filter      => ActivityStream::API::Search::Filter->new(
+                'consumer_id'    => sprintf( '%s:person',   ActivityStream::Util::generate_id ),
+                'see_source_ids' => [ sprintf( '%s:person', ActivityStream::Util::generate_id ) ],
+                'before_time'    => $NOW_TIME - 3 * 60 * 60,
+                'after_time'     => $NOW_TIME - 24 * 60 * 60,
+            ),
+            now_time => $NOW_TIME,
+        );
+
+        eq_or_diff( $cursor->get_intervals, [ @EXPECTED[ 2 .. 4 ] ] );
+    };
 };
 
 subtest 'basic search', sub {
@@ -178,10 +213,10 @@ subtest 'basic search', sub {
                             'timebox' => {
                                 '$in' => [
                                     sprintf(
-                                        '%s:%s:%s',
+                                        '%s%s%s',
                                         $_,
                                         MIME::Base64::encode_base64url(
-                                            pack( 'V', ActivityStream::Util::calc_hash($USER_1_ID) )
+                                            pack( 'N', ActivityStream::Util::calc_hash($USER_1_ID) )
                                         ),
                                         $USER_1_ID,
                                     ) ] } } ]

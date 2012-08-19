@@ -42,13 +42,6 @@ has 'now_time' => (
     'default' => sub {time},
 );
 
-has 'start_time' => (
-    'is'      => 'rw',
-    'isa'     => 'Int',
-    'lazy'    => 1,
-    'default' => sub {time},
-);
-
 has 'intervals' => (
     'is'      => 'rw',
     'isa'     => 'ArrayRef[Str]',
@@ -60,23 +53,42 @@ has 'intervals' => (
 
         my $index = 0;
 
-        $time_now = int( $time_now / $ActivityStream::API::Activity::MINOR_INTERVAL_LENGTH );
-        push(
-            @intervals,
-            MIME::Base64::encode_base64url(
-                pack( 'I', $index + $ActivityStream::API::Activity::NUMBER_OF_INTERVAL_DELTA * $time_now ) ) );
+        Readonly my $MINOR_INTERVAL_LENGTH => $ActivityStream::API::Activity::MINOR_INTERVAL_LENGTH;
+
+        $time_now = int( $time_now / $MINOR_INTERVAL_LENGTH );
+
+        my $before_time = $self->get_filter->get_before_time;
+        my $after_time  = $self->get_filter->get_after_time;
+
+        if ( $before_time > $time_now * $MINOR_INTERVAL_LENGTH * 2**$index ) {
+            if ( $after_time < ( $time_now + 1 ) * $MINOR_INTERVAL_LENGTH * 2**$index ) {
+                push(
+                    @intervals,
+                    MIME::Base64::encode_base64url(
+                        pack( 'N', $index + $ActivityStream::API::Activity::NUMBER_OF_INTERVAL_DELTA * $time_now )
+                    ),
+                );
+            }
+        }
+
         $time_now--;
 
-        while ( @intervals < $ActivityStream::API::Activity::NUMBER_OF_INTERVAL_TYPES * 2 ) {
+        foreach my $step ( 2 .. $ActivityStream::API::Activity::NUMBER_OF_INTERVAL_TYPES * 2 ) {
             if ( ( $index < $ActivityStream::API::Activity::NUMBER_OF_INTERVAL_TYPES - 1 ) && ( $time_now % 2 == 1 ) ) {
                 $time_now = ( $time_now - 1 ) / 2;
                 $index++;
             }
 
-            push(
-                @intervals,
-                MIME::Base64::encode_base64url(
-                    pack( 'V', $index + $ActivityStream::API::Activity::NUMBER_OF_INTERVAL_DELTA * $time_now ) ) );
+            if ( $before_time > $time_now * $MINOR_INTERVAL_LENGTH * 2**$index ) {
+                if ( $after_time < ( $time_now + 1 ) * $MINOR_INTERVAL_LENGTH * 2**$index ) {
+                    push(
+                        @intervals,
+                        MIME::Base64::encode_base64url(
+                            pack( 'N', $index + $ActivityStream::API::Activity::NUMBER_OF_INTERVAL_DELTA * $time_now )
+                        ),
+                    );
+                }
+            }
 
             $time_now--;
         }
@@ -124,13 +136,12 @@ sub next_activity {
     if ( @{ $self->get_intervals } ) {
         my $interval = shift @{ $self->get_intervals };
 
-        my @timebox = map { "$interval:$_" } @{ $self->get_filter->get_see_source_id_suffixs };
+        my @timebox = map {"$interval$_"} @{ $self->get_filter->get_see_source_id_suffixs };
 
         my $found_activities_cursor
-              = $self->get_collection_activity->find_activities( { timebox => { '$in' => \@timebox } } );
+              = $self->get_collection_activity->find_activities( { 'timebox' => { '$in' => \@timebox } } );
 
-        my @objects = $found_activities_cursor->all;
-        @objects = sort { $b->{'creation_time'} <=> $a->{'creation_time'} } @objects;
+        my @objects = sort { $b->{'creation_time'} <=> $a->{'creation_time'} } $found_activities_cursor->all;
         $self->set_next_activity_ids( [ map { $_->{'activity_id'} } @objects ] );
 
         return $self->next_activity;

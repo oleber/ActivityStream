@@ -140,28 +140,21 @@ Readonly our $NUMBER_OF_INTERVAL_DELTA => 100;
 sub to_db_struct {
     my ($self) = @_;
 
-    my @intervals;
-    foreach my $index ( 0 .. $NUMBER_OF_INTERVAL_TYPES - 1 ) {
-        my $interval = MIME::Base64::encode_base64url(
-            pack( 'V',
-                        $index
-                      + $NUMBER_OF_INTERVAL_DELTA * int( $self->get_creation_time / $MINOR_INTERVAL_LENGTH / 2**$index )
-            ) );
-        push( @intervals, $interval );
-    }
-
     my @sources = $self->get_sources;
     my @timebox;
 
-    foreach my $interval (@intervals) {
+    foreach my $index ( 0 .. $NUMBER_OF_INTERVAL_TYPES - 1 ) {
+        my $interval = MIME::Base64::encode_base64url(
+            pack( 'N',
+                        $index
+                      + $NUMBER_OF_INTERVAL_DELTA * int( $self->get_creation_time / $MINOR_INTERVAL_LENGTH / 2**$index )
+            ) );
         foreach my $source (@sources) {
             push(
                 @timebox,
-                sprintf( '%s:%s:%s',
-                    $interval,
-                    MIME::Base64::encode_base64url( pack( 'V', ActivityStream::Util::calc_hash($source) ) ), 
-                    $source,
-                ),
+                sprintf( '%s%s%s',
+                    $interval, MIME::Base64::encode_base64url( pack( 'N', ActivityStream::Util::calc_hash($source) ) ),
+                    $source, ),
             );
         }
     }

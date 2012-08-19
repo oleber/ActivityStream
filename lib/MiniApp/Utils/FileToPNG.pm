@@ -154,7 +154,10 @@ sub BUILD {
 
     my $filetype = $self->find_filetype( $self->get_filepath );
 
-    confess "Filetype not found for file: " . $self->get_filepath if not defined $filetype;
+    if ( not defined $filetype ) {
+        warn Dumper \%CONVERT_FOR;
+        confess "Filetype not found for file: " . $self->get_filepath ;
+    }
 
     $self->set_filetype($filetype);
 
@@ -164,7 +167,7 @@ sub BUILD {
 sub find_filetype {
     my ( $pkg, $filepath ) = @_;
 
-    while ( my ( $key, $data ) = each %CONVERT_FOR ) {
+    foreach my $key ( keys %CONVERT_FOR ) {
         return $key if $filepath =~ /\Q$key\E$/;
     }
 

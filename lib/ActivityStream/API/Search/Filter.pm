@@ -27,8 +27,8 @@ has 'see_source_id_suffixs' => (
         foreach my $see_source_id ( @{ shift->get_see_source_ids } ) {
             push(
                 @see_source_id_suffixs,
-                sprintf( '%s:%s',
-                    MIME::Base64::encode_base64url( pack( 'V', ActivityStream::Util::calc_hash($see_source_id) ) ),
+                sprintf( '%s%s',
+                    MIME::Base64::encode_base64url( pack( 'N', ActivityStream::Util::calc_hash($see_source_id) ) ),
                     $see_source_id, ),
             );
         }
@@ -52,6 +52,20 @@ has 'limit' => (
     'is'      => 'rw',
     'isa'     => subtype( 'Int' => where sub { $_ > 0 and $_ <= 25 } ),
     'default' => 1,
+);
+
+has 'before_time' => (
+    'is'      => 'rw',
+    'isa'     => 'Int',
+    'lazy'    => 1,
+    'default' => sub { 2**32 },
+);
+
+has 'after_time' => (
+    'is'      => 'rw',
+    'isa'     => 'Int',
+    'lazy'    => 1,
+    'default' => sub { -2**32 },
 );
 
 __PACKAGE__->meta->make_immutable;
